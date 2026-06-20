@@ -1,0 +1,800 @@
+{
+  "nodes": [
+    {
+      "id": "ixr-d3l-a",
+      "name": "ixr-d3l-a",
+      "platform": "7220 IXR-D3L",
+      "os": "srl",
+      "role": "leaf"
+    },
+    {
+      "id": "ixr-d3l-b",
+      "name": "ixr-d3l-b",
+      "platform": "7220 IXR-D3L",
+      "os": "srl",
+      "role": "leaf"
+    }
+  ],
+  "links": [
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-1",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-1",
+      "targetPort": "ethernet-1-1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-2",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-2",
+      "targetPort": "ethernet-1-2",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-3",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-3",
+      "targetPort": "ethernet-1-3",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-4",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-4",
+      "targetPort": "ethernet-1-4",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-5",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-5",
+      "targetPort": "ethernet-1-5",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-6",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-6",
+      "targetPort": "ethernet-1-6",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-7",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-7",
+      "targetPort": "ethernet-1-7",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-8",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-8",
+      "targetPort": "ethernet-1-8",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-9",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-9",
+      "targetPort": "ethernet-1-9",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-10",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-10",
+      "targetPort": "ethernet-1-10",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-11",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-11",
+      "targetPort": "ethernet-1-11",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-12",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-12",
+      "targetPort": "ethernet-1-12",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-13",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-13",
+      "targetPort": "ethernet-1-13",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-14",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-14",
+      "targetPort": "ethernet-1-14",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-15",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-15",
+      "targetPort": "ethernet-1-15",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-16",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-16",
+      "targetPort": "ethernet-1-16",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-17",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-17",
+      "targetPort": "ethernet-1-17",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-18",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-18",
+      "targetPort": "ethernet-1-18",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-19",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-19",
+      "targetPort": "ethernet-1-19",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-20",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-20",
+      "targetPort": "ethernet-1-20",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-21",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-21",
+      "targetPort": "ethernet-1-21",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-22",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-22",
+      "targetPort": "ethernet-1-22",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-23",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-23",
+      "targetPort": "ethernet-1-23",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-24",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-24",
+      "targetPort": "ethernet-1-24",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-25",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-25",
+      "targetPort": "ethernet-1-25",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-26",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-26",
+      "targetPort": "ethernet-1-26",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-27",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-27",
+      "targetPort": "ethernet-1-27",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-28",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-28",
+      "targetPort": "ethernet-1-28",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-29",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-29",
+      "targetPort": "ethernet-1-29",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-30",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-30",
+      "targetPort": "ethernet-1-30",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-31",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-31",
+      "targetPort": "ethernet-1-31",
+      "type": "interSwitch"
+    },
+    {
+      "id": "ixr-d3l-a-ixr-d3l-b-32",
+      "source": "ixr-d3l-a",
+      "target": "ixr-d3l-b",
+      "sourcePort": "ethernet-1-32",
+      "targetPort": "ethernet-1-32",
+      "type": "interSwitch"
+    }
+  ],
+  "tables": {
+    "ixr-d3l-a": [
+      {
+        "label": "ethernet-1-1",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-1",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-2",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-2",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-3",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-3",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-4",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-4",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-5",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-5",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-6",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-6",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-7",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-7",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-8",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-8",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-9",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-9",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-10",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-10",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-11",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-11",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-12",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-12",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-13",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-13",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-14",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-14",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-15",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-15",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-16",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-16",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-17",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-17",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-18",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-18",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-19",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-19",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-20",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-20",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-21",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-21",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-22",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-22",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-23",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-23",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-24",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-24",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-25",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-25",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-26",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-26",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-27",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-27",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-28",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-28",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-29",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-29",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-30",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-30",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-31",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-31",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-32",
+        "desc": "",
+        "remoteNode": "ixr-d3l-b",
+        "remotePort": "ethernet-1-32",
+        "type": "interSwitch"
+      }
+    ],
+    "ixr-d3l-b": [
+      {
+        "label": "ethernet-1-1",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-1",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-2",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-2",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-3",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-3",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-4",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-4",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-5",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-5",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-6",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-6",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-7",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-7",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-8",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-8",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-9",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-9",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-10",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-10",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-11",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-11",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-12",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-12",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-13",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-13",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-14",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-14",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-15",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-15",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-16",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-16",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-17",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-17",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-18",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-18",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-19",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-19",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-20",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-20",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-21",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-21",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-22",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-22",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-23",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-23",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-24",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-24",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-25",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-25",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-26",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-26",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-27",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-27",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-28",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-28",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-29",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-29",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-30",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-30",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-31",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-31",
+        "type": "interSwitch"
+      },
+      {
+        "label": "ethernet-1-32",
+        "desc": "",
+        "remoteNode": "ixr-d3l-a",
+        "remotePort": "ethernet-1-32",
+        "type": "interSwitch"
+      }
+    ]
+  },
+  "occupied": {
+    "ixr-d3l-a": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32
+    ],
+    "ixr-d3l-b": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32
+    ]
+  }
+}

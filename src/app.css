@@ -1,0 +1,6 @@
+/* front panel — the wrapping <Paper variant="outlined"> provides the frame,
+   so .fp is just a sizing container (no border/background of its own). */
+.fp-wrap { overflow-x: auto; }
+
+/* reveal a node's handle dots on hover (topo-builder group-hover behaviour) */
+.topo-node:hover .topo-handle-src { opacity: 1 !important; }

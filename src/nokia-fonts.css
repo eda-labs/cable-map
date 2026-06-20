@@ -1,0 +1,16 @@
+/* Nokia Pure — imported from the same CDN as nokia-eda/docs
+   (docs/stylesheets/nokia-fonts.css). */
+@font-face {
+  font-family: 'NokiaPureText';
+  src: url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Lt.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Lt.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'NokiaPureText';
+  src: url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Bd.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Bd.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}

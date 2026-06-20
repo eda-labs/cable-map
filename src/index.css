@@ -1,0 +1,27 @@
+/* Global styling adopted from eda-labs/topo-builder (src/styles/global.css).
+   NokiaPureText is imported in nokia-fonts.css (CDN, like nokia-eda/docs). */
+
+:root {
+  --color-link-stroke: #8994a37f;
+  --color-link-stroke-selected: #6098FF;
+  --color-link-stroke-highlight: #6098FF;
+  --color-node-border: #8994a37f;
+  --color-node-border-selected: #6098FF;
+  --color-node-bg: #000000;
+  --color-node-text: #ffffff;
+  --color-handle-bg: #1e1e1e;
+  --color-icon-bg: #707070;
+  --color-icon-fg: #ffffff;
+
+  /* aliases used by app.css */
+  --bg: #1A222E; --panel: #101824; --line: #4A5361B2; --fg: #ffffff; --muted: #C9CED6;
+  --accent: #6098FF;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+.muted { color: var(--muted); }
+
+/* canvas colour, same override topo-builder uses (colorMode="dark" does the rest) */
+.react-flow { --xy-background-color: #101824; -webkit-user-select: none; user-select: none; }
