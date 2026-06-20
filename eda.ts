@@ -1,12 +1,5 @@
-// EDA REST data layer. Reads toponodes/topolinks/interfaces from the EDA API and
-// builds the topology + per-node cable tables.
-//
-// Auth: either a static EDA_TOKEN, or a confidential client (EDA_CLIENT_ID +
-// EDA_CLIENT_SECRET) the backend exchanges for a token via client_credentials and
-// caches/refreshes itself. In-cluster, mount the eda-api client secret into these.
-//
-// TLS: no code — point Node at the EDA CA with NODE_EXTRA_CA_CERTS=/path/ca.crt
-// (prod), or NODE_TLS_REJECT_UNAUTHORIZED=0 for the self-signed playground.
+import { readFileSync } from 'node:fs';
+import https from 'node:https';
 
 export type TopoNode = { id: string; name: string; platform: string; os: string; role: string };
 export type TopoEdge = {
@@ -29,14 +22,9 @@ type RawLink = { metadata: Meta; spec?: { links?: { type?: string; local?: LinkE
 type RawIface = { metadata: Meta; spec?: { description?: string } };
 
 const NS = process.env.EDA_NAMESPACE || 'eda';
-// the in-cluster EDA API service (svc :443 -> :9443)
-const API = 'https://eda-api.eda-system.svc';
-const REALM = process.env.EDA_REALM || 'eda';
-const TOKEN_URL = process.env.EDA_TOKEN_URL ||
-  `${API}/core/proxy/v1/identity/realms/${REALM}/protocol/openid-connect/token`;
-const CLIENT_ID = process.env.EDA_CLIENT_ID || '';
-const CLIENT_SECRET = process.env.EDA_CLIENT_SECRET || '';
-const STATIC_TOKEN = process.env.EDA_TOKEN || '';
+const K8S_HOST = 'kubernetes.default.svc';
+const K8S_PORT = Number(443);
+const SA = '/var/run/secrets/kubernetes.io/serviceaccount';
 
 const GROUP: Record<string, string> = {
   toponodes: 'core.eda.nokia.com',
@@ -44,33 +32,31 @@ const GROUP: Record<string, string> = {
   interfaces: 'interfaces.eda.nokia.com',
 };
 
-let cached = { token: '', exp: 0 };
-async function bearer(): Promise<string> {
-  if (STATIC_TOKEN) return STATIC_TOKEN;
-  if (cached.token && Date.now() / 1000 < cached.exp - 30) return cached.token;
-  if (!CLIENT_ID || !CLIENT_SECRET) {
-    throw new Error('no EDA auth: set EDA_TOKEN, or EDA_CLIENT_ID + EDA_CLIENT_SECRET');
-  }
-  const res = await fetch(TOKEN_URL, {
-    method: 'POST',
-    body: new URLSearchParams({ grant_type: 'client_credentials', client_id: CLIENT_ID, client_secret: CLIENT_SECRET }),
+function getJson(path: string): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        host: K8S_HOST, port: K8S_PORT, path, method: 'GET',
+        ca: readFileSync(`${SA}/ca.crt`),
+        headers: { authorization: `Bearer ${readFileSync(`${SA}/token`, 'utf8').trim()}` },
+      },
+      (res) => {
+        let body = '';
+        res.on('data', (c) => (body += c));
+        res.on('end', () => {
+          if ((res.statusCode ?? 0) >= 400) return reject(new Error(`k8s ${path} ${res.statusCode}: ${body.slice(0, 200)}`));
+          try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+        });
+      },
+    );
+    req.on('error', reject);
+    req.end();
   });
-  if (!res.ok) throw new Error(`token ${res.status}: ${await res.text()}`);
-  const j = await res.json() as { access_token: string; expires_in?: number };
-  cached = { token: j.access_token, exp: Date.now() / 1000 + (j.expires_in || 300) };
-  return cached.token;
 }
 
 async function list<T>(plural: string): Promise<T[]> {
-  const url = `${API}/apps/${GROUP[plural]}/v1/namespaces/${NS}/${plural}`;
-  const get = async () => fetch(url, { headers: { authorization: `Bearer ${await bearer()}` } });
-  let res = await get();
-  if (res.status === 401 && !STATIC_TOKEN) {   // token expired mid-flight: refresh once
-    cached = { token: '', exp: 0 };
-    res = await get();
-  }
-  if (!res.ok) throw new Error(`EDA ${plural} ${res.status}: ${await res.text()}`);
-  return (await res.json() as { items?: T[] }).items || [];
+  const data = await getJson(`/apis/${GROUP[plural]}/v1/namespaces/${NS}/${plural}`) as { items?: T[] };
+  return data.items || [];
 }
 
 // numeric port index from an interface name (ethernet-1-12 / ethernet-1/12 -> 12).
