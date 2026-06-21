@@ -8,6 +8,8 @@ import {
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { fetchTopology, BASE, type Topology } from './api';
 import { buildGraph, CABLE_COLOR } from './graph';
 import { trace, setAdjacency } from './trace';
@@ -26,7 +28,9 @@ const LEGEND: Array<[string, keyof typeof CABLE_COLOR]> = [
   ['Fabric (ISL)', 'isl'], ['Edge', 'edge'], ['Local LAG', 'lag'], ['ESI / MH-LAG', 'mlag'],
 ];
 
-export default function App() {
+type Mode = 'light' | 'dark';
+
+export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: () => void }) {
   const [topo, setTopo] = useState<Topology | null>(null);
   const [err, setErr] = useState('');
   const [open, setOpen] = useState<string | null>(null);
@@ -106,6 +110,11 @@ export default function App() {
               </IconButton>
             </Tooltip>
           )}
+          <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            <IconButton size="small" sx={{ color: 'text.primary' }} onClick={onToggleMode}>
+              {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 
@@ -114,7 +123,7 @@ export default function App() {
           <ReactFlow
             nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
-            colorMode="dark" elevateNodesOnSelect={false} nodesConnectable={false}
+            colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
             proOptions={{ hideAttribution: true }}
             minZoom={0.15}
             onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
@@ -128,16 +137,16 @@ export default function App() {
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
             <Controls position="top-right" showInteractive={false} />
             <Panel position="bottom-left">
-              <Box sx={{ bgcolor: 'rgba(16,24,36,0.92)', border: 1, borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, backdropFilter: 'blur(4px)' }}>
+              <Box sx={{ bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, boxShadow: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2, mb: 0.75 }}>
                   {LEGEND.map(([label, kind]) => (
                     <Box key={kind} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Box sx={{ width: 16, height: 4, borderRadius: 2, bgcolor: CABLE_COLOR[kind] }} />
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{label}</Typography>
+                      <Box sx={{ width: 14, height: 6, borderRadius: 2, bgcolor: CABLE_COLOR[kind] }} />
+                      <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 500 }}>{label}</Typography>
                     </Box>
                   ))}
                 </Box>
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 10 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 11 }}>
                   Hover to trace · click a cable or port to pin · click a switch for its panel
                 </Typography>
               </Box>

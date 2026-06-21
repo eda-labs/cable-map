@@ -54,7 +54,7 @@ function CableEdge(props: EdgeProps) {
         style={{
           stroke: color,
           strokeWidth: (on ? 2.6 : 1.1) + (count > 1 ? 1 : 0),
-          opacity: dim ? 0.12 : on ? 1 : 0.62,
+          opacity: dim ? 0.12 : on ? 1 : 'var(--edge-idle)',
           filter: on ? `drop-shadow(0 0 3px ${color})` : 'none',
           transition: 'stroke-width 120ms, opacity 120ms',
         }} />
@@ -83,7 +83,7 @@ function CableLabel({ x, y, text, color }: { x: number; y: number; text: string;
     <div style={{
       position: 'absolute', transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
       fontSize: 10, fontWeight: 700, lineHeight: 1.3, padding: '1px 5px', borderRadius: 4,
-      background: '#0B1119', color, border: `1px solid ${color}`, whiteSpace: 'nowrap',
+      background: 'var(--label-bg)', color, border: `1px solid ${color}`, whiteSpace: 'nowrap',
       pointerEvents: 'none', zIndex: 10,
     }}>{text}</div>
   );

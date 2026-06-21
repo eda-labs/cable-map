@@ -28,9 +28,9 @@ function PortCell({ info, hot }: { info: PortInfo; hot: boolean }) {
         position: 'relative', width: CELL, height: CELL, borderRadius: 2,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 7, lineHeight: 1, fontWeight: 700,
-        color: free ? '#3d4756' : 'rgba(0,0,0,0.78)',
-        background: free ? '#222c39' : fillFor(info.kind),
-        outline: hot ? '2px solid #fff' : free ? '1px solid #2c3645' : '1px solid rgba(0,0,0,0.35)',
+        color: free ? 'var(--cell-free-fg)' : 'rgba(0,0,0,0.78)',
+        background: free ? 'var(--cell-free-bg)' : fillFor(info.kind),
+        outline: hot ? '2px solid var(--port-hot-ring)' : free ? '1px solid var(--cell-free-line)' : '1px solid rgba(0,0,0,0.35)',
         outlineOffset: hot ? 0 : -1,
         boxShadow: hot ? `0 0 8px 1px ${fillFor(info.kind)}` : 'none',
         cursor: free ? 'default' : 'pointer', zIndex: hot ? 2 : 1,
@@ -81,9 +81,9 @@ function SwitchNode({ id, data, selected }: NodeProps) {
       onMouseLeave={() => trace.hover(null)}
       style={{
         background: 'var(--panel)', borderRadius: 8, padding: 8,
-        border: `1.5px solid ${selected ? '#5B9BFF' : mode === 'on' ? 'rgba(255,255,255,0.55)' : 'var(--line)'}`,
+        border: `1.5px solid ${selected ? '#5B9BFF' : mode === 'on' ? 'var(--node-ring)' : 'var(--line)'}`,
         opacity: mode === 'dim' ? 0.32 : 1, transition: 'opacity 140ms, border-color 140ms',
-        boxShadow: mode === 'on' ? '0 0 0 1px rgba(255,255,255,0.18)' : 'none',
+        boxShadow: mode === 'on' ? '0 0 0 1px var(--node-ring-soft)' : 'none',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, height: 20 }}>

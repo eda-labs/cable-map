@@ -13,15 +13,35 @@
   --color-icon-bg: #707070;
   --color-icon-fg: #ffffff;
 
-  /* aliases used by app.css */
+  /* aliases used by app.css and the inline node / edge styling */
   --bg: #1A222E; --panel: #101824; --line: #4A5361B2; --fg: #ffffff; --muted: #C9CED6;
   --accent: #6098FF;
+  --cell-free-bg: #222c39; --cell-free-fg: #3d4756; --cell-free-line: #2c3645;
+  --port-hot-ring: #ffffff; --label-bg: #0B1119;
+  --node-ring: rgba(255, 255, 255, 0.55); --node-ring-soft: rgba(255, 255, 255, 0.18);
+  --edge-idle: 0.62;   /* idle cable opacity — bright colours read on dark at 0.62 */
   color-scheme: dark;
+}
+
+/* light mode — toggled by setting data-theme="light" on <html> (see main.tsx Root) */
+:root[data-theme='light'] {
+  --bg: #E7ECF2; --panel: #FFFFFF; --line: #BCC5D2; --fg: #0B1119; --muted: #4A5563;
+  --accent: #2F6BE0;
+  --cell-free-bg: #DBE1E9; --cell-free-fg: #9AA4B2; --cell-free-line: #C0C8D4;
+  --port-hot-ring: #0B1119; --label-bg: #FFFFFF;
+  --node-ring: rgba(11, 17, 25, 0.5); --node-ring-soft: rgba(11, 17, 25, 0.14);
+  --edge-idle: 0.95;   /* light bg needs near-opaque cables or they wash out */
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
 .muted { color: var(--muted); }
 
-/* canvas colour, same override topo-builder uses (colorMode="dark" does the rest) */
-.react-flow { --xy-background-color: #101824; -webkit-user-select: none; user-select: none; }
+/* canvas colour follows the theme; React Flow's colorMode prop does the control chrome */
+.react-flow { --xy-background-color: var(--panel); -webkit-user-select: none; user-select: none; }
