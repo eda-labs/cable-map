@@ -90,9 +90,26 @@ function getJson(path: string): Promise<unknown> {
   });
 }
 
-async function list<T>(plural: string): Promise<T[]> {
-  const data = await getJson(`/apis/${GROUP[plural]}/v1/namespaces/${NS}/${plural}`) as { items?: T[] };
+async function list<T>(plural: string, ns: string): Promise<T[]> {
+  const data = await getJson(`/apis/${GROUP[plural]}/v1/namespaces/${ns}/${plural}`) as { items?: T[] };
   return data.items || [];
+}
+
+// EDA namespaces (core.eda.nokia.com/Namespace) — each name is also the k8s namespace its
+// topology lives in. Falls back to the namespaces that actually hold toponodes if the base
+// RBAC can't read the Namespace CRD.
+export async function listNamespaces(): Promise<string[]> {
+  try {
+    const data = await getJson('/apis/core.eda.nokia.com/v1/namespaces') as { items?: { metadata: { name: string } }[] };
+    const names = (data.items ?? []).map((i) => i.metadata.name);
+    if (names.length) return names;
+  } catch { /* fall through to the toponode-derived list */ }
+  try {
+    const data = await getJson('/apis/core.eda.nokia.com/v1/toponodes') as { items?: { metadata: { namespace?: string } }[] };
+    const names = [...new Set((data.items ?? []).map((i) => i.metadata.namespace).filter((n): n is string => !!n))];
+    if (names.length) return names;
+  } catch { /* fall through to the default */ }
+  return [NS];
 }
 
 // numeric port index from an interface name (ethernet-1-12 / ethernet-1/12 -> 12).
@@ -124,12 +141,16 @@ export function peerLabel(linkName: string, nodes: Set<string>): string {
 const normIf = (s: string | undefined): string => String(s || '').replace(/\//g, '-');
 
 // Fetch from the live EDA API, then build.
-export async function getTopology(): Promise<Topology> {
-  const [nodes, links, ifaces] = await Promise.all([
-    list<RawNode>('toponodes'),
-    list<RawLink>('topolinks'),
-    list<RawIface>('interfaces').catch(() => [] as RawIface[]),
-  ]);
+export async function getTopology(nsList: string[] = [NS]): Promise<Topology> {
+  const nodes: RawNode[] = [], links: RawLink[] = [], ifaces: RawIface[] = [];
+  await Promise.all(nsList.map(async (ns) => {
+    const [n, l, i] = await Promise.all([
+      list<RawNode>('toponodes', ns),
+      list<RawLink>('topolinks', ns),
+      list<RawIface>('interfaces', ns).catch(() => [] as RawIface[]),
+    ]);
+    nodes.push(...n); links.push(...l); ifaces.push(...i);
+  }));
   return buildTopology(nodes, links, ifaces);
 }
 
@@ -231,24 +252,22 @@ type RawItem = { metadata: { name: string; resourceVersion?: string } };
 type WatchEvent = { type: string; object?: RawItem };
 const PLURALS = ['toponodes', 'topolinks', 'interfaces'] as const;
 
-async function listWithRV(plural: string): Promise<{ items: RawItem[]; rv: string }> {
-  const data = await getJson(`/apis/${GROUP[plural]}/v1/namespaces/${NS}/${plural}`) as
+async function listWithRV(plural: string, ns: string): Promise<{ items: RawItem[]; rv: string }> {
+  const data = await getJson(`/apis/${GROUP[plural]}/v1/namespaces/${ns}/${plural}`) as
     { items?: RawItem[]; metadata?: { resourceVersion?: string } };
   return { items: data.items ?? [], rv: data.metadata?.resourceVersion ?? '0' };
 }
 
 // Open a long-lived watch and parse its newline-delimited JSON events (same wire shape the
 // vscode-eda SSE reader handles). Resolves when k8s rotates the watch on its timeout.
-function watch(plural: string, rv: string, onEvent: (e: WatchEvent) => void): Promise<void> {
-  const path = `/apis/${GROUP[plural]}/v1/namespaces/${NS}/${plural}` +
-    `?watch=true&resourceVersion=${rv}&allowWatchBookmarks=true&timeoutSeconds=1800`;
+function watchPath(path: string, onEvent: (e: WatchEvent) => void): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const req = https.request({
       host: K8S_HOST, port: K8S_PORT, path, method: 'GET',
       ca: readFileSync(`${SA}/ca.crt`),
       headers: { authorization: `Bearer ${readFileSync(`${SA}/token`, 'utf8').trim()}` },
     }, (res) => {
-      if ((res.statusCode ?? 0) >= 400) { res.resume(); reject(new Error(`watch ${plural} ${res.statusCode}`)); return; }
+      if ((res.statusCode ?? 0) >= 400) { res.resume(); reject(new Error(`watch ${path} ${res.statusCode}`)); return; }
       res.setEncoding('utf8');
       let buf = '';
       res.on('data', (chunk: string) => {
@@ -268,18 +287,94 @@ function watch(plural: string, rv: string, onEvent: (e: WatchEvent) => void): Pr
   });
 }
 
+const watch = (plural: string, ns: string, rv: string, onEvent: (e: WatchEvent) => void) =>
+  watchPath(`/apis/${GROUP[plural]}/v1/namespaces/${ns}/${plural}?watch=true&resourceVersion=${rv}&allowWatchBookmarks=true&timeoutSeconds=1800`, onEvent);
+
+// The set of EDA namespaces, kept live by a cluster-wide watch of the Namespace CRD so the
+// picker updates the moment one is created/deleted. Falls back to polling the toponode-derived
+// list when the base RBAC can't watch the CRD.
+const NS_PATH = '/apis/core.eda.nokia.com/v1/namespaces';
+export type NamespaceStream = { subscribe: (cb: (names: string[]) => void) => () => void; current: () => string[] };
+
+export function createNamespaceStream(): NamespaceStream {
+  const names = new Set<string>();
+  const listeners = new Set<(n: string[]) => void>();
+  let current: string[] = [];
+  let lastJson = '';
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let started = false;
+
+  const rebuild = () => {
+    timer = null;
+    const sorted = [...names].toSorted();
+    const json = JSON.stringify(sorted);
+    if (json === lastJson) return;
+    lastJson = json; current = sorted;
+    for (const l of listeners) l(sorted);
+  };
+  const schedule = () => { if (!timer) timer = setTimeout(rebuild, 200); };
+
+  /* eslint-disable no-await-in-loop */
+  async function run(): Promise<void> {
+    for (;;) {
+      try {
+        const data = await getJson(NS_PATH) as { items?: { metadata: { name: string } }[]; metadata?: { resourceVersion?: string } };
+        names.clear();
+        for (const i of data.items ?? []) names.add(i.metadata.name);
+        schedule();
+        await watchPath(`${NS_PATH}?watch=true&resourceVersion=${data.metadata?.resourceVersion ?? '0'}&allowWatchBookmarks=true&timeoutSeconds=1800`, (e) => {
+          const name = e.object?.metadata?.name;
+          if (!name) return;
+          if (e.type === 'DELETED') names.delete(name);
+          else if (e.type === 'ADDED' || e.type === 'MODIFIED') names.add(name);
+          else return;
+          schedule();
+        });
+      } catch (e) {
+        console.error('[ns-stream]:', e instanceof Error ? e.message : e);
+        try { names.clear(); for (const n of await listNamespaces()) names.add(n); schedule(); } catch { /* keep last */ }
+        await new Promise((r) => setTimeout(r, 5000));   // CRD not watchable → poll the fallback
+      }
+    }
+  }
+  /* eslint-enable no-await-in-loop */
+
+  return {
+    subscribe(cb) {
+      if (!started) { started = true; void run(); }
+      listeners.add(cb);
+      if (current.length) cb(current);
+      return () => { listeners.delete(cb); };
+    },
+    current: () => current,
+  };
+}
+
 export type TopologyStream = {
   subscribe: (cb: (t: Topology) => void) => () => void;
   current: () => Topology | null;
+  setNamespaces: (nsList: string[]) => void;   // "All Namespaces" updates this as ns come/go
 };
 
-// Live caches → debounced, de-duplicated rebuild → fan-out to SSE subscribers. The
-// stringify guard means chatty interface status updates (counters etc.) that don't change
+// Live caches → debounced, de-duplicated rebuild → fan-out to SSE subscribers. Watches each
+// (namespace, resource) so "All Namespaces" simply merges several namespaces into one map.
+// The stringify guard means chatty interface status updates (counters etc.) that don't change
 // our derived topology never reach the browser.
-export function createTopologyStream(): TopologyStream {
-  const caches: Record<string, Map<string, RawItem>> = {
-    toponodes: new Map(), topolinks: new Map(), interfaces: new Map(),
+export function createTopologyStream(nsList: string[]): TopologyStream {
+  const caches = new Map<string, Map<string, RawItem>>();   // `${ns}|${plural}` -> name -> item
+  const cacheOf = (ns: string, plural: string) => {
+    const k = `${ns}|${plural}`;
+    let m = caches.get(k);
+    if (!m) { m = new Map(); caches.set(k, m); }
+    return m;
   };
+  const activeNs = new Set(nsList);
+  const merged = (plural: string) => {
+    const out: RawItem[] = [];
+    for (const ns of activeNs) for (const v of cacheOf(ns, plural).values()) out.push(v);
+    return out;
+  };
+
   const listeners = new Set<(t: Topology) => void>();
   let current: Topology | null = null;
   let lastJson = '';
@@ -289,9 +384,9 @@ export function createTopologyStream(): TopologyStream {
   const rebuild = () => {
     timer = null;
     const topo = buildTopology(
-      [...caches.toponodes.values()] as unknown as RawNode[],
-      [...caches.topolinks.values()] as unknown as RawLink[],
-      [...caches.interfaces.values()] as unknown as RawIface[],
+      merged('toponodes') as unknown as RawNode[],
+      merged('topolinks') as unknown as RawLink[],
+      merged('interfaces') as unknown as RawIface[],
     );
     const json = JSON.stringify(topo);
     if (json === lastJson) return;
@@ -300,18 +395,20 @@ export function createTopologyStream(): TopologyStream {
   };
   const schedule = () => { if (!timer) timer = setTimeout(rebuild, 300); };
 
-  // Sequential by design: each iteration re-lists then holds open one watch until k8s rotates
-  // it (or it errors), so the awaits genuinely depend on each other — not parallelisable.
+  // One runner per (namespace, resource). Loops while its namespace stays active: each pass
+  // re-lists then holds open a watch until k8s rotates it. Sequential awaits are the point, so
+  // the loop genuinely depends on each step. A namespace dropped from the set ends its runners.
   /* eslint-disable no-await-in-loop */
-  async function run(plural: string): Promise<void> {
-    const cache = caches[plural];
-    for (;;) {
+  async function run(ns: string, plural: string): Promise<void> {
+    const cache = cacheOf(ns, plural);
+    while (activeNs.has(ns)) {
       try {
-        const { items, rv } = await listWithRV(plural);
+        const { items, rv } = await listWithRV(plural, ns);
+        if (!activeNs.has(ns)) break;
         cache.clear();
         for (const it of items) cache.set(it.metadata.name, it);
         schedule();
-        await watch(plural, rv, (e) => {
+        await watch(plural, ns, rv, (e) => {
           const name = e.object?.metadata?.name;
           if (!name) return;
           if (e.type === 'DELETED') cache.delete(name);
@@ -320,17 +417,32 @@ export function createTopologyStream(): TopologyStream {
           schedule();
         });
       } catch (e) {
-        console.error(`[stream] ${plural}:`, e instanceof Error ? e.message : e);
+        if (!activeNs.has(ns)) break;
+        console.error(`[stream] ${ns}/${plural}:`, e instanceof Error ? e.message : e);
         await new Promise((r) => setTimeout(r, 2000));   // 410 Gone / blip → re-list + rewatch
       }
     }
   }
   /* eslint-enable no-await-in-loop */
 
+  const startNs = (ns: string) => { for (const p of PLURALS) void run(ns, p); };
+
+  const setNamespaces = (next: string[]) => {
+    const wanted = new Set(next);
+    for (const ns of wanted) if (!activeNs.has(ns)) { activeNs.add(ns); if (started) startNs(ns); }
+    const remove: string[] = [];
+    for (const ns of activeNs) if (!wanted.has(ns)) remove.push(ns);
+    for (const ns of remove) {
+      activeNs.delete(ns);                       // its runners exit on the next loop check
+      for (const p of PLURALS) cacheOf(ns, p).clear();
+    }
+    schedule();
+  };
+
   const start = () => {
     if (started) return;
     started = true;
-    for (const p of PLURALS) void run(p);
+    for (const ns of activeNs) startNs(ns);
   };
 
   return {
@@ -341,5 +453,6 @@ export function createTopologyStream(): TopologyStream {
       return () => { listeners.delete(cb); };
     },
     current: () => current,
+    setNamespaces,
   };
 }

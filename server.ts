@@ -2,7 +2,7 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import type { Browser } from 'puppeteer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { getTopology, createTopologyStream } from './eda.js';
+import { getTopology, createTopologyStream, createNamespaceStream, listNamespaces, type TopologyStream } from './eda.js';
 
 const serverDir = dirname(fileURLToPath(import.meta.url));
 const DIST = join(serverDir, '..', 'dist');
@@ -16,19 +16,69 @@ const asyncHandler =
   };
 
 const app = express();
+const DEFAULT_NS = process.env.EDA_NAMESPACE || 'eda';
 
-// One shared watch-backed topology stream for the whole process.
-const topology = createTopologyStream();
+// The live set of EDA namespaces (one cluster-wide watch shared by everything below).
+const namespaces = createNamespaceStream();
+
+// One watch-backed topology stream per namespace selection ('' == All Namespaces), created on
+// demand. The All stream tracks the live namespace set, so a namespace added later starts
+// streaming without a refresh.
+const streams = new Map<string, TopologyStream>();
+async function streamFor(ns: string): Promise<TopologyStream> {
+  let s = streams.get(ns);
+  if (!s) {
+    if (ns) {
+      s = createTopologyStream([ns]);
+    } else {
+      const initial = namespaces.current().length ? namespaces.current() : await listNamespaces();
+      s = createTopologyStream(initial.length ? initial : [DEFAULT_NS]);
+      const all = s;
+      namespaces.subscribe((list) => all.setNamespaces(list.length ? list : [DEFAULT_NS]));
+    }
+    streams.set(ns, s);
+  }
+  return s;
+}
+
+const sseHeaders = {
+  'Content-Type': 'text/event-stream',
+  'Cache-Control': 'no-cache, no-transform',
+  Connection: 'keep-alive',
+  'X-Accel-Buffering': 'no',   // don't let a proxy buffer the stream
+};
 
 app.get('/healthz', (_req: Request, res: Response) => {
   res.status(200).json({ ok: true });
 });
 
-// Always the real EDA API — no demo/fallback data. On failure the UI shows a
-// placeholder ("Didn't fetch anything from EDA").
-app.get('/api/topology', asyncHandler(async (_req: Request, res: Response) => {
+// The EDA namespaces available to pick from (one-shot).
+app.get('/api/namespaces', asyncHandler(async (_req: Request, res: Response) => {
   try {
-    res.json(topology.current() ?? await getTopology());
+    res.json(await listNamespaces());
+  } catch (e) {
+    res.status(502).json({ error: errMsg(e) });
+  }
+}));
+
+// Live namespace list over SSE — the picker updates as namespaces are created/deleted.
+app.get('/api/namespaces/stream', (req: Request, res: Response) => {
+  res.set(sseHeaders);
+  res.flushHeaders?.();
+  res.write('retry: 3000\n\n');
+  const send = (list: string[]) => res.write(`data: ${JSON.stringify(list)}\n\n`);
+  const unsubscribe = namespaces.subscribe(send);
+  const keepAlive = setInterval(() => res.write(': ping\n\n'), 25000);
+  req.on('close', () => { clearInterval(keepAlive); unsubscribe(); });
+});
+
+// Always the real EDA API — no demo/fallback data. On failure the UI shows a
+// placeholder ("Didn't fetch anything from EDA"). ?ns=<namespace> (omit -> all).
+app.get('/api/topology', asyncHandler(async (req: Request, res: Response) => {
+  const ns = String(req.query.ns || '');
+  try {
+    const stream = await streamFor(ns);
+    res.json(stream.current() ?? await getTopology(ns ? [ns] : await listNamespaces()));
   } catch (e) {
     res.status(502).json({ error: errMsg(e) });
   }
@@ -36,20 +86,16 @@ app.get('/api/topology', asyncHandler(async (_req: Request, res: Response) => {
 
 // Live topology over Server-Sent Events: the current snapshot on connect, then a fresh
 // payload whenever the watched CRDs change. EventSource handles reconnection on the client.
-app.get('/api/topology/stream', (req: Request, res: Response) => {
-  res.set({
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-transform',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',   // don't let a proxy buffer the stream
-  });
+app.get('/api/topology/stream', asyncHandler(async (req: Request, res: Response) => {
+  const stream = await streamFor(String(req.query.ns || ''));
+  res.set(sseHeaders);
   res.flushHeaders?.();
   res.write('retry: 3000\n\n');
   const send = (topo: unknown) => res.write(`data: ${JSON.stringify(topo)}\n\n`);
-  const unsubscribe = topology.subscribe(send);
+  const unsubscribe = stream.subscribe(send);
   const keepAlive = setInterval(() => res.write(': ping\n\n'), 25000);
   req.on('close', () => { clearInterval(keepAlive); unsubscribe(); });
-});
+}));
 
 // Render the front-panel + cable-table print page(s) to a single PDF.
 // ?nodes=leaf1,spine1  (omit -> all nodes). Multi-node = multi-page.

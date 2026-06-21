@@ -42,8 +42,24 @@ export async function fetchTopology(): Promise<Topology> {
 // Live topology over Server-Sent Events. The server pushes the current snapshot on connect
 // and a fresh payload on every change; EventSource auto-reconnects (honouring the server's
 // `retry:` hint). Returns an unsubscribe that closes the stream.
-export function streamTopology(onTopo: (t: Topology) => void, onError: (msg: string) => void): () => void {
-  const es = new EventSource(`${BASE}api/topology/stream`);
+export async function fetchNamespaces(): Promise<string[]> {
+  try {
+    const res = await fetch(`${BASE}api/namespaces`);
+    return res.ok ? await res.json() : [];
+  } catch { return []; }
+}
+
+// Live EDA namespace list — the picker updates as namespaces are created/deleted.
+export function streamNamespaces(onList: (names: string[]) => void): () => void {
+  const es = new EventSource(`${BASE}api/namespaces/stream`);
+  es.addEventListener('message', (ev) => {
+    try { onList(JSON.parse(ev.data) as string[]); } catch { /* ignore malformed frame */ }
+  });
+  return () => es.close();
+}
+
+export function streamTopology(namespace: string, onTopo: (t: Topology) => void, onError: (msg: string) => void): () => void {
+  const es = new EventSource(`${BASE}api/topology/stream?ns=${encodeURIComponent(namespace)}`);
   es.addEventListener('message', (ev) => {
     try { onTopo(JSON.parse(ev.data) as Topology); } catch (e) { onError(String((e as Error).message || e)); }
   });
