@@ -14,6 +14,27 @@ function fakeTopologyApi(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const path = req.url?.split('?')[0]
+        // optional dev override: a fake-namespaces.json next to the topology fixture lets you
+        // exercise the live namespace picker (edit it and the SSE re-emits); defaults to ['eda'].
+        const nsFile = fileURLToPath(new URL('./fake-namespaces.json', import.meta.url))
+        const readNs = () => { try { return JSON.parse(readFileSync(nsFile, 'utf8')) } catch { return ['eda'] } }
+        if (path === '/api/namespaces') {
+          res.setHeader('content-type', 'application/json')
+          res.end(JSON.stringify(readNs()))
+          return
+        }
+        if (path === '/api/namespaces/stream') {
+          res.setHeader('content-type', 'text/event-stream')
+          res.setHeader('cache-control', 'no-cache')
+          res.setHeader('connection', 'keep-alive')
+          res.write('retry: 3000\n\n')
+          const send = () => { try { res.write(`data: ${JSON.stringify(readNs())}\n\n`) } catch { /* mid-write */ } }
+          send()
+          let watcher: ReturnType<typeof fsWatch> | undefined
+          try { watcher = fsWatch(nsFile, () => send()) } catch { /* file absent: static ['eda'] */ }
+          req.on('close', () => watcher?.close())
+          return
+        }
         if (path === '/api/topology') {
           res.setHeader('content-type', 'application/json')
           res.end(readFileSync(file, 'utf8'))

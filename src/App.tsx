@@ -11,7 +11,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SensorsIcon from '@mui/icons-material/Sensors';
-import { streamTopology, BASE, type Topology } from './api';
+import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
 import { buildGraph, CABLE_COLOR, LLDP_COLOR } from './graph';
 import { trace, setAdjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
@@ -19,6 +19,7 @@ import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
 import CableEdge from './CableEdge';
 import NodeView from './NodeView';
+import NamespacePicker from './NamespacePicker';
 import './app.css';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
@@ -41,6 +42,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [open, setOpen] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
+  const [namespace, setNamespace] = useState('');     // '' == All Namespaces
+  const [namespaces, setNamespaces] = useState<string[]>([]);
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
 
   // drag the top edge of the drawer to resize its height
@@ -53,8 +56,15 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     window.addEventListener('pointerup', up);
   };
 
-  // live topology stream — pushes the current snapshot then updates on every change
-  useEffect(() => streamTopology((t) => { setTopo(t); setErr(''); }, setErr), []);
+  // the EDA namespaces to choose from — streamed so the picker updates live
+  useEffect(() => streamNamespaces(setNamespaces), []);
+
+  // live topology stream for the selected namespace — pushes the snapshot then live updates.
+  // Reconnects when the namespace changes; clears first so stale data never lingers.
+  useEffect(() => {
+    setTopo(null);
+    return streamTopology(namespace, (t) => { setTopo(t); setErr(''); }, setErr);
+  }, [namespace]);
 
   const { nodes: builtNodes, edges, switchIds } = useMemo(() => {
     if (!topo) return { nodes: [] as RFNode[], edges: [], switchIds: new Set<string>() };
@@ -113,6 +123,9 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
                 <IconButton size="small" sx={{ p: 0.25 }} onClick={() => setQuery('')}><CloseIcon sx={{ fontSize: 15 }} /></IconButton>
               )}
             </Box>
+          )}
+          {namespaces.length > 0 && (
+            <NamespacePicker value={namespace} options={namespaces} onChange={setNamespace} />
           )}
           {ready && (
             <Tooltip title={selected.length ? `Download PDF (${selected.length} selected)` : 'Download PDF (all nodes)'}>
