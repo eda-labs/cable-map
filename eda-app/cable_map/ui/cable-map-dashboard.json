@@ -3,18 +3,41 @@
   "name": "Cable Map",
   "version": "0.1.0",
   "displayName": "Cable Map",
-  "description": "Open the cable-map topology and front-panel view.",
+  "description": "Open the cable-map topology, front-panel and cable-table view.",
   "showNavigationToolbar": true,
   "lastChanged": "2026-06-21T00:00:00Z",
   "screens": [
     {
       "name": "Cable Map",
       "uuid": "e12f658d-b4f1-42fa-b2c8-7ef7de94f8b4",
-      "screenType": "externalFrame",
+      "screenType": "dashboard",
       "partOfNav": true,
       "startScreen": true,
-      "type": "externalFrame",
-      "url": "/core/httpproxy/v1/cable-map/"
+      "type": "screen",
+      "components": [
+        {
+          "uuid": "f3bc1d43-e5d4-44af-9c1c-90e866c54f59",
+          "type": "flexRow",
+          "flexDirection": "row",
+          "horizontalAlignment": "center",
+          "verticalAlignment": "center",
+          "components": [
+            {
+              "uuid": "d1836dd3-e02e-42c8-8db4-c618a92cf67f",
+              "type": "dashletDataView",
+              "title": "Cable Map",
+              "subtitle": "Open the standalone cable-map UI with React Flow, front panels, cable tables and PDF export.",
+              "width": 400,
+              "height": 300,
+              "navigationTarget": {
+                "edaRoute": "external",
+                "targetReference": "/core/httpproxy/v1/cable-map/",
+                "useNewTab": true
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
