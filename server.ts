@@ -12,6 +12,10 @@ const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 const app = express();
 
+app.get('/healthz', (_req: Request, res: Response) => {
+  res.status(200).json({ ok: true });
+});
+
 // Always the real EDA API — no demo/fallback data. On failure the UI shows a
 // placeholder ("Didn't fetch anything from EDA").
 app.get('/api/topology', async (_req: Request, res: Response) => {

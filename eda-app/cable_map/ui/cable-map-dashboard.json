@@ -1,0 +1,20 @@
+{
+  "uuid": "f265f9e7-70d3-4d1e-b508-430b3f2b531c",
+  "name": "Cable Map",
+  "version": "0.1.0",
+  "displayName": "Cable Map",
+  "description": "Open the cable-map topology and front-panel view.",
+  "showNavigationToolbar": true,
+  "lastChanged": "2026-06-21T00:00:00Z",
+  "screens": [
+    {
+      "name": "Cable Map",
+      "uuid": "e12f658d-b4f1-42fa-b2c8-7ef7de94f8b4",
+      "screenType": "externalFrame",
+      "partOfNav": true,
+      "startScreen": true,
+      "type": "externalFrame",
+      "url": "/core/httpproxy/v1/cable-map/"
+    }
+  ]
+}

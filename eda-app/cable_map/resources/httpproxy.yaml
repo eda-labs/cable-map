@@ -1,0 +1,11 @@
+apiVersion: core.eda.nokia.com/v1
+kind: HttpProxy
+metadata:
+  name: cable-map
+  namespace: eda-system
+  labels:
+    app.kubernetes.io/name: cable-map
+    app.kubernetes.io/part-of: cable-map
+spec:
+  authType: atDestination
+  rootUrl: http://cable-map.eda-system.svc:8080/

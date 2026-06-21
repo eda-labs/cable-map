@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: eda-api-original
+  namespace: eda-system
+spec:
+  ports:
+    - name: apiserver-raw
+      port: 9200
+      protocol: TCP
+      targetPort: 9200
+    - name: apiserverhttps
+      port: 443
+      protocol: TCP
+      targetPort: 9443
+    - name: redundancy
+      port: 51201
+      protocol: TCP
+      targetPort: 51201
+    - name: state-aggregator
+      port: 51202
+      protocol: TCP
+      targetPort: 51202
+    - name: fe
+      port: 51203
+      protocol: TCP
+      targetPort: 51203
+    - name: grpc-proxy
+      port: 51206
+      protocol: TCP
+      targetPort: 51206
+    - name: apiserver-grpc
+      port: 51300
+      protocol: TCP
+      targetPort: 51300
+    - name: eda-dhcp
+      port: 67
+      protocol: UDP
+      targetPort: 67
+    - name: eda-dhcp6
+      port: 547
+      protocol: UDP
+      targetPort: 547
+  selector:
+    eda.nokia.com/app: apiserver
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cable-map-eda-api-proxy
+  namespace: eda-system
+  labels:
+    app.kubernetes.io/name: cable-map-eda-api-proxy
+    app.kubernetes.io/part-of: cable-map
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cable-map-eda-api-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cable-map-eda-api-proxy
+        app.kubernetes.io/part-of: cable-map
+    spec:
+      serviceAccountName: eda-ce
+      containers:
+        - name: proxy
+          image: image/cable-map
+          imagePullPolicy: IfNotPresent
+          command:
+            - node
+            - /app/proxy/eda-api-proxy.js
+          env:
+            - name: UPSTREAM_HOST
+              value: eda-api-original.eda-system.svc
+            - name: UPSTREAM_SERVER_NAME
+              value: eda-api.eda-system.svc
+          ports:
+            - name: apiserver
+              containerPort: 9200
+              protocol: TCP
+            - name: apiserverhttps
+              containerPort: 9443
+              protocol: TCP
+            - name: redundancy
+              containerPort: 51201
+              protocol: TCP
+            - name: state-aggr
+              containerPort: 51202
+              protocol: TCP
+            - name: fe
+              containerPort: 51203
+              protocol: TCP
+            - name: grpc-proxy
+              containerPort: 51206
+              protocol: TCP
+            - name: api-grpc
+              containerPort: 51300
+              protocol: TCP
+            - name: eda-dhcp
+              containerPort: 67
+              protocol: UDP
+            - name: eda-dhcp6
+              containerPort: 547
+              protocol: UDP
+          readinessProbe:
+            tcpSocket:
+              port: apiserverhttps
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          volumeMounts:
+            - mountPath: /app/proxy
+              name: proxy-files
+              readOnly: true
+            - mountPath: /var/run/eda/tls/api/client
+              name: eda-api-issuer
+              readOnly: true
+            - mountPath: /var/run/eda/tls/api/trust
+              name: api-trustbundle
+              readOnly: true
+      volumes:
+        - name: proxy-files
+          configMap:
+            name: cable-map-eda-api-proxy
+        - name: eda-api-issuer
+          csi:
+            driver: csi.cert-manager.io
+            readOnly: true
+            volumeAttributes:
+              csi.cert-manager.io/dns-names: FloSch.localdomain,eda-api.${POD_NAMESPACE}.svc,eda-api.${POD_NAMESPACE}.svc.cluster.local
+              csi.cert-manager.io/duration: 720h0m0s
+              csi.cert-manager.io/ip-sans: 192.168.195.174
+              csi.cert-manager.io/issuer-name: eda-api-issuer
+              csi.cert-manager.io/key-algorithm: ECDSA
+              csi.cert-manager.io/renew-before: 240h0m0s
+        - name: api-trustbundle
+          configMap:
+            defaultMode: 420
+            name: eda-api-trust-bundle
+            optional: false
