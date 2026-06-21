@@ -1,68 +1,37 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, useNodesState, type Node as RFNode, type Edge as RFEdge, type NodeTypes, type EdgeTypes } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls, Panel, useNodesState, type Node as RFNode, type NodeTypes, type EdgeTypes } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
-  CircularProgress, Chip, Divider,
+  CircularProgress, Chip, Divider, InputBase,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CloseIcon from '@mui/icons-material/Close';
-import { fetchTopology, BASE, type Topology, type Node } from './api';
-import TopoNode from './TopoNode';
-import PortEdge from './PortEdge';
+import SearchIcon from '@mui/icons-material/Search';
+import { fetchTopology, BASE, type Topology } from './api';
+import { buildGraph, CABLE_COLOR } from './graph';
+import { trace, setAdjacency } from './trace';
+import SwitchNode from './SwitchNode';
+import EndpointNode from './EndpointNode';
+import CableEdge from './CableEdge';
 import NodeView from './NodeView';
 import './app.css';
 
-const nodeTypes: NodeTypes = { topoNode: TopoNode };
-const edgeTypes: EdgeTypes = { portEdge: PortEdge };
-type Pos = Record<string, { x: number; y: number }>;
+const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
+const edgeTypes: EdgeTypes = { cable: CableEdge };
 
-const shortPort = (iface: string) => iface.replace(/^ethernet-/, '');   // ethernet-1-1 -> 1-1
-const portNumber = (port: string) => Number(port.split('-').pop());
 const pdf = (q = '') => window.open(`${BASE}pdf${q}`, '_blank');
 
-// role-tiered auto-layout: superspine/spine on top, leaves below; rows centered.
-const TIER: Record<string, number> = { superspine: 0, spine: 1, borderleaf: 2, leaf: 3 };
-function layout(nodes: Node[]): Pos {
-  const tiers = new Map<number, Node[]>();
-  for (const n of nodes) { const t = TIER[n.role] ?? 4; (tiers.get(t) ?? tiers.set(t, []).get(t)!).push(n); }
-  const CX = 480, GAPX = 240, GAPY = 200;
-  const pos: Pos = {};
-  [...tiers.keys()].toSorted((a, b) => a - b).forEach((t, ti) => {
-    const row = tiers.get(t)!;
-    const startX = CX - ((row.length - 1) * GAPX) / 2;
-    row.forEach((n, i) => { pos[n.id] = { x: startX + i * GAPX, y: 80 + ti * GAPY }; });
-  });
-  return pos;
-}
-
-// aggregate ISL links per node-pair; collect each node's local ports for end labels.
-// Edges are floating (PortEdge derives geometry from node positions), so no handles.
-function buildEdges(t: Topology): RFEdge[] {
-  const pairs = new Map<string, { a: string; b: string; pa: Set<string>; pb: Set<string> }>();
-  for (const l of t.links) {
-    const [a, b] = [l.source, l.target].toSorted();
-    const key = `${a}|${b}`;
-    let e = pairs.get(key);
-    if (!e) { e = { a, b, pa: new Set(), pb: new Set() }; pairs.set(key, e); }
-    const [aPort, bPort] = l.source === a ? [l.sourcePort, l.targetPort] : [l.targetPort, l.sourcePort];
-    e.pa.add(shortPort(aPort)); e.pb.add(shortPort(bPort));
-  }
-  const fmt = (set: Set<string>) => {
-    const a = [...set].toSorted((x, y) => portNumber(x) - portNumber(y));
-    return a.length <= 4 ? a.join(', ') : `${a[0]}…${a[a.length - 1]} (${a.length})`;
-  };
-  return [...pairs.values()].map(({ a, b, pa, pb }) => ({
-    id: `${a}|${b}`, source: a, target: b, type: 'portEdge',
-    data: { sourcePorts: fmt(pa), targetPorts: fmt(pb) },
-  }));
-}
+const LEGEND: Array<[string, keyof typeof CABLE_COLOR]> = [
+  ['Fabric (ISL)', 'isl'], ['Server edge', 'edge'], ['LAG bundle', 'lag'],
+];
 
 export default function App() {
   const [topo, setTopo] = useState<Topology | null>(null);
   const [err, setErr] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
+  const [query, setQuery] = useState('');
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
 
   // drag the top edge of the drawer to resize its height
@@ -77,31 +46,36 @@ export default function App() {
 
   useEffect(() => { fetchTopology().then(setTopo).catch((e) => setErr(String(e.message || e))); }, []);
 
-  // nodes live in React Flow state (via onNodesChange) so dragging, selection, and
-  // deselect-on-pane-click all apply — same as topo-builder.
-  const [nodes, setNodes, onNodesChange] = useNodesState<RFNode>([]);
-  useEffect(() => {
-    if (!topo) return;
-    const pos = layout(topo.nodes);
-    setNodes(topo.nodes.map((n) => ({
-      id: n.id, type: 'topoNode', position: pos[n.id] ?? { x: 0, y: 0 }, data: { name: n.name, role: n.role },
-    })));
-  }, [topo, setNodes]);
-  const rfEdges = useMemo(() => (topo ? buildEdges(topo) : []), [topo]);
-  const onSel = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => setSelected(sel.map((n) => n.id)), []);
+  const { nodes: builtNodes, edges, switchIds } = useMemo(() => {
+    if (!topo) return { nodes: [] as RFNode[], edges: [], switchIds: new Set<string>() };
+    const g = buildGraph(topo);
+    setAdjacency(g.adjacency);
+    return { nodes: g.nodes, edges: g.edges, switchIds: new Set(topo.nodes.map((n) => n.id)) };
+  }, [topo]);
 
-  // Ctrl/Cmd+A selects all nodes (ignored while typing in an input)
+  // nodes live in React Flow state so dragging + selection apply
+  const [nodes, setNodes, onNodesChange] = useNodesState<RFNode>([]);
+  useEffect(() => { setNodes(builtNodes); }, [builtNodes, setNodes]);
+
+  const onSel = useCallback(({ nodes: sel }: { nodes: RFNode[] }) =>
+    setSelected(sel.filter((n) => n.type === 'switch').map((n) => n.id)), []);
+
+  // search drives the trace store (debounced via input value)
+  useEffect(() => { trace.search(query); }, [query]);
+
+  // Ctrl/Cmd+A selects all switches (ignored while typing in an input)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'a') return;
       const el = document.activeElement;
       if (el && /^(input|textarea)$/i.test(el.tagName)) return;
       e.preventDefault();
-      setNodes((nds) => nds.map((n) => ({ ...n, selected: true })));
+      setNodes((nds) => nds.map((n) => ({ ...n, selected: n.type === 'switch' })));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [setNodes]);
+
   const ready = !!topo && topo.nodes.length > 0;
   const openNode = topo?.nodes.find((n) => n.id === open);
 
@@ -112,6 +86,16 @@ export default function App() {
           <img src={`${BASE}eda.svg`} alt="EDA" style={{ height: 26 }} />
           <Typography variant="h6" sx={{ fontWeight: 200, color: 'text.primary' }}>EDA Cable Map</Typography>
           <Box sx={{ flex: 1 }} />
+          {ready && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'background.default', px: 1, borderRadius: 1, border: 1, borderColor: 'divider' }}>
+              <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+              <InputBase value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find node / server / port…"
+                sx={{ fontSize: 13, color: 'text.primary', width: 200 }} />
+              {query && (
+                <IconButton size="small" sx={{ p: 0.25 }} onClick={() => setQuery('')}><CloseIcon sx={{ fontSize: 15 }} /></IconButton>
+              )}
+            </Box>
+          )}
           {ready && (
             <Tooltip title={selected.length ? `Download PDF (${selected.length} selected)` : 'Download PDF (all nodes)'}>
               <IconButton size="small" sx={{ color: 'text.primary' }}
@@ -128,16 +112,32 @@ export default function App() {
       <Box sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
-            nodes={nodes} edges={rfEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
-            colorMode="dark" defaultEdgeOptions={{ type: 'portEdge' }} elevateNodesOnSelect={false}
-            onNodeClick={(_, n) => setOpen(n.id)}
+            colorMode="dark" elevateNodesOnSelect={false} nodesConnectable={false}
+            minZoom={0.15}
+            onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
             onSelectionChange={onSel}
-            onPaneClick={() => setSelected([])}
-            fitView panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
+            onPaneClick={() => { setSelected([]); trace.clear(); setQuery(''); }}
+            fitView fitViewOptions={{ padding: 0.12 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-            <Controls position="top-right" />
+            <Controls position="top-right" showInteractive={false} />
+            <Panel position="bottom-left">
+              <Box sx={{ bgcolor: 'rgba(16,24,36,0.92)', border: 1, borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, backdropFilter: 'blur(4px)' }}>
+                <Box sx={{ display: 'flex', gap: 2, mb: 0.75 }}>
+                  {LEGEND.map(([label, kind]) => (
+                    <Box key={kind} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Box sx={{ width: 16, height: 4, borderRadius: 2, bgcolor: CABLE_COLOR[kind] }} />
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{label}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 10 }}>
+                  Hover to trace a cable · click a port to pin · click a switch for its panel
+                </Typography>
+              </Box>
+            </Panel>
           </ReactFlow>
         ) : (
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, color: 'text.secondary' }}>
