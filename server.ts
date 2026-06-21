@@ -2,7 +2,7 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import type { Browser } from 'puppeteer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { getTopology } from './eda.js';
+import { getTopology, createTopologyStream } from './eda.js';
 
 const serverDir = dirname(fileURLToPath(import.meta.url));
 const DIST = join(serverDir, '..', 'dist');
@@ -17,6 +17,9 @@ const asyncHandler =
 
 const app = express();
 
+// One shared watch-backed topology stream for the whole process.
+const topology = createTopologyStream();
+
 app.get('/healthz', (_req: Request, res: Response) => {
   res.status(200).json({ ok: true });
 });
@@ -25,11 +28,28 @@ app.get('/healthz', (_req: Request, res: Response) => {
 // placeholder ("Didn't fetch anything from EDA").
 app.get('/api/topology', asyncHandler(async (_req: Request, res: Response) => {
   try {
-    res.json(await getTopology());
+    res.json(topology.current() ?? await getTopology());
   } catch (e) {
     res.status(502).json({ error: errMsg(e) });
   }
 }));
+
+// Live topology over Server-Sent Events: the current snapshot on connect, then a fresh
+// payload whenever the watched CRDs change. EventSource handles reconnection on the client.
+app.get('/api/topology/stream', (req: Request, res: Response) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',   // don't let a proxy buffer the stream
+  });
+  res.flushHeaders?.();
+  res.write('retry: 3000\n\n');
+  const send = (topo: unknown) => res.write(`data: ${JSON.stringify(topo)}\n\n`);
+  const unsubscribe = topology.subscribe(send);
+  const keepAlive = setInterval(() => res.write(': ping\n\n'), 25000);
+  req.on('close', () => { clearInterval(keepAlive); unsubscribe(); });
+});
 
 // Render the front-panel + cable-table print page(s) to a single PDF.
 // ?nodes=leaf1,spine1  (omit -> all nodes). Multi-node = multi-page.

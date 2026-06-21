@@ -10,9 +10,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
-import { fetchTopology, BASE, type Topology } from './api';
-import { buildGraph, CABLE_COLOR } from './graph';
+import SensorsIcon from '@mui/icons-material/Sensors';
+import { streamTopology, BASE, type Topology } from './api';
+import { buildGraph, CABLE_COLOR, LLDP_COLOR } from './graph';
 import { trace, setAdjacency } from './trace';
+import { lldp as lldpStore, useLldp } from './lldp';
 import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
 import CableEdge from './CableEdge';
@@ -24,8 +26,11 @@ const edgeTypes: EdgeTypes = { cable: CableEdge };
 
 const pdf = (q = '') => window.open(`${BASE}pdf${q}`, '_blank');
 
-const LEGEND: Array<[string, keyof typeof CABLE_COLOR]> = [
-  ['Fabric (ISL)', 'isl'], ['Edge', 'edge'], ['Local LAG', 'lag'], ['ESI / MH-LAG', 'mlag'],
+const LEGEND: Array<[string, string]> = [
+  ['Fabric (ISL)', CABLE_COLOR.isl], ['Edge', CABLE_COLOR.edge], ['Local LAG', CABLE_COLOR.lag], ['ESI / MH-LAG', CABLE_COLOR.mlag],
+];
+const LLDP_LEGEND: Array<[string, string]> = [
+  ['LLDP confirmed', LLDP_COLOR.ok], ['Mismatch', LLDP_COLOR.mismatch], ['No neighbor', LLDP_COLOR.none],
 ];
 
 type Mode = 'light' | 'dark';
@@ -48,7 +53,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     window.addEventListener('pointerup', up);
   };
 
-  useEffect(() => { fetchTopology().then(setTopo).catch((e) => setErr(String(e.message || e))); }, []);
+  // live topology stream — pushes the current snapshot then updates on every change
+  useEffect(() => streamTopology((t) => { setTopo(t); setErr(''); }, setErr), []);
 
   const { nodes: builtNodes, edges, switchIds } = useMemo(() => {
     if (!topo) return { nodes: [] as RFNode[], edges: [], switchIds: new Set<string>() };
@@ -57,9 +63,16 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     return { nodes: g.nodes, edges: g.edges, switchIds: new Set(topo.nodes.map((n) => n.id)) };
   }, [topo]);
 
-  // nodes live in React Flow state so dragging + selection apply
+  // nodes live in React Flow state so dragging + selection apply. On a live update we keep
+  // each existing node's current position (so a stream tick never snaps a dragged node back)
+  // while taking the rebuilt data; new nodes adopt their computed layout position.
   const [nodes, setNodes, onNodesChange] = useNodesState<RFNode>([]);
-  useEffect(() => { setNodes(builtNodes); }, [builtNodes, setNodes]);
+  useEffect(() => {
+    setNodes((prev) => {
+      const pos = new Map(prev.map((n) => [n.id, n.position]));
+      return builtNodes.map((n) => { const p = pos.get(n.id); return p ? { ...n, position: p } : n; });
+    });
+  }, [builtNodes, setNodes]);
 
   const onSel = useCallback(({ nodes: sel }: { nodes: RFNode[] }) =>
     setSelected(sel.filter((n) => n.type === 'switch').map((n) => n.id)), []);
@@ -82,6 +95,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
 
   const ready = !!topo && topo.nodes.length > 0;
   const openNode = topo?.nodes.find((n) => n.id === open);
+  const lldpOn = useLldp();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -107,6 +121,13 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
                 <Badge badgeContent={selected.length} color="primary">
                   <PictureAsPdfIcon />
                 </Badge>
+              </IconButton>
+            </Tooltip>
+          )}
+          {ready && (
+            <Tooltip title={lldpOn ? 'Hide LLDP overlay' : 'Show LLDP overlay (neighbour match / mismatch)'}>
+              <IconButton size="small" sx={{ color: lldpOn ? 'success.main' : 'text.primary' }} onClick={() => lldpStore.toggle()}>
+                <SensorsIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
@@ -139,15 +160,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             <Panel position="bottom-left">
               <Box sx={{ bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, boxShadow: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2, mb: 0.75 }}>
-                  {LEGEND.map(([label, kind]) => (
-                    <Box key={kind} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Box sx={{ width: 14, height: 6, borderRadius: 2, bgcolor: CABLE_COLOR[kind] }} />
+                  {(lldpOn ? LLDP_LEGEND : LEGEND).map(([label, swatch]) => (
+                    <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Box sx={{ width: 14, height: 6, borderRadius: 2, bgcolor: swatch }} />
                       <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 500 }}>{label}</Typography>
                     </Box>
                   ))}
                 </Box>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 11 }}>
-                  Hover to trace · click a cable or port to pin · click a switch for its panel
+                  {lldpOn
+                    ? 'LLDP overlay — cables coloured by neighbour match vs the configured remote'
+                    : 'Hover to trace · click a cable or port to pin · click a switch for its panel'}
                 </Typography>
               </Box>
             </Panel>

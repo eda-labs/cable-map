@@ -1,10 +1,11 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import { readFileSync } from 'node:fs'
+import { readFileSync, watch as fsWatch } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-// Dev-only: serve the captured topology as /api/topology so `pnpm dev` has data
-// (HMR) with no backend and no EDA. Production uses the real EDA REST API instead.
+// Dev-only: serve the captured topology so `pnpm dev` has data with no backend and no EDA.
+// Both the one-shot /api/topology and the SSE /api/topology/stream are mocked; the stream
+// re-emits whenever fake-topology.json is edited, mirroring the live watch in production.
 function fakeTopologyApi(): Plugin {
   const file = fileURLToPath(new URL('./fake-topology.json', import.meta.url))
   return {
@@ -12,9 +13,22 @@ function fakeTopologyApi(): Plugin {
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url?.split('?')[0] === '/api/topology') {
+        const path = req.url?.split('?')[0]
+        if (path === '/api/topology') {
           res.setHeader('content-type', 'application/json')
           res.end(readFileSync(file, 'utf8'))
+          return
+        }
+        if (path === '/api/topology/stream') {
+          res.setHeader('content-type', 'text/event-stream')
+          res.setHeader('cache-control', 'no-cache')
+          res.setHeader('connection', 'keep-alive')
+          res.write('retry: 3000\n\n')
+          // SSE data must be single-line; the snapshot is pretty-printed, so compact it first.
+          const send = () => { try { res.write(`data: ${JSON.stringify(JSON.parse(readFileSync(file, 'utf8')))}\n\n`) } catch { /* mid-write */ } }
+          send()
+          const watcher = fsWatch(file, () => send())
+          req.on('close', () => watcher.close())
           return
         }
         next()

@@ -54,7 +54,7 @@ export default function NodeView({ node, rows, occupied, showHeader = true, inte
       <Table size="small" stickyHeader={fillHeight} sx={{ '& .MuiTableCell-root': { borderColor: 'divider' } }}>
         <TableHead>
           <TableRow>
-            {['Port', 'Description', 'Type', 'Remote node', 'Remote port'].map((h) => (
+            {['Port', 'Description', 'Type', 'Remote node', 'Remote port', 'LLDP neighbor'].map((h) => (
               <TableCell key={h} sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>{h}</TableCell>
             ))}
           </TableRow>
@@ -86,6 +86,13 @@ export default function NodeView({ node, rows, occupied, showHeader = true, inte
                 </TableCell>
                 <TableCell>
                   {r.remotePort || blank}
+                </TableCell>
+                <TableCell>
+                  {r.lldpStatus === 'mismatch'
+                    ? <Box component="span" color="error.main" sx={{ fontWeight: 600 }}>⚠ {r.lldpPeer}</Box>
+                    : r.lldpPeer
+                      ? <Box component="span" color="success.main">{r.lldpPeer}</Box>
+                      : blank}
                 </TableCell>
               </TableRow>
             );

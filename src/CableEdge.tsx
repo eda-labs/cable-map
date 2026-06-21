@@ -1,9 +1,11 @@
 import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSmoothStepPath, Position, type EdgeProps } from '@xyflow/react';
-import { CABLE_COLOR, type CableKind } from './graph';
+import { CABLE_COLOR, LLDP_COLOR, type CableKind } from './graph';
 import { useTrace, modeFor, type Mode } from './trace';
+import { useLldp } from './lldp';
+import type { LldpStatus } from './api';
 
-type Data = { kind: CableKind; a: string; b: string; count?: number };
+type Data = { kind: CableKind; a: string; b: string; count?: number; lldp?: LldpStatus };
 
 // One physical cable. Routed handle-to-handle (port cell -> port cell / endpoint).
 // Idle: a thin coloured thread. Traced: thick + glowing with both end labels shown
@@ -15,7 +17,9 @@ function CableEdge(props: EdgeProps) {
   // only label when a SMALL trace is active (single cable / LAG) — tracing a whole
   // switch lights 8-20 cables and stacked end labels would just be noise.
   const showLabel = useTrace((s) => s.edges.has(id) && s.edges.size <= 4);
-  const color = CABLE_COLOR[d.kind];
+  // LLDP overlay recolours every cable by neighbour-confirmation status instead of kind.
+  const lldpOn = useLldp();
+  const color = lldpOn ? LLDP_COLOR[d.lldp ?? 'none'] : CABLE_COLOR[d.kind];
 
   // A same-tier peer link (leaf↔leaf ISL) has both ends on the top side at the same height,
   // where getBezierPath collapses to a flat line buried under the panels — arch it up over the
