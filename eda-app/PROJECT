@@ -1,5 +1,5 @@
 builderVersion: v26.4.2
 domain: eda.labs
 name: cable-map
-registry: ghcr.io/eda-labs
+registry: ghcr.io/flosch62
 vendor: eda-labs

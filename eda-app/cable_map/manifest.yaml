@@ -12,11 +12,11 @@ spec:
   author: eda-labs
   dependencies:
   - container:
-      image: localhost:15055/eda-labs/cable-map-runtime:v0.1.0
+      image: ghcr.io/flosch62/cable-map-runtime:v0.1.0
       name: cable-map
   description: Cable-map topology and front-panel view for EDA fabrics.
   group: cable-map.eda.labs
-  image: ghcr.io/eda-labs/cable-map:v0.1.0
+  image: ghcr.io/flosch62/cable-map:v0.1.0
   supportedCoreVersions:
   - v5.0.0-0
   title: Cable Map
