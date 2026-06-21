@@ -114,7 +114,10 @@ export function buildGraph(topo: Topology): BuiltGraph {
 
       if (r.type === 'interSwitch' && r.remoteNode) {
         hay(sw.id).push(r.label);
-        const up = tierOf(role(r.remoteNode)) < tierOf(sw.role);
+        const remoteTier = tierOf(role(r.remoteNode));
+        // uplinks leave the top; a same-tier peer link (leaf↔leaf MLAG ISL) also routes over
+        // the top, into the open space above — routing it below would dive through the host band.
+        const side: 'top' | 'bottom' = remoteTier <= tierOf(sw.role) ? 'top' : 'bottom';
         const rp = portIdx(r.remotePort) ?? p;
         // canonical per-cable id, stable across the mirrored far-side row
         const ends = [`${sw.id}:${r.remotePort}`, `${r.remoteNode}:${r.label}`].toSorted();
@@ -126,15 +129,15 @@ export function buildGraph(topo: Topology): BuiltGraph {
           const [a, b] = [sw.id, r.remoteNode].toSorted();
           const aPort = a === sw.id ? p : rp;
           const bPort = a === sw.id ? rp : p;
-          const bundle = bundles.get(bid) ?? bundles.set(bid, { id: bid, child: a, parent: b, side: up ? 'top' : 'bottom', cables: new Map() }).get(bid)!;
+          const bundle = bundles.get(bid) ?? bundles.set(bid, { id: bid, child: a, parent: b, side, cables: new Map() }).get(bid)!;
           bundle.cables.set(cableId, {
             childPort: aPort, parentPort: bPort,
             childLabel: shortPortLabel(a === sw.id ? r.label : r.remotePort),
             parentLabel: shortPortLabel(a === sw.id ? r.remotePort : r.label),
           });
-          portsOf(sw.id).push({ port: p, kind: 'isl', side: up ? 'top' : 'bottom', remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: bid });
+          portsOf(sw.id).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: bid });
         } else {
-          portsOf(sw.id).push({ port: p, kind: 'isl', side: up ? 'top' : 'bottom', remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId });
+          portsOf(sw.id).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId });
           if (!islSeen.has(cableId)) {
             islSeen.add(cableId);
             const child = tierOf(sw.role) >= tierOf(role(r.remoteNode)) ? sw.id : r.remoteNode;
