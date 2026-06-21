@@ -23,7 +23,7 @@ const edgeTypes: EdgeTypes = { cable: CableEdge };
 const pdf = (q = '') => window.open(`${BASE}pdf${q}`, '_blank');
 
 const LEGEND: Array<[string, keyof typeof CABLE_COLOR]> = [
-  ['Fabric (ISL)', 'isl'], ['Server edge', 'edge'], ['Local LAG', 'lag'], ['ESI / MH-LAG', 'mlag'],
+  ['Fabric (ISL)', 'isl'], ['Edge', 'edge'], ['Local LAG', 'lag'], ['ESI / MH-LAG', 'mlag'],
 ];
 
 export default function App() {
@@ -115,6 +115,7 @@ export default function App() {
             nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             colorMode="dark" elevateNodesOnSelect={false} nodesConnectable={false}
+            proOptions={{ hideAttribution: true }}
             minZoom={0.15}
             onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
             onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}

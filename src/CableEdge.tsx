@@ -22,9 +22,9 @@ function CableEdge(props: EdgeProps) {
   // open space instead. Other ISLs curve normally; short server stubs step straight down.
   // labelX/labelY is the path midpoint, used to anchor the bundle ×N badge onto the curve.
   const peerArch = d.kind === 'isl' && sourcePosition === Position.Top && targetPosition === Position.Top;
+  const lift = peerArch ? Math.min(Math.max(Math.abs(targetX - sourceX) * 0.35, 60), 200) : 0;
   let path: string, labelX: number, labelY: number;
   if (peerArch) {
-    const lift = Math.min(Math.max(Math.abs(targetX - sourceX) * 0.35, 60), 200);
     path = `M${sourceX},${sourceY} C${sourceX},${sourceY - lift} ${targetX},${targetY - lift} ${targetX},${targetY}`;
     labelX = (sourceX + targetX) / 2;
     labelY = (sourceY + targetY) / 2 - lift * 0.75;
@@ -36,7 +36,17 @@ function CableEdge(props: EdgeProps) {
 
   const on = mode === 'on', dim = mode === 'dim';
   const count = d.count ?? 1;   // ISL port-channel: parallel members drawn as one ×N cable
-  const lerp = (t: number) => ({ x: sourceX + (targetX - sourceX) * t, y: sourceY + (targetY - sourceY) * t });
+  // anchor each interface label ON the cable: the arch rides its own cubic curve so the
+  // labels sit against the actual link; every other edge interpolates the straight chord
+  // (close enough to its gentle bezier / stepped drop).
+  const at = (t: number) => {
+    if (!peerArch) return { x: sourceX + (targetX - sourceX) * t, y: sourceY + (targetY - sourceY) * t };
+    const mt = 1 - t;
+    return {
+      x: mt * mt * mt * sourceX + 3 * mt * mt * t * sourceX + 3 * mt * t * t * targetX + t * t * t * targetX,
+      y: mt * mt * mt * sourceY + 3 * mt * mt * t * (sourceY - lift) + 3 * mt * t * t * (targetY - lift) + t * t * t * targetY,
+    };
+  };
 
   return (
     <>
@@ -60,8 +70,8 @@ function CableEdge(props: EdgeProps) {
       )}
       {on && showLabel && (
         <EdgeLabelRenderer>
-          <CableLabel x={lerp(0.18).x} y={lerp(0.18).y} text={d.a} color={color} />
-          <CableLabel x={lerp(0.82).x} y={lerp(0.82).y} text={d.b} color={color} />
+          <CableLabel x={at(0.18).x} y={at(0.18).y} text={d.a} color={color} />
+          <CableLabel x={at(0.82).x} y={at(0.82).y} text={d.b} color={color} />
         </EdgeLabelRenderer>
       )}
     </>
