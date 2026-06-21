@@ -1,7 +1,8 @@
 import { memo, useMemo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { CABLE_COLOR, type PortInfo, type SwitchData } from './graph';
+import { CABLE_COLOR, LLDP_COLOR, type PortInfo, type SwitchData } from './graph';
 import { trace, useTrace, modeFor } from './trace';
+import { useLldp } from './lldp';
 import spineIcon from './icons/spine.svg?raw';
 import leafIcon from './icons/leaf.svg?raw';
 import superspineIcon from './icons/superspine.svg?raw';
@@ -11,11 +12,13 @@ const RoleIcons: Record<string, string> = {
 };
 
 const CELL = 13, CELL_GAP = 3;
-const fillFor = (kind: PortInfo['kind']) => (kind === 'free' ? 'transparent' : CABLE_COLOR[kind]);
+// occupied cells fill with their cable-kind colour, or their LLDP status while the overlay is on
+const fillFor = (info: PortInfo, lldp: boolean) =>
+  info.kind === 'free' ? 'transparent' : lldp ? LLDP_COLOR[info.lldp ?? 'none'] : CABLE_COLOR[info.kind];
 
 // A single front-panel cage. Occupied ports carry the handles cables attach to,
 // and glow when their cable is being traced.
-function PortCell({ info, hot }: { info: PortInfo; hot: boolean }) {
+function PortCell({ info, hot, lldp }: { info: PortInfo; hot: boolean; lldp: boolean }) {
   const free = info.kind === 'free';
   const side = info.side === 'top' ? Position.Top : Position.Bottom;
   return (
@@ -29,10 +32,10 @@ function PortCell({ info, hot }: { info: PortInfo; hot: boolean }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 7, lineHeight: 1, fontWeight: 700,
         color: free ? 'var(--cell-free-fg)' : 'rgba(0,0,0,0.78)',
-        background: free ? 'var(--cell-free-bg)' : fillFor(info.kind),
+        background: free ? 'var(--cell-free-bg)' : fillFor(info, lldp),
         outline: hot ? '2px solid var(--port-hot-ring)' : free ? '1px solid var(--cell-free-line)' : '1px solid rgba(0,0,0,0.35)',
         outlineOffset: hot ? 0 : -1,
-        boxShadow: hot ? `0 0 8px 1px ${fillFor(info.kind)}` : 'none',
+        boxShadow: hot ? `0 0 8px 1px ${fillFor(info, lldp)}` : 'none',
         cursor: free ? 'default' : 'pointer', zIndex: hot ? 2 : 1,
       }}
     >
@@ -56,6 +59,7 @@ function SwitchNode({ id, data, selected }: NodeProps) {
   const icon = RoleIcons[d.role];
 
   const mode = useTrace(modeFor((s) => s.nodes.has(id)));
+  const lldp = useLldp();
   // which of THIS node's ports are part of the active trace (one subscription)
   const activeStr = useTrace((s) => {
     if (!s.any) return '';
@@ -95,7 +99,7 @@ function SwitchNode({ id, data, selected }: NodeProps) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${CELL}px)`, gridTemplateRows: `repeat(${rows}, ${CELL}px)`, gridAutoFlow: 'column', gap: CELL_GAP }}>
         {cells.map((info) => (
-          <PortCell key={info.port} info={info} hot={hotPorts.has(info.port)} />
+          <PortCell key={info.port} info={info} hot={hotPorts.has(info.port)} lldp={lldp} />
         ))}
       </div>
     </div>

@@ -4,7 +4,7 @@
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 import PORTS from './frontpanel/ports.json';
 import ROWS from './frontpanel/rows.json';
-import { portIdx, type Topology, type LagInfo } from './api';
+import { portIdx, type Topology, type LagInfo, type LldpStatus } from './api';
 import type { Adjacency } from './trace';
 
 const portMap = PORTS as Record<string, number[]>;
@@ -25,6 +25,14 @@ export const CABLE_COLOR: Record<CableKind, string> = {
   isl: '#5B9BFF', edge: '#13C39A', lag: '#FFB020', mlag: '#C77DFF',
 };
 
+// LLDP overlay palette (used in place of CABLE_COLOR while the overlay is on).
+export const LLDP_COLOR: Record<LldpStatus, string> = {
+  ok: '#22C55E', mismatch: '#FF4D4D', none: '#8A94A6',
+};
+// Aggregating a bundle / bond to its worst member status — a mismatch anywhere wins.
+const LLDP_RANK: Record<LldpStatus, number> = { ok: 0, none: 1, mismatch: 2 };
+const worseLldp = (a: LldpStatus, b: LldpStatus): LldpStatus => (LLDP_RANK[a] >= LLDP_RANK[b] ? a : b);
+
 export type PortInfo = {
   port: number;
   kind: CableKind | 'free';
@@ -33,6 +41,7 @@ export type PortInfo = {
   remotePort: string;
   desc: string;
   cableId: string;      // edge id this port terminates, for hover-to-trace
+  lldp?: LldpStatus;    // LLDP cross-check vs the configured remote
 };
 
 export type SwitchData = {
@@ -49,6 +58,7 @@ export type EndpointData = {
   leaves: string[];       // leaves this endpoint attaches to (>1 == multihomed)
   lacp?: boolean;         // LACP vs static (LAGs only)
   mode?: string;          // multihoming mode, e.g. AllActive (ESI only)
+  lldp?: LldpStatus;      // worst LLDP status across the bond's member ports
 };
 
 // ---- layout constants ---------------------------------------------------
@@ -96,14 +106,14 @@ export function buildGraph(topo: Topology): BuiltGraph {
   // ISL port-channels collapse their parallel members into one drawn cable (×N); plain
   // ISLs stay one-cable-per-link. Bundles accumulate across the mirrored far-side rows.
   type Bundle = {
-    id: string; child: string; parent: string; side: 'top' | 'bottom';
+    id: string; child: string; parent: string; side: 'top' | 'bottom'; lldp: LldpStatus;
     cables: Map<string, { childPort: number; parentPort: number; childLabel: string; parentLabel: string }>;
   };
   const bundles = new Map<string, Bundle>();
 
   // Edge endpoints are grouped GLOBALLY (across nodes), keyed by LAG resource when bundled,
   // so a multihomed LAG landing on two leaves becomes one shared chip instead of two.
-  type Member = { port: number; desc: string; remotePort: string; label: string };
+  type Member = { port: number; desc: string; remotePort: string; label: string; lldp: LldpStatus };
   type Accum = { key: string; label: string; full: string; lagName?: string; portsByNode: Map<string, Member[]> };
   const epAccum = new Map<string, Accum>();
 
@@ -129,15 +139,16 @@ export function buildGraph(topo: Topology): BuiltGraph {
           const [a, b] = [sw.id, r.remoteNode].toSorted();
           const aPort = a === sw.id ? p : rp;
           const bPort = a === sw.id ? rp : p;
-          const bundle = bundles.get(bid) ?? bundles.set(bid, { id: bid, child: a, parent: b, side, cables: new Map() }).get(bid)!;
+          const bundle = bundles.get(bid) ?? bundles.set(bid, { id: bid, child: a, parent: b, side, lldp: 'ok', cables: new Map() }).get(bid)!;
+          bundle.lldp = worseLldp(bundle.lldp, r.lldpStatus ?? 'none');
           bundle.cables.set(cableId, {
             childPort: aPort, parentPort: bPort,
             childLabel: shortPortLabel(a === sw.id ? r.label : r.remotePort),
             parentLabel: shortPortLabel(a === sw.id ? r.remotePort : r.label),
           });
-          portsOf(sw.id).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: bid });
+          portsOf(sw.id).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: bid, lldp: r.lldpStatus });
         } else {
-          portsOf(sw.id).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId });
+          portsOf(sw.id).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId, lldp: r.lldpStatus });
           if (!islSeen.has(cableId)) {
             islSeen.add(cableId);
             const child = tierOf(sw.role) >= tierOf(role(r.remoteNode)) ? sw.id : r.remoteNode;
@@ -147,7 +158,7 @@ export function buildGraph(topo: Topology): BuiltGraph {
             rfEdges.push({
               id: cableId, source: child, target: parent, type: 'cable',
               sourceHandle: `p${childPort}`, targetHandle: `p${parentPort}t`,
-              data: { kind: 'isl', a: shortPortLabel(r.label), b: shortPortLabel(r.remotePort) },
+              data: { kind: 'isl', a: shortPortLabel(r.label), b: shortPortLabel(r.remotePort), lldp: r.lldpStatus },
             });
             link(cableId, child, parent, [`${child}:${childPort}`, `${parent}:${parentPort}`]);
           }
@@ -159,7 +170,7 @@ export function buildGraph(topo: Topology): BuiltGraph {
           key, label: shortEndpoint(sw.id, name), full: r.lag ?? name, lagName: r.lag, portsByNode: new Map(),
         }).get(key)!;
         (accum.portsByNode.get(sw.id) ?? accum.portsByNode.set(sw.id, []).get(sw.id)!)
-          .push({ port: p, desc: r.desc, remotePort: r.remotePort, label: r.label });
+          .push({ port: p, desc: r.desc, remotePort: r.remotePort, label: r.label, lldp: r.lldpStatus ?? 'none' });
         hay(sw.id).push(r.label);
       }
     }
@@ -175,21 +186,23 @@ export function buildGraph(topo: Topology): BuiltGraph {
     const multihomed = leaves.length > 1 || !!lag?.multihomed;
     const kind: EndpointData['kind'] = multihomed ? 'mlag' : (a.lagName || total > 1) ? 'lag' : 'edge';
     const epId = `ep|${a.key}`;
-    const remotePort = [...a.portsByNode.values()][0][0].remotePort;
+    const allMembers = [...a.portsByNode.values()].flat();
+    const remotePort = allMembers[0].remotePort;
+    const epLldp = allMembers.reduce<LldpStatus>((acc, m) => worseLldp(acc, m.lldp), 'ok');
     endpoints.push({
       id: epId, leaves,
-      data: { label: a.label, full: a.full, remotePort, kind, members: total, leaves, lacp: lag?.lacp, mode: lag?.mode },
+      data: { label: a.label, full: a.full, remotePort, kind, members: total, leaves, lacp: lag?.lacp, mode: lag?.mode, lldp: epLldp },
     });
-    const labels = [...a.portsByNode.values()].flatMap((m) => m.map((x) => x.label));
+    const labels = allMembers.map((x) => x.label);
     search.set(epId, [a.label, a.full, remotePort, ...labels].join(' ').toLowerCase());
     for (const [node, members] of a.portsByNode) {
       for (const m of members) {
         const sid = `stub|${node}|${m.port}`;
-        portsOf(node).push({ port: m.port, kind, side: 'bottom', remote: a.label, remotePort: m.remotePort, desc: m.desc, cableId: sid });
+        portsOf(node).push({ port: m.port, kind, side: 'bottom', remote: a.label, remotePort: m.remotePort, desc: m.desc, cableId: sid, lldp: m.lldp });
         rfEdges.push({
           id: sid, source: node, target: epId, type: 'cable',
           sourceHandle: `p${m.port}`, targetHandle: 'in',
-          data: { kind, a: shortPortLabel(m.label), b: m.remotePort || a.label },
+          data: { kind, a: shortPortLabel(m.label), b: m.remotePort || a.label, lldp: m.lldp },
         });
         link(sid, node, epId, [`${node}:${m.port}`]);
       }
@@ -203,7 +216,7 @@ export function buildGraph(topo: Topology): BuiltGraph {
     rfEdges.push({
       id: b.id, source: b.child, target: b.parent, type: 'cable',
       sourceHandle: `p${rep.childPort}`, targetHandle: `p${rep.parentPort}t`,
-      data: { kind: 'isl', a: cables.map((c) => c.childLabel).join(', '), b: cables.map((c) => c.parentLabel).join(', '), count: cables.length },
+      data: { kind: 'isl', a: cables.map((c) => c.childLabel).join(', '), b: cables.map((c) => c.parentLabel).join(', '), count: cables.length, lldp: b.lldp },
     });
     link(b.id, b.child, b.parent, cables.flatMap((c) => [`${b.child}:${c.childPort}`, `${b.parent}:${c.parentPort}`]));
   }

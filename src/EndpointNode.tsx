@@ -1,14 +1,16 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { CABLE_COLOR, type EndpointData } from './graph';
+import { CABLE_COLOR, LLDP_COLOR, type EndpointData } from './graph';
 import { trace, useTrace, modeFor } from './trace';
+import { useLldp } from './lldp';
 
 // A server / LAG peer hanging off a leaf's edge port. LAGs collapse their members into
 // one chip with a member count; a multihomed (ESI) bond is one shared chip whose stubs
 // fan up to every leaf it homes to, so the dual-homing reads at a glance.
 function EndpointNode({ id, data }: NodeProps) {
   const d = data as EndpointData;
-  const color = CABLE_COLOR[d.kind];
+  const lldpOn = useLldp();
+  const color = lldpOn ? LLDP_COLOR[d.lldp ?? 'none'] : CABLE_COLOR[d.kind];
   const mode = useTrace(modeFor((s) => s.nodes.has(id)));
   const kindWord = d.kind === 'mlag' ? 'ESI / multihomed' : d.kind === 'lag' ? 'local LAG' : 'edge';
   const title =
