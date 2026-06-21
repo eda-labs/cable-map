@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.1
+
+- Refresh the Cable Map app and runtime image tags for the v0.1.1 release.
+
 ## v0.1.0
 
 - Package Cable Map as an EDA app with an embedded runtime container.

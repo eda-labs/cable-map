@@ -1,7 +1,7 @@
 {
   "uuid": "f265f9e7-70d3-4d1e-b508-430b3f2b531c",
   "name": "Cable Map",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "Cable Map",
   "description": "Open the cable-map topology, front-panel and cable-table view.",
   "showNavigationToolbar": true,
