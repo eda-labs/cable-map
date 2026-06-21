@@ -10,7 +10,10 @@
     "build:server": "tsc -b tsconfig.server.json",
     "start": "node dist-server/server.js",
     "lint": "oxlint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:eda": "node scripts/deploy-eda.mjs",
+    "deploy:eda:local": "node scripts/deploy-eda.mjs --source local",
+    "deploy:eda:ghcr": "node scripts/deploy-eda.mjs --source ghcr"
   },
   "dependencies": {
     "express": "^4.22.2",

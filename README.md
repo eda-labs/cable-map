@@ -44,6 +44,40 @@ docker build -t ghcr.io/eda-labs/cable-map-runtime:v0.1.0 .
 docker push ghcr.io/eda-labs/cable-map-runtime:v0.1.0
 ```
 
+## EDA Dev Deploy
+
+For local EDA development, use the pnpm helper. It keeps
+`eda-app/cable_map/manifest.yaml` pointed at GHCR, but deploys from a temporary
+manifest when you want to override the runtime image from your local build.
+
+```sh
+pnpm deploy:eda:local
+```
+
+That command rebuilds `ghcr.io/eda-labs/cable-map-runtime:v0.1.0`, pushes the
+same tag into the in-cluster EDA dev registry, and deploys it. Reusing the same
+tag is intentional; the helper overwrites the registry tag before calling
+`edabuilder`.
+
+To redeploy the image that is already built locally:
+
+```sh
+pnpm deploy:eda:local -- --no-build
+```
+
+To publish the runtime image to GHCR first and deploy from GHCR:
+
+```sh
+pnpm deploy:eda:ghcr
+```
+
+Override the tag or image repository when needed:
+
+```sh
+pnpm deploy:eda:local -- --tag v0.1.1
+RUNTIME_IMAGE=ghcr.io/flosch62/cable-map-runtime pnpm deploy:eda:ghcr
+```
+
 ## EDA App Package
 
 From `eda-app/`, publish the EDA app artifact into the catalog with
