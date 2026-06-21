@@ -178,7 +178,8 @@ export default function App() {
             <Divider />
             <Box sx={{ flex: 1, minHeight: 0, px: 3, py: 2, display: 'flex', flexDirection: 'column' }}>
               <NodeView node={openNode} rows={topo?.tables[openNode.id] || []}
-                occupied={topo?.occupied[openNode.id] || []} showHeader={false} onOpenNode={setOpen} fillHeight />
+                occupied={topo?.occupied[openNode.id] || []} showHeader={false} onOpenNode={setOpen} fillHeight
+                panelMaxHeight={Math.round(drawerH * 0.4)} />
             </Box>
           </>
         )}

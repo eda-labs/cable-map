@@ -13,10 +13,11 @@ type Props = {
   interactive?: boolean;  // hover cross-highlight (off for print)
   onOpenNode?: (id: string) => void;   // jump to a remote node's drawer
   fillHeight?: boolean;   // drawer: panel fixed, only the table scrolls
+  panelMaxHeight?: number | string;    // cap panel height so the table stays visible
 };
 
 // Front panel + cable matrix for one node, with port<->row hover cross-highlighting.
-export default function NodeView({ node, rows, occupied, showHeader = true, interactive = true, onOpenNode, fillHeight = false }: Props) {
+export default function NodeView({ node, rows, occupied, showHeader = true, interactive = true, onOpenNode, fillHeight = false, panelMaxHeight }: Props) {
   const [hovered, setHovered] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +46,8 @@ export default function NodeView({ node, rows, occupied, showHeader = true, inte
       <Paper variant="outlined" className="fp-wrap" sx={{ p: 1, width: '100%', bgcolor: 'transparent', flexShrink: 0 }}>
         <FrontPanel platform={node.platform} occupied={occupied}
           hovered={interactive ? hovered : null}
-          onHover={interactive ? setHovered : undefined} />
+          onHover={interactive ? setHovered : undefined}
+          maxHeight={panelMaxHeight} />
       </Paper>
 
       <Box ref={scrollRef} sx={fillHeight ? { flex: 1, minHeight: 0, overflow: 'auto', mt: 2 } : { mt: 2 }}>
