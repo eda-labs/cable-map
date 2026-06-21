@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-// Dev-only: serve the captured topology as /api/topology so `npm run dev` has data
+// Dev-only: serve the captured topology as /api/topology so `pnpm dev` has data
 // (HMR) with no backend and no EDA. Production uses the real EDA REST API instead.
 function fakeTopologyApi(): Plugin {
   const file = fileURLToPath(new URL('./fake-topology.json', import.meta.url))
@@ -32,7 +32,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    // /pdf needs the server (Puppeteer); run `npm start` alongside to use it in dev.
+    // /pdf needs the server (Puppeteer); run `pnpm start` alongside to use it in dev.
     proxy: { '/pdf': 'http://127.0.0.1:8080' },
   },
 })

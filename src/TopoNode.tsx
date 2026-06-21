@@ -31,7 +31,7 @@ export default function TopoNode({ id, data, selected }: NodeProps) {
       const other = s.nodeLookup.get(otherId);
       if (other) sides.add(facingSide(me, other));
     }
-    return [...sides].sort().join(',');
+    return [...sides].toSorted().join(',');
   }, [id]));
   const connected = new Set(connectedStr ? connectedStr.split(',') : []);
 

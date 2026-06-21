@@ -22,16 +22,16 @@ installs Kubernetes resources and a launcher view.
 ## Local Development
 
 ```sh
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 For a production build:
 
 ```sh
-npm run build
-npm run build:server
-npm start
+pnpm build
+pnpm build:server
+pnpm start
 ```
 
 ## Runtime Image

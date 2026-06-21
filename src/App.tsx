@@ -18,6 +18,8 @@ const edgeTypes: EdgeTypes = { portEdge: PortEdge };
 type Pos = Record<string, { x: number; y: number }>;
 
 const shortPort = (iface: string) => iface.replace(/^ethernet-/, '');   // ethernet-1-1 -> 1-1
+const portNumber = (port: string) => Number(port.split('-').pop());
+const pdf = (q = '') => window.open(`${BASE}pdf${q}`, '_blank');
 
 // role-tiered auto-layout: superspine/spine on top, leaves below; rows centered.
 const TIER: Record<string, number> = { superspine: 0, spine: 1, borderleaf: 2, leaf: 3 };
@@ -26,7 +28,7 @@ function layout(nodes: Node[]): Pos {
   for (const n of nodes) { const t = TIER[n.role] ?? 4; (tiers.get(t) ?? tiers.set(t, []).get(t)!).push(n); }
   const CX = 480, GAPX = 240, GAPY = 200;
   const pos: Pos = {};
-  [...tiers.keys()].sort((a, b) => a - b).forEach((t, ti) => {
+  [...tiers.keys()].toSorted((a, b) => a - b).forEach((t, ti) => {
     const row = tiers.get(t)!;
     const startX = CX - ((row.length - 1) * GAPX) / 2;
     row.forEach((n, i) => { pos[n.id] = { x: startX + i * GAPX, y: 80 + ti * GAPY }; });
@@ -39,16 +41,15 @@ function layout(nodes: Node[]): Pos {
 function buildEdges(t: Topology): RFEdge[] {
   const pairs = new Map<string, { a: string; b: string; pa: Set<string>; pb: Set<string> }>();
   for (const l of t.links) {
-    const [a, b] = [l.source, l.target].sort();
+    const [a, b] = [l.source, l.target].toSorted();
     const key = `${a}|${b}`;
     let e = pairs.get(key);
     if (!e) { e = { a, b, pa: new Set(), pb: new Set() }; pairs.set(key, e); }
     const [aPort, bPort] = l.source === a ? [l.sourcePort, l.targetPort] : [l.targetPort, l.sourcePort];
     e.pa.add(shortPort(aPort)); e.pb.add(shortPort(bPort));
   }
-  const num = (s: string) => Number(s.split('-').pop());
   const fmt = (set: Set<string>) => {
-    const a = [...set].sort((x, y) => num(x) - num(y));
+    const a = [...set].toSorted((x, y) => portNumber(x) - portNumber(y));
     return a.length <= 4 ? a.join(', ') : `${a[0]}…${a[a.length - 1]} (${a.length})`;
   };
   return [...pairs.values()].map(({ a, b, pa, pb }) => ({
@@ -101,8 +102,6 @@ export default function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [setNodes]);
-  const pdf = (q = '') => window.open(`${BASE}pdf${q}`, '_blank');
-
   const ready = !!topo && topo.nodes.length > 0;
   const openNode = topo?.nodes.find((n) => n.id === open);
 
