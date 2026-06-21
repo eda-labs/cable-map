@@ -6,11 +6,24 @@ export type Edge = {
 export type Row = {
   label: string; desc: string;
   remoteNode: string; remotePort: string; type: string;
+  lag?: string;   // LAG resource name when this port is bundled into a port-channel
+  peer?: string;  // endpoint/server label for edge links whose remote node is external
+};
+// Mirror of eda.ts LagInfo — see there for the multihomed/ESI classification nuance.
+export type LagInfo = {
+  name: string;
+  lacp: boolean;
+  isl: boolean;
+  multihomed: boolean;
+  mode: string;
+  members: { node: string; port: string }[];
+  nodes: string[];
 };
 export type Topology = {
   nodes: Node[]; links: Edge[];
   tables: Record<string, Row[]>;
   occupied: Record<string, number[]>;
+  lags: Record<string, LagInfo>;
 };
 
 // Vite base (trailing slash) — prefix all same-origin URLs so they resolve under

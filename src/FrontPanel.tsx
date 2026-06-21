@@ -15,9 +15,12 @@ type Props = {
   hovered?: number | null;
   onHover?: (port: number | null) => void;
   width?: number | string;
+  // cap the rendered height so tall multi-RU chassis (e.g. 7220 IXR-H2) don't
+  // fill the whole drawer; the SVG scales down and centres within this height.
+  maxHeight?: number | string;
 };
 
-export default function FrontPanel({ platform, occupied, hovered = null, onHover, width = '100%' }: Props) {
+export default function FrontPanel({ platform, occupied, hovered = null, onHover, width = '100%', maxHeight }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const indices = portMap[platform];
@@ -36,11 +39,21 @@ export default function FrontPanel({ platform, occupied, hovered = null, onHover
         if (svg) {
           svg.removeAttribute('width'); svg.removeAttribute('height');
           svg.style.width = '100%'; svg.style.height = 'auto'; svg.style.display = 'block';
+          svg.style.margin = '0 auto';
         }
         setLoaded(true);
       });
     return () => { cancelled = true; };
   }, [platform, indices]);
+
+  // apply / update the height cap (cheap: no re-inlining when the drawer resizes)
+  useEffect(() => {
+    if (!loaded || !ref.current) return;
+    const svg = ref.current.querySelector('svg');
+    if (!svg) return;
+    svg.style.maxHeight = maxHeight == null ? ''
+      : typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight;
+  }, [loaded, maxHeight]);
 
   // style the existing cage paths on state/hover change
   useEffect(() => {
