@@ -117,6 +117,9 @@ export default function App() {
             colorMode="dark" elevateNodesOnSelect={false} nodesConnectable={false}
             minZoom={0.15}
             onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
+            onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
+            onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}
+            onEdgeMouseLeave={() => trace.hover(null)}
             onSelectionChange={onSel}
             onPaneClick={() => { setSelected([]); trace.clear(); setQuery(''); }}
             fitView fitViewOptions={{ padding: 0.12 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
@@ -134,7 +137,7 @@ export default function App() {
                   ))}
                 </Box>
                 <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 10 }}>
-                  Hover to trace a cable · click a port to pin · click a switch for its panel
+                  Hover to trace · click a cable or port to pin · click a switch for its panel
                 </Typography>
               </Box>
             </Panel>

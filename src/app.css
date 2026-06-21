@@ -6,3 +6,6 @@
    EndpointNode); the canvas just needs a grab cursor while panning. */
 .react-flow__pane { cursor: grab; }
 .react-flow__pane.dragging { cursor: grabbing; }
+
+/* cables are click-to-pin / hover-to-trace, so show a pointer over the line */
+.react-flow__edge { cursor: pointer; }
