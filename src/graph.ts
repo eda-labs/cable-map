@@ -4,7 +4,7 @@
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 import PORTS from './frontpanel/ports.json';
 import ROWS from './frontpanel/rows.json';
-import { portIdx, type Topology } from './api';
+import { portIdx, type Topology, type LagInfo } from './api';
 import type { Adjacency } from './trace';
 
 const portMap = PORTS as Record<string, number[]>;
@@ -18,8 +18,12 @@ export const portCountOf = (platform: string) => portMap[platform]?.length ?? 32
 export const TIER: Record<string, number> = { superspine: 0, spine: 1, borderleaf: 2, leaf: 3 };
 const tierOf = (role: string) => TIER[role] ?? 3;
 
-export type CableKind = 'isl' | 'edge' | 'lag';
-export const CABLE_COLOR: Record<CableKind, string> = { isl: '#5B9BFF', edge: '#13C39A', lag: '#FFB020' };
+// edge = plain server cable, lag = local port-channel (all members one box),
+// mlag = multihomed/ESI bond (members span two leaves), isl = fabric uplink.
+export type CableKind = 'isl' | 'edge' | 'lag' | 'mlag';
+export const CABLE_COLOR: Record<CableKind, string> = {
+  isl: '#5B9BFF', edge: '#13C39A', lag: '#FFB020', mlag: '#C77DFF',
+};
 
 export type PortInfo = {
   port: number;
@@ -40,7 +44,11 @@ export type SwitchData = {
 
 export type EndpointData = {
   label: string; full: string; remotePort: string;
-  kind: 'edge' | 'lag'; members: number; localPorts: number[];
+  kind: 'edge' | 'lag' | 'mlag';
+  members: number;        // member ports summed across every leaf it homes to
+  leaves: string[];       // leaves this endpoint attaches to (>1 == multihomed)
+  lacp?: boolean;         // LACP vs static (LAGs only)
+  mode?: string;          // multihoming mode, e.g. AllActive (ESI only)
 };
 
 // ---- layout constants ---------------------------------------------------
@@ -64,6 +72,7 @@ export type BuiltGraph = { nodes: RFNode[]; edges: RFEdge[]; adjacency: Adjacenc
 export function buildGraph(topo: Topology): BuiltGraph {
   const byId = new Map(topo.nodes.map((n) => [n.id, n]));
   const role = (id: string) => byId.get(id)?.role ?? 'leaf';
+  const lagOf = (name?: string): LagInfo | undefined => (name ? topo.lags[name] : undefined);
 
   const nodeEdges = new Map<string, Set<string>>();
   const edgeEnds = new Map<string, [string, string]>();
@@ -77,72 +86,126 @@ export function buildGraph(topo: Topology): BuiltGraph {
 
   const rfEdges: RFEdge[] = [];
   const islSeen = new Set<string>();
-
-  // per-switch port metadata + endpoint grouping, from each node's table
   const switchPorts = new Map<string, PortInfo[]>();
-  const endpoints: Array<{ id: string; leafId: string; data: EndpointData }> = [];
+  const portsOf = (node: string) => switchPorts.get(node) ?? switchPorts.set(node, []).get(node)!;
+  const haystacks = new Map<string, string[]>();
+  const hay = (node: string) =>
+    haystacks.get(node) ??
+    haystacks.set(node, [byId.get(node)?.name ?? node, byId.get(node)?.platform ?? '', role(node)]).get(node)!;
+
+  // ISL port-channels collapse their parallel members into one drawn cable (×N); plain
+  // ISLs stay one-cable-per-link. Bundles accumulate across the mirrored far-side rows.
+  type Bundle = {
+    id: string; child: string; parent: string; side: 'top' | 'bottom';
+    cables: Map<string, { childPort: number; parentPort: number; childLabel: string; parentLabel: string }>;
+  };
+  const bundles = new Map<string, Bundle>();
+
+  // Edge endpoints are grouped GLOBALLY (across nodes), keyed by LAG resource when bundled,
+  // so a multihomed LAG landing on two leaves becomes one shared chip instead of two.
+  type Member = { port: number; desc: string; remotePort: string; label: string };
+  type Accum = { key: string; label: string; full: string; lagName?: string; portsByNode: Map<string, Member[]> };
+  const epAccum = new Map<string, Accum>();
 
   for (const sw of topo.nodes) {
-    const rows = topo.tables[sw.id] ?? [];
-    const ports: PortInfo[] = [];
-    const haystack = [sw.name, sw.platform, sw.role];
-    // group this node's edge rows by remote (single server vs LAG bundle)
-    const groups = new Map<string, typeof rows>();
-
-    for (const r of rows) {
+    for (const r of topo.tables[sw.id] ?? []) {
       const p = portIdx(r.label);
-      if (r.type === 'interSwitch' && r.remoteNode && p != null) {
+      if (p == null) continue;
+
+      if (r.type === 'interSwitch' && r.remoteNode) {
+        hay(sw.id).push(r.label);
         const up = tierOf(role(r.remoteNode)) < tierOf(sw.role);
-        // canonical ISL id (dedupe the mirrored row on the far node)
+        const rp = portIdx(r.remotePort) ?? p;
+        // canonical per-cable id, stable across the mirrored far-side row
         const ends = [`${sw.id}:${r.remotePort}`, `${r.remoteNode}:${r.label}`].toSorted();
-        const id = `isl|${ends[0]}|${ends[1]}`;
-        ports.push({ port: p, kind: 'isl', side: up ? 'top' : 'bottom', remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: id });
-        haystack.push(r.label);
-        if (!islSeen.has(id)) {
-          islSeen.add(id);
-          const child = tierOf(sw.role) >= tierOf(role(r.remoteNode)) ? sw.id : r.remoteNode;
-          const parent = child === sw.id ? r.remoteNode : sw.id;
-          const childPort = child === sw.id ? p : portIdx(r.remotePort);
-          const parentPort = child === sw.id ? portIdx(r.remotePort) : p;
-          rfEdges.push({
-            id, source: child, target: parent, type: 'cable',
-            sourceHandle: `p${childPort}`, targetHandle: `p${parentPort}t`,
-            data: { kind: 'isl', a: shortPortLabel(r.label), b: shortPortLabel(r.remotePort) },
+        const cableId = `isl|${ends[0]}|${ends[1]}`;
+
+        if (lagOf(r.lag)?.isl) {
+          // bundle: -local/-remote name the two ends of the same channel — normalise to one key
+          const bid = `isllag|${r.lag!.replace(/^lag-/, '').replace(/-(local|remote)$/, '')}`;
+          const [a, b] = [sw.id, r.remoteNode].toSorted();
+          const aPort = a === sw.id ? p : rp;
+          const bPort = a === sw.id ? rp : p;
+          const bundle = bundles.get(bid) ?? bundles.set(bid, { id: bid, child: a, parent: b, side: up ? 'top' : 'bottom', cables: new Map() }).get(bid)!;
+          bundle.cables.set(cableId, {
+            childPort: aPort, parentPort: bPort,
+            childLabel: shortPortLabel(a === sw.id ? r.label : r.remotePort),
+            parentLabel: shortPortLabel(a === sw.id ? r.remotePort : r.label),
           });
-          link(id, child, parent, [`${child}:${childPort}`, `${parent}:${parentPort}`]);
+          portsOf(sw.id).push({ port: p, kind: 'isl', side: up ? 'top' : 'bottom', remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: bid });
+        } else {
+          portsOf(sw.id).push({ port: p, kind: 'isl', side: up ? 'top' : 'bottom', remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId });
+          if (!islSeen.has(cableId)) {
+            islSeen.add(cableId);
+            const child = tierOf(sw.role) >= tierOf(role(r.remoteNode)) ? sw.id : r.remoteNode;
+            const parent = child === sw.id ? r.remoteNode : sw.id;
+            const childPort = child === sw.id ? p : rp;
+            const parentPort = child === sw.id ? rp : p;
+            rfEdges.push({
+              id: cableId, source: child, target: parent, type: 'cable',
+              sourceHandle: `p${childPort}`, targetHandle: `p${parentPort}t`,
+              data: { kind: 'isl', a: shortPortLabel(r.label), b: shortPortLabel(r.remotePort) },
+            });
+            link(cableId, child, parent, [`${child}:${childPort}`, `${parent}:${parentPort}`]);
+          }
         }
-      } else if (r.type === 'edge' && r.remoteNode && p != null) {
-        (groups.get(r.remoteNode) ?? groups.set(r.remoteNode, []).get(r.remoteNode)!).push(r);
-        haystack.push(r.label);   // the server name is indexed on the endpoint chip
+      } else if (r.type === 'edge') {
+        const name = r.peer || r.remoteNode || '';
+        const key = r.lag ?? `${sw.id}|${name}`;   // LAG members share one key; plain servers key per-leaf
+        const accum = epAccum.get(key) ?? epAccum.set(key, {
+          key, label: shortEndpoint(sw.id, name), full: r.lag ?? name, lagName: r.lag, portsByNode: new Map(),
+        }).get(key)!;
+        (accum.portsByNode.get(sw.id) ?? accum.portsByNode.set(sw.id, []).get(sw.id)!)
+          .push({ port: p, desc: r.desc, remotePort: r.remotePort, label: r.label });
+        hay(sw.id).push(r.label);
       }
     }
-
-    // realise endpoint chips + stub cables for this switch's edge interfaces
-    for (const [remote, grp] of groups) {
-      const kind: 'edge' | 'lag' = grp.length > 1 ? 'lag' : 'edge';
-      const epId = `ep|${sw.id}|${remote}`;
-      const localPorts = grp.map((r) => portIdx(r.label)!).toSorted((a, b) => a - b);
-      endpoints.push({
-        id: epId, leafId: sw.id,
-        data: { label: shortEndpoint(sw.id, remote), full: remote, remotePort: grp[0].remotePort, kind, members: grp.length, localPorts },
-      });
-      search.set(epId, [remote, grp[0].remotePort, ...grp.map((r) => r.label)].join(' ').toLowerCase());
-      for (const r of grp) {
-        const p = portIdx(r.label)!;
-        const id = `stub|${sw.id}|${p}`;
-        ports.push({ port: p, kind, side: 'bottom', remote: shortEndpoint(sw.id, remote), remotePort: r.remotePort, desc: r.desc, cableId: id });
-        rfEdges.push({
-          id, source: sw.id, target: epId, type: 'cable',
-          sourceHandle: `p${p}`, targetHandle: 'in',
-          data: { kind, a: shortPortLabel(r.label), b: r.remotePort },
-        });
-        link(id, sw.id, epId, [`${sw.id}:${p}`]);
-      }
-    }
-
-    switchPorts.set(sw.id, ports);
-    search.set(sw.id, haystack.join(' ').toLowerCase());
   }
+
+  // realise endpoint chips + a stub cable per member port, all converging on the one chip
+  type Endpoint = { id: string; leaves: string[]; data: EndpointData };
+  const endpoints: Endpoint[] = [];
+  for (const a of epAccum.values()) {
+    const leaves = [...a.portsByNode.keys()];
+    const total = [...a.portsByNode.values()].reduce((s, m) => s + m.length, 0);
+    const lag = lagOf(a.lagName);
+    const multihomed = leaves.length > 1 || !!lag?.multihomed;
+    const kind: EndpointData['kind'] = multihomed ? 'mlag' : (a.lagName || total > 1) ? 'lag' : 'edge';
+    const epId = `ep|${a.key}`;
+    const remotePort = [...a.portsByNode.values()][0][0].remotePort;
+    endpoints.push({
+      id: epId, leaves,
+      data: { label: a.label, full: a.full, remotePort, kind, members: total, leaves, lacp: lag?.lacp, mode: lag?.mode },
+    });
+    const labels = [...a.portsByNode.values()].flatMap((m) => m.map((x) => x.label));
+    search.set(epId, [a.label, a.full, remotePort, ...labels].join(' ').toLowerCase());
+    for (const [node, members] of a.portsByNode) {
+      for (const m of members) {
+        const sid = `stub|${node}|${m.port}`;
+        portsOf(node).push({ port: m.port, kind, side: 'bottom', remote: a.label, remotePort: m.remotePort, desc: m.desc, cableId: sid });
+        rfEdges.push({
+          id: sid, source: node, target: epId, type: 'cable',
+          sourceHandle: `p${m.port}`, targetHandle: 'in',
+          data: { kind, a: shortPortLabel(m.label), b: m.remotePort || a.label },
+        });
+        link(sid, node, epId, [`${node}:${m.port}`]);
+      }
+    }
+  }
+
+  // emit one drawn cable per ISL bundle, labelled with its member count
+  for (const b of bundles.values()) {
+    const cables = [...b.cables.values()].toSorted((x, y) => x.childPort - y.childPort);
+    const rep = cables[0];
+    rfEdges.push({
+      id: b.id, source: b.child, target: b.parent, type: 'cable',
+      sourceHandle: `p${rep.childPort}`, targetHandle: `p${rep.parentPort}t`,
+      data: { kind: 'isl', a: cables.map((c) => c.childLabel).join(', '), b: cables.map((c) => c.parentLabel).join(', '), count: cables.length },
+    });
+    link(b.id, b.child, b.parent, cables.flatMap((c) => [`${b.child}:${c.childPort}`, `${b.parent}:${c.parentPort}`]));
+  }
+
+  for (const n of topo.nodes) search.set(n.id, (haystacks.get(n.id) ?? [n.name, n.platform, n.role]).join(' ').toLowerCase());
 
   // ---- positions -------------------------------------------------------
   const leaves = topo.nodes.filter((n) => tierOf(n.role) >= 2);
@@ -178,19 +241,37 @@ export function buildGraph(topo: Topology): BuiltGraph {
     draggable: true,
   }));
 
-  // endpoint chips fan out below their leaf in an EP_COLS-wide grid, starting
-  // below that leaf's own bottom (taller leaves like D2L push their chips down)
+  // single-homed chips fan out below their one leaf in an EP_COLS-wide grid; multihomed
+  // (ESI) chips drop into a shared band underneath, centred between the leaves they bond.
   const byLeaf = new Map(leaves.map((l) => [l.id, l]));
+  const leafTopOf = (id: string) => LEAF_Y + switchH(rowsOf(byLeaf.get(id)?.platform ?? '')) + EP_TOP_GAP;
+  const single = endpoints.filter((e) => e.data.kind !== 'mlag');
+  const multi = endpoints.filter((e) => e.data.kind === 'mlag');
+
+  const fanCount = new Map<string, number>();
+  for (const ep of single) fanCount.set(ep.leaves[0], (fanCount.get(ep.leaves[0]) ?? 0) + 1);
+
+  const clusterW = EP_COLS * EP_W + (EP_COLS - 1) * EP_HGAP;
   const epIndex = new Map<string, number>();
-  for (const ep of endpoints) {
-    const i = epIndex.get(ep.leafId) ?? 0; epIndex.set(ep.leafId, i + 1);
-    const center = leafCenter.get(ep.leafId) ?? 0;
-    const leafTop = LEAF_Y + switchH(rowsOf(byLeaf.get(ep.leafId)?.platform ?? '')) + EP_TOP_GAP;
+  for (const ep of single) {
+    const lf = ep.leaves[0];
+    const i = epIndex.get(lf) ?? 0; epIndex.set(lf, i + 1);
+    const center = leafCenter.get(lf) ?? 0;
     const col = i % EP_COLS, row = Math.floor(i / EP_COLS);
-    const clusterW = EP_COLS * EP_W + (EP_COLS - 1) * EP_HGAP;
     const x = center - clusterW / 2 + col * (EP_W + EP_HGAP);
-    const y = leafTop + row * (EP_H + EP_VGAP);
+    const y = leafTopOf(lf) + row * (EP_H + EP_VGAP);
     rfNodes.push({ id: ep.id, type: 'endpoint', position: { x, y }, data: ep.data, draggable: true });
+  }
+
+  // band sits below the deepest single-homed fan so ESI cables clear the chips above
+  const fanBottom = (lf: string) => leafTopOf(lf) + Math.ceil((fanCount.get(lf) ?? 0) / EP_COLS) * (EP_H + EP_VGAP);
+  const bandY = (leaves.length ? Math.max(...leaves.map((l) => fanBottom(l.id))) : LEAF_Y) + 48;
+  const centroid = (ep: Endpoint) => ep.leaves.reduce((s, n) => s + (leafCenter.get(n) ?? 0), 0) / ep.leaves.length;
+  let prevRight = -Infinity;
+  for (const ep of multi.toSorted((p, q) => centroid(p) - centroid(q))) {
+    const x = Math.max(centroid(ep) - EP_W / 2, prevRight + EP_HGAP);
+    prevRight = x + EP_W;
+    rfNodes.push({ id: ep.id, type: 'endpoint', position: { x, y: bandY }, data: ep.data, draggable: true });
   }
 
   return { nodes: rfNodes, edges: rfEdges, adjacency: { nodeEdges, edgeEnds, edgePorts, search } };

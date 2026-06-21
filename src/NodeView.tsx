@@ -70,14 +70,19 @@ export default function NodeView({ node, rows, occupied, showHeader = true, inte
                 onMouseLeave={() => interactive && setHovered(null)}>
                 <TableCell>{r.label}</TableCell>
                 <TableCell>{r.desc || blank}</TableCell>
-                <TableCell>{r.type === 'interSwitch' ? 'ISL' : r.type === 'edge' ? 'edge' : r.type}</TableCell>
+                <TableCell>
+                  {r.type === 'interSwitch' ? 'ISL' : r.type === 'edge' ? 'edge' : r.type}
+                  {r.lag && <Box component="span" color="warning.main" sx={{ fontSize: 11 }}>{' · LAG'}</Box>}
+                </TableCell>
                 <TableCell>
                   {r.remoteNode
                     ? (onOpenNode
                         ? <Link component="button" underline="hover" sx={{ font: 'inherit' }}
                             onClick={() => onOpenNode(r.remoteNode)}>{r.remoteNode}</Link>
                         : r.remoteNode)
-                    : blank}
+                    : r.peer
+                      ? <Box component="span" color="text.secondary">{r.peer}</Box>
+                      : blank}
                 </TableCell>
                 <TableCell>
                   {r.remotePort || blank}

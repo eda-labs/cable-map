@@ -23,7 +23,7 @@ const edgeTypes: EdgeTypes = { cable: CableEdge };
 const pdf = (q = '') => window.open(`${BASE}pdf${q}`, '_blank');
 
 const LEGEND: Array<[string, keyof typeof CABLE_COLOR]> = [
-  ['Fabric (ISL)', 'isl'], ['Server edge', 'edge'], ['LAG bundle', 'lag'],
+  ['Fabric (ISL)', 'isl'], ['Server edge', 'edge'], ['Local LAG', 'lag'], ['ESI / MH-LAG', 'mlag'],
 ];
 
 export default function App() {

@@ -1,20 +1,6 @@
 {
   "nodes": [
     {
-      "id": "spine1",
-      "name": "spine1",
-      "platform": "7220 IXR-D5",
-      "os": "srl",
-      "role": "spine"
-    },
-    {
-      "id": "spine2",
-      "name": "spine2",
-      "platform": "7220 IXR-D5",
-      "os": "srl",
-      "role": "spine"
-    },
-    {
       "id": "leaf1",
       "name": "leaf1",
       "platform": "7220 IXR-D3L",
@@ -29,72 +15,32 @@
       "role": "leaf"
     },
     {
-      "id": "leaf3",
-      "name": "leaf3",
-      "platform": "7220 IXR-D3L",
-      "os": "srl",
-      "role": "leaf"
-    },
-    {
-      "id": "leaf4",
-      "name": "leaf4",
-      "platform": "7220 IXR-D3L",
-      "os": "srl",
-      "role": "leaf"
-    },
-    {
-      "id": "leaf5",
-      "name": "leaf5",
-      "platform": "7220 IXR-D3L",
-      "os": "srl",
-      "role": "leaf"
-    },
-    {
-      "id": "leaf6",
-      "name": "leaf6",
-      "platform": "7220 IXR-D3L",
-      "os": "srl",
-      "role": "leaf"
-    },
-    {
-      "id": "leaf7",
-      "name": "leaf7",
-      "platform": "7220 IXR-D3L",
-      "os": "srl",
-      "role": "leaf"
-    },
-    {
-      "id": "leaf8",
-      "name": "leaf8",
-      "platform": "7220 IXR-D3L",
-      "os": "srl",
-      "role": "leaf"
-    },
-    {
-      "id": "spine3",
-      "name": "spine3",
-      "platform": "7220 IXR-H2",
+      "id": "spine1",
+      "name": "spine1",
+      "platform": "7220 IXR-D5",
       "os": "srl",
       "role": "spine"
-    },
-    {
-      "id": "spine4",
-      "name": "spine4",
-      "platform": "7220 IXR-H5-64D",
-      "os": "srl",
-      "role": "spine"
-    },
-    {
-      "id": "leaf9",
-      "name": "leaf9",
-      "platform": "7220 IXR-D2L",
-      "os": "srl",
-      "role": "leaf"
     }
   ],
   "links": [
     {
-      "id": "leaf1-spine1",
+      "id": "leaf1-leaf2-isl-lag-1",
+      "source": "leaf1",
+      "target": "leaf2",
+      "sourcePort": "ethernet-1-32",
+      "targetPort": "ethernet-1-32",
+      "type": "interSwitch"
+    },
+    {
+      "id": "leaf1-leaf2-isl-lag-1",
+      "source": "leaf1",
+      "target": "leaf2",
+      "sourcePort": "ethernet-1-33",
+      "targetPort": "ethernet-1-33",
+      "type": "interSwitch"
+    },
+    {
+      "id": "leaf1-spine1-isl-1",
       "source": "leaf1",
       "target": "spine1",
       "sourcePort": "ethernet-1-1",
@@ -102,1923 +48,326 @@
       "type": "interSwitch"
     },
     {
-      "id": "leaf1-spine2",
+      "id": "leaf1-spine1-isl-2",
       "source": "leaf1",
-      "target": "spine2",
-      "sourcePort": "ethernet-1-2",
-      "targetPort": "ethernet-1-1",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf2-spine1",
-      "source": "leaf2",
       "target": "spine1",
-      "sourcePort": "ethernet-1-1",
-      "targetPort": "ethernet-1-2",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf2-spine2",
-      "source": "leaf2",
-      "target": "spine2",
       "sourcePort": "ethernet-1-2",
       "targetPort": "ethernet-1-2",
       "type": "interSwitch"
     },
     {
-      "id": "leaf3-spine1",
-      "source": "leaf3",
+      "id": "leaf2-spine1-isl-1",
+      "source": "leaf2",
       "target": "spine1",
       "sourcePort": "ethernet-1-1",
       "targetPort": "ethernet-1-3",
       "type": "interSwitch"
     },
     {
-      "id": "leaf3-spine2",
-      "source": "leaf3",
-      "target": "spine2",
-      "sourcePort": "ethernet-1-2",
-      "targetPort": "ethernet-1-3",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf4-spine1",
-      "source": "leaf4",
+      "id": "leaf2-spine1-isl-2",
+      "source": "leaf2",
       "target": "spine1",
-      "sourcePort": "ethernet-1-1",
-      "targetPort": "ethernet-1-4",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf4-spine2",
-      "source": "leaf4",
-      "target": "spine2",
       "sourcePort": "ethernet-1-2",
       "targetPort": "ethernet-1-4",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf5-spine1",
-      "source": "leaf5",
-      "target": "spine1",
-      "sourcePort": "ethernet-1-1",
-      "targetPort": "ethernet-1-5",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf5-spine2",
-      "source": "leaf5",
-      "target": "spine2",
-      "sourcePort": "ethernet-1-2",
-      "targetPort": "ethernet-1-5",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf6-spine1",
-      "source": "leaf6",
-      "target": "spine1",
-      "sourcePort": "ethernet-1-1",
-      "targetPort": "ethernet-1-6",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf6-spine2",
-      "source": "leaf6",
-      "target": "spine2",
-      "sourcePort": "ethernet-1-2",
-      "targetPort": "ethernet-1-6",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf7-spine1",
-      "source": "leaf7",
-      "target": "spine1",
-      "sourcePort": "ethernet-1-1",
-      "targetPort": "ethernet-1-7",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf7-spine2",
-      "source": "leaf7",
-      "target": "spine2",
-      "sourcePort": "ethernet-1-2",
-      "targetPort": "ethernet-1-7",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf8-spine1",
-      "source": "leaf8",
-      "target": "spine1",
-      "sourcePort": "ethernet-1-1",
-      "targetPort": "ethernet-1-8",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf8-spine2",
-      "source": "leaf8",
-      "target": "spine2",
-      "sourcePort": "ethernet-1-2",
-      "targetPort": "ethernet-1-8",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf9-spine1",
-      "source": "leaf9",
-      "target": "spine1",
-      "sourcePort": "ethernet-1-1",
-      "targetPort": "ethernet-1-9",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf9-spine2",
-      "source": "leaf9",
-      "target": "spine2",
-      "sourcePort": "ethernet-1-2",
-      "targetPort": "ethernet-1-9",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf9-spine3",
-      "source": "leaf9",
-      "target": "spine3",
-      "sourcePort": "ethernet-1-3",
-      "targetPort": "ethernet-1-1",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf9-spine4",
-      "source": "leaf9",
-      "target": "spine4",
-      "sourcePort": "ethernet-1-4",
-      "targetPort": "ethernet-1-1",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf1-spine3",
-      "source": "leaf1",
-      "target": "spine3",
-      "sourcePort": "ethernet-1-21",
-      "targetPort": "ethernet-1-2",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf2-spine3",
-      "source": "leaf2",
-      "target": "spine3",
-      "sourcePort": "ethernet-1-21",
-      "targetPort": "ethernet-1-3",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf1-spine4",
-      "source": "leaf1",
-      "target": "spine4",
-      "sourcePort": "ethernet-1-22",
-      "targetPort": "ethernet-1-2",
-      "type": "interSwitch"
-    },
-    {
-      "id": "leaf2-spine4",
-      "source": "leaf2",
-      "target": "spine4",
-      "sourcePort": "ethernet-1-22",
-      "targetPort": "ethernet-1-3",
       "type": "interSwitch"
     }
   ],
   "tables": {
-    "spine1": [
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS downlink to leaf1",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS downlink to leaf2",
-        "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "CLOS downlink to leaf3",
-        "remoteNode": "leaf3",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "CLOS downlink to leaf4",
-        "remoteNode": "leaf4",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "CLOS downlink to leaf5",
-        "remoteNode": "leaf5",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "CLOS downlink to leaf6",
-        "remoteNode": "leaf6",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "CLOS downlink to leaf7",
-        "remoteNode": "leaf7",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "CLOS downlink to leaf8",
-        "remoteNode": "leaf8",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "CLOS downlink to leaf9",
-        "remoteNode": "leaf9",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      }
-    ],
-    "spine2": [
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS downlink to leaf1",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS downlink to leaf2",
-        "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "CLOS downlink to leaf3",
-        "remoteNode": "leaf3",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "CLOS downlink to leaf4",
-        "remoteNode": "leaf4",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "CLOS downlink to leaf5",
-        "remoteNode": "leaf5",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "CLOS downlink to leaf6",
-        "remoteNode": "leaf6",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "CLOS downlink to leaf7",
-        "remoteNode": "leaf7",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "CLOS downlink to leaf8",
-        "remoteNode": "leaf8",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "CLOS downlink to leaf9",
-        "remoteNode": "leaf9",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      }
-    ],
     "leaf1": [
       {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
+        "label": "ethernet-1-10",
+        "desc": "",
         "remoteNode": "",
         "remotePort": "",
-        "type": "loopback"
+        "type": "edge",
+        "peer": "server-a"
+      },
+      {
+        "label": "ethernet-1-32",
+        "desc": "",
+        "remoteNode": "leaf2",
+        "remotePort": "ethernet-1-32",
+        "type": "interSwitch",
+        "lag": "lag-leaf1-leaf2-isl-lag-1-local"
+      },
+      {
+        "label": "ethernet-1-33",
+        "desc": "",
+        "remoteNode": "leaf2",
+        "remotePort": "ethernet-1-33",
+        "type": "interSwitch",
+        "lag": "lag-leaf1-leaf2-isl-lag-1-local"
+      },
+      {
+        "label": "ethernet-1-30",
+        "desc": "",
+        "remoteNode": "",
+        "remotePort": "",
+        "type": "edge",
+        "lag": "lag-leaf1-leaf2-mh-lag-server-d-local",
+        "peer": "server-d"
+      },
+      {
+        "label": "ethernet-1-20",
+        "desc": "",
+        "remoteNode": "",
+        "remotePort": "",
+        "type": "edge",
+        "lag": "lag-leaf1-local-lag-server-c-local",
+        "peer": "server-c"
+      },
+      {
+        "label": "ethernet-1-21",
+        "desc": "",
+        "remoteNode": "",
+        "remotePort": "",
+        "type": "edge",
+        "lag": "lag-leaf1-local-lag-server-c-local",
+        "peer": "server-c"
       },
       {
         "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
+        "desc": "",
         "remoteNode": "spine1",
         "remotePort": "ethernet-1-1",
         "type": "interSwitch"
       },
       {
         "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf1-srv01",
-        "remoteNode": "leaf1-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf1-srv02",
-        "remoteNode": "leaf1-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf1-srv03",
-        "remoteNode": "leaf1-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf1-srv04",
-        "remoteNode": "leaf1-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf1-srv05",
-        "remoteNode": "leaf1-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf1-srv06",
-        "remoteNode": "leaf1-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf1-srv07",
-        "remoteNode": "leaf1-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf1-srv08",
-        "remoteNode": "leaf1-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf1-srv09",
-        "remoteNode": "leaf1-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf1-srv10",
-        "remoteNode": "leaf1-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf1-srv11",
-        "remoteNode": "leaf1-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf1-srv12",
-        "remoteNode": "leaf1-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf1-srv13",
-        "remoteNode": "leaf1-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf1-srv14",
-        "remoteNode": "leaf1-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf1-lag-a member",
-        "remoteNode": "leaf1-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf1-lag-a member",
-        "remoteNode": "leaf1-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf1-lag-b member",
-        "remoteNode": "leaf1-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf1-lag-b member",
-        "remoteNode": "leaf1-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-21",
-        "desc": "CLOS uplink to spine3",
-        "remoteNode": "spine3",
+        "desc": "",
+        "remoteNode": "spine1",
         "remotePort": "ethernet-1-2",
         "type": "interSwitch"
       },
       {
-        "label": "ethernet-1-22",
-        "desc": "CLOS uplink to spine4",
-        "remoteNode": "spine4",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
+        "label": "ethernet-1-31",
+        "desc": "",
+        "remoteNode": "",
+        "remotePort": "",
+        "type": "edge",
+        "lag": "lag-testman1-esi-lag-1-local",
+        "peer": "testman1-esi-lag-1"
       }
     ],
     "leaf2": [
       {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
+        "label": "ethernet-1-32",
+        "desc": "",
+        "remoteNode": "leaf1",
+        "remotePort": "ethernet-1-32",
+        "type": "interSwitch",
+        "lag": "lag-leaf1-leaf2-isl-lag-1-remote"
+      },
+      {
+        "label": "ethernet-1-33",
+        "desc": "",
+        "remoteNode": "leaf1",
+        "remotePort": "ethernet-1-33",
+        "type": "interSwitch",
+        "lag": "lag-leaf1-leaf2-isl-lag-1-remote"
+      },
+      {
+        "label": "ethernet-1-30",
+        "desc": "",
         "remoteNode": "",
         "remotePort": "",
-        "type": "loopback"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf2-srv01",
-        "remoteNode": "leaf2-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf2-srv02",
-        "remoteNode": "leaf2-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf2-srv03",
-        "remoteNode": "leaf2-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf2-srv04",
-        "remoteNode": "leaf2-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf2-srv05",
-        "remoteNode": "leaf2-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf2-srv06",
-        "remoteNode": "leaf2-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf2-srv07",
-        "remoteNode": "leaf2-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
+        "type": "edge",
+        "lag": "lag-leaf1-leaf2-mh-lag-server-d-local",
+        "peer": "server-d"
       },
       {
         "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf2-srv08",
-        "remoteNode": "leaf2-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf2-srv09",
-        "remoteNode": "leaf2-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf2-srv10",
-        "remoteNode": "leaf2-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf2-srv11",
-        "remoteNode": "leaf2-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf2-srv12",
-        "remoteNode": "leaf2-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf2-srv13",
-        "remoteNode": "leaf2-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf2-srv14",
-        "remoteNode": "leaf2-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf2-lag-a member",
-        "remoteNode": "leaf2-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf2-lag-a member",
-        "remoteNode": "leaf2-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf2-lag-b member",
-        "remoteNode": "leaf2-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf2-lag-b member",
-        "remoteNode": "leaf2-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-21",
-        "desc": "CLOS uplink to spine3",
-        "remoteNode": "spine3",
-        "remotePort": "ethernet-1-3",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-22",
-        "desc": "CLOS uplink to spine4",
-        "remoteNode": "spine4",
-        "remotePort": "ethernet-1-3",
-        "type": "interSwitch"
-      }
-    ],
-    "leaf3": [
-      {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
+        "desc": "",
         "remoteNode": "",
         "remotePort": "",
-        "type": "loopback"
+        "type": "edge",
+        "peer": "server-b"
       },
       {
         "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
+        "desc": "",
         "remoteNode": "spine1",
         "remotePort": "ethernet-1-3",
         "type": "interSwitch"
       },
       {
         "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-3",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf3-srv01",
-        "remoteNode": "leaf3-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf3-srv02",
-        "remoteNode": "leaf3-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf3-srv03",
-        "remoteNode": "leaf3-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf3-srv04",
-        "remoteNode": "leaf3-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf3-srv05",
-        "remoteNode": "leaf3-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf3-srv06",
-        "remoteNode": "leaf3-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf3-srv07",
-        "remoteNode": "leaf3-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf3-srv08",
-        "remoteNode": "leaf3-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf3-srv09",
-        "remoteNode": "leaf3-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf3-srv10",
-        "remoteNode": "leaf3-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf3-srv11",
-        "remoteNode": "leaf3-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf3-srv12",
-        "remoteNode": "leaf3-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf3-srv13",
-        "remoteNode": "leaf3-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf3-srv14",
-        "remoteNode": "leaf3-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf3-lag-a member",
-        "remoteNode": "leaf3-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf3-lag-a member",
-        "remoteNode": "leaf3-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf3-lag-b member",
-        "remoteNode": "leaf3-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf3-lag-b member",
-        "remoteNode": "leaf3-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      }
-    ],
-    "leaf4": [
-      {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "loopback"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
+        "desc": "",
         "remoteNode": "spine1",
         "remotePort": "ethernet-1-4",
         "type": "interSwitch"
       },
       {
-        "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-4",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf4-srv01",
-        "remoteNode": "leaf4-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf4-srv02",
-        "remoteNode": "leaf4-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf4-srv03",
-        "remoteNode": "leaf4-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf4-srv04",
-        "remoteNode": "leaf4-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf4-srv05",
-        "remoteNode": "leaf4-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf4-srv06",
-        "remoteNode": "leaf4-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf4-srv07",
-        "remoteNode": "leaf4-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf4-srv08",
-        "remoteNode": "leaf4-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf4-srv09",
-        "remoteNode": "leaf4-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf4-srv10",
-        "remoteNode": "leaf4-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf4-srv11",
-        "remoteNode": "leaf4-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf4-srv12",
-        "remoteNode": "leaf4-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf4-srv13",
-        "remoteNode": "leaf4-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf4-srv14",
-        "remoteNode": "leaf4-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf4-lag-a member",
-        "remoteNode": "leaf4-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf4-lag-a member",
-        "remoteNode": "leaf4-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf4-lag-b member",
-        "remoteNode": "leaf4-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf4-lag-b member",
-        "remoteNode": "leaf4-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      }
-    ],
-    "leaf5": [
-      {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
+        "label": "ethernet-1-31",
+        "desc": "",
         "remoteNode": "",
         "remotePort": "",
-        "type": "loopback"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-5",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-5",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf5-srv01",
-        "remoteNode": "leaf5-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf5-srv02",
-        "remoteNode": "leaf5-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf5-srv03",
-        "remoteNode": "leaf5-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf5-srv04",
-        "remoteNode": "leaf5-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf5-srv05",
-        "remoteNode": "leaf5-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf5-srv06",
-        "remoteNode": "leaf5-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf5-srv07",
-        "remoteNode": "leaf5-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf5-srv08",
-        "remoteNode": "leaf5-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf5-srv09",
-        "remoteNode": "leaf5-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf5-srv10",
-        "remoteNode": "leaf5-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf5-srv11",
-        "remoteNode": "leaf5-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf5-srv12",
-        "remoteNode": "leaf5-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf5-srv13",
-        "remoteNode": "leaf5-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf5-srv14",
-        "remoteNode": "leaf5-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf5-lag-a member",
-        "remoteNode": "leaf5-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf5-lag-a member",
-        "remoteNode": "leaf5-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf5-lag-b member",
-        "remoteNode": "leaf5-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf5-lag-b member",
-        "remoteNode": "leaf5-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
+        "type": "edge",
+        "lag": "lag-testman1-esi-lag-1-local",
+        "peer": "testman1-esi-lag-1"
       }
     ],
-    "leaf6": [
-      {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "loopback"
-      },
+    "spine1": [
       {
         "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-6",
+        "desc": "",
+        "remoteNode": "leaf1",
+        "remotePort": "ethernet-1-1",
         "type": "interSwitch"
       },
       {
         "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-6",
+        "desc": "",
+        "remoteNode": "leaf1",
+        "remotePort": "ethernet-1-2",
         "type": "interSwitch"
       },
       {
         "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf6-srv01",
-        "remoteNode": "leaf6-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf6-srv02",
-        "remoteNode": "leaf6-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf6-srv03",
-        "remoteNode": "leaf6-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf6-srv04",
-        "remoteNode": "leaf6-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf6-srv05",
-        "remoteNode": "leaf6-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf6-srv06",
-        "remoteNode": "leaf6-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf6-srv07",
-        "remoteNode": "leaf6-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf6-srv08",
-        "remoteNode": "leaf6-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf6-srv09",
-        "remoteNode": "leaf6-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf6-srv10",
-        "remoteNode": "leaf6-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf6-srv11",
-        "remoteNode": "leaf6-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf6-srv12",
-        "remoteNode": "leaf6-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf6-srv13",
-        "remoteNode": "leaf6-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf6-srv14",
-        "remoteNode": "leaf6-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf6-lag-a member",
-        "remoteNode": "leaf6-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf6-lag-a member",
-        "remoteNode": "leaf6-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf6-lag-b member",
-        "remoteNode": "leaf6-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf6-lag-b member",
-        "remoteNode": "leaf6-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      }
-    ],
-    "leaf7": [
-      {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "loopback"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-7",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-7",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf7-srv01",
-        "remoteNode": "leaf7-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf7-srv02",
-        "remoteNode": "leaf7-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf7-srv03",
-        "remoteNode": "leaf7-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf7-srv04",
-        "remoteNode": "leaf7-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf7-srv05",
-        "remoteNode": "leaf7-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf7-srv06",
-        "remoteNode": "leaf7-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf7-srv07",
-        "remoteNode": "leaf7-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf7-srv08",
-        "remoteNode": "leaf7-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf7-srv09",
-        "remoteNode": "leaf7-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf7-srv10",
-        "remoteNode": "leaf7-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf7-srv11",
-        "remoteNode": "leaf7-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf7-srv12",
-        "remoteNode": "leaf7-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf7-srv13",
-        "remoteNode": "leaf7-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf7-srv14",
-        "remoteNode": "leaf7-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf7-lag-a member",
-        "remoteNode": "leaf7-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf7-lag-a member",
-        "remoteNode": "leaf7-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf7-lag-b member",
-        "remoteNode": "leaf7-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf7-lag-b member",
-        "remoteNode": "leaf7-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      }
-    ],
-    "leaf8": [
-      {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "loopback"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-8",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-8",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "Edge access interface leaf8-srv01",
-        "remoteNode": "leaf8-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "Edge access interface leaf8-srv02",
-        "remoteNode": "leaf8-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf8-srv03",
-        "remoteNode": "leaf8-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf8-srv04",
-        "remoteNode": "leaf8-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf8-srv05",
-        "remoteNode": "leaf8-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf8-srv06",
-        "remoteNode": "leaf8-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf8-srv07",
-        "remoteNode": "leaf8-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf8-srv08",
-        "remoteNode": "leaf8-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf8-srv09",
-        "remoteNode": "leaf8-srv09",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf8-srv10",
-        "remoteNode": "leaf8-srv10",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge access interface leaf8-srv11",
-        "remoteNode": "leaf8-srv11",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge access interface leaf8-srv12",
-        "remoteNode": "leaf8-srv12",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-15",
-        "desc": "Edge access interface leaf8-srv13",
-        "remoteNode": "leaf8-srv13",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-16",
-        "desc": "Edge access interface leaf8-srv14",
-        "remoteNode": "leaf8-srv14",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-17",
-        "desc": "Edge LAG leaf8-lag-a member",
-        "remoteNode": "leaf8-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-18",
-        "desc": "Edge LAG leaf8-lag-a member",
-        "remoteNode": "leaf8-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-19",
-        "desc": "Edge LAG leaf8-lag-b member",
-        "remoteNode": "leaf8-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "Edge LAG leaf8-lag-b member",
-        "remoteNode": "leaf8-lag-b-peer",
-        "remotePort": "bond1",
-        "type": "edge"
-      }
-    ],
-    "leaf9": [
-      {
-        "label": "loopback-0",
-        "desc": "Loopback interface sample",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "loopback"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS uplink to spine1",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-9",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS uplink to spine2",
-        "remoteNode": "spine2",
-        "remotePort": "ethernet-1-9",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "CLOS uplink to spine3",
-        "remoteNode": "spine3",
+        "desc": "",
+        "remoteNode": "leaf2",
         "remotePort": "ethernet-1-1",
         "type": "interSwitch"
       },
       {
         "label": "ethernet-1-4",
-        "desc": "CLOS uplink to spine4",
-        "remoteNode": "spine4",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-5",
-        "desc": "Edge access interface leaf9-srv01",
-        "remoteNode": "leaf9-srv01",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-6",
-        "desc": "Edge access interface leaf9-srv02",
-        "remoteNode": "leaf9-srv02",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-7",
-        "desc": "Edge access interface leaf9-srv03",
-        "remoteNode": "leaf9-srv03",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-8",
-        "desc": "Edge access interface leaf9-srv04",
-        "remoteNode": "leaf9-srv04",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-9",
-        "desc": "Edge access interface leaf9-srv05",
-        "remoteNode": "leaf9-srv05",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "Edge access interface leaf9-srv06",
-        "remoteNode": "leaf9-srv06",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-11",
-        "desc": "Edge access interface leaf9-srv07",
-        "remoteNode": "leaf9-srv07",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-12",
-        "desc": "Edge access interface leaf9-srv08",
-        "remoteNode": "leaf9-srv08",
-        "remotePort": "eth0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-13",
-        "desc": "Edge LAG leaf9-lag-a member",
-        "remoteNode": "leaf9-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      },
-      {
-        "label": "ethernet-1-14",
-        "desc": "Edge LAG leaf9-lag-a member",
-        "remoteNode": "leaf9-lag-a-peer",
-        "remotePort": "bond0",
-        "type": "edge"
-      }
-    ],
-    "spine3": [
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS downlink to leaf9",
-        "remoteNode": "leaf9",
-        "remotePort": "ethernet-1-3",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS downlink to leaf1",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-21",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "CLOS downlink to leaf2",
+        "desc": "",
         "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-21",
-        "type": "interSwitch"
-      }
-    ],
-    "spine4": [
-      {
-        "label": "ethernet-1-1",
-        "desc": "CLOS downlink to leaf9",
-        "remoteNode": "leaf9",
-        "remotePort": "ethernet-1-4",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "CLOS downlink to leaf1",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-22",
-        "type": "interSwitch"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "CLOS downlink to leaf2",
-        "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-22",
+        "remotePort": "ethernet-1-2",
         "type": "interSwitch"
       }
     ]
   },
   "occupied": {
+    "leaf1": [
+      10,
+      32,
+      33,
+      30,
+      20,
+      21,
+      1,
+      2,
+      31
+    ],
+    "leaf2": [
+      32,
+      33,
+      30,
+      10,
+      1,
+      2,
+      31
+    ],
     "spine1": [
       1,
       2,
       3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9
-    ],
-    "spine2": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9
-    ],
-    "leaf1": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20,
-      21,
-      22
-    ],
-    "leaf2": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20,
-      21,
-      22
-    ],
-    "leaf3": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20
-    ],
-    "leaf4": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20
-    ],
-    "leaf5": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20
-    ],
-    "leaf6": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20
-    ],
-    "leaf7": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20
-    ],
-    "leaf8": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20
-    ],
-    "leaf9": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14
-    ],
-    "spine3": [
-      1,
-      2,
-      3
-    ],
-    "spine4": [
-      1,
-      2,
-      3
+      4
     ]
+  },
+  "lags": {
+    "lag-leaf1-leaf2-isl-lag-1-local": {
+      "name": "lag-leaf1-leaf2-isl-lag-1-local",
+      "lacp": true,
+      "isl": true,
+      "multihomed": false,
+      "mode": "AllActive",
+      "members": [
+        {
+          "node": "leaf1",
+          "port": "ethernet-1-32"
+        },
+        {
+          "node": "leaf1",
+          "port": "ethernet-1-33"
+        }
+      ],
+      "nodes": [
+        "leaf1"
+      ]
+    },
+    "lag-leaf1-leaf2-isl-lag-1-remote": {
+      "name": "lag-leaf1-leaf2-isl-lag-1-remote",
+      "lacp": true,
+      "isl": true,
+      "multihomed": false,
+      "mode": "AllActive",
+      "members": [
+        {
+          "node": "leaf2",
+          "port": "ethernet-1-32"
+        },
+        {
+          "node": "leaf2",
+          "port": "ethernet-1-33"
+        }
+      ],
+      "nodes": [
+        "leaf2"
+      ]
+    },
+    "lag-leaf1-leaf2-mh-lag-server-d-local": {
+      "name": "lag-leaf1-leaf2-mh-lag-server-d-local",
+      "lacp": true,
+      "isl": false,
+      "multihomed": true,
+      "mode": "AllActive",
+      "members": [
+        {
+          "node": "leaf1",
+          "port": "ethernet-1-30"
+        },
+        {
+          "node": "leaf2",
+          "port": "ethernet-1-30"
+        }
+      ],
+      "nodes": [
+        "leaf1",
+        "leaf2"
+      ]
+    },
+    "lag-leaf1-local-lag-server-c-local": {
+      "name": "lag-leaf1-local-lag-server-c-local",
+      "lacp": true,
+      "isl": false,
+      "multihomed": false,
+      "mode": "AllActive",
+      "members": [
+        {
+          "node": "leaf1",
+          "port": "ethernet-1-20"
+        },
+        {
+          "node": "leaf1",
+          "port": "ethernet-1-21"
+        }
+      ],
+      "nodes": [
+        "leaf1"
+      ]
+    },
+    "lag-testman1-esi-lag-1-local": {
+      "name": "lag-testman1-esi-lag-1-local",
+      "lacp": true,
+      "isl": false,
+      "multihomed": true,
+      "mode": "AllActive",
+      "members": [
+        {
+          "node": "leaf1",
+          "port": "ethernet-1-31"
+        },
+        {
+          "node": "leaf2",
+          "port": "ethernet-1-31"
+        }
+      ],
+      "nodes": [
+        "leaf1",
+        "leaf2"
+      ]
+    }
   }
 }

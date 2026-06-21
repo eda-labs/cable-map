@@ -3,7 +3,7 @@ import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSmoothStepPath, type Edg
 import { CABLE_COLOR, type CableKind } from './graph';
 import { useTrace, modeFor, type Mode } from './trace';
 
-type Data = { kind: CableKind; a: string; b: string };
+type Data = { kind: CableKind; a: string; b: string; count?: number };
 
 // One physical cable. Routed handle-to-handle (port cell -> port cell / endpoint).
 // Idle: a thin coloured thread. Traced: thick + glowing with both end labels shown
@@ -23,6 +23,7 @@ function CableEdge(props: EdgeProps) {
     : getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 6 });
 
   const on = mode === 'on', dim = mode === 'dim';
+  const count = d.count ?? 1;   // ISL port-channel: parallel members drawn as one ×N cable
   const lerp = (t: number) => ({ x: sourceX + (targetX - sourceX) * t, y: sourceY + (targetY - sourceY) * t });
 
   return (
@@ -30,11 +31,21 @@ function CableEdge(props: EdgeProps) {
       <BaseEdge id={id} path={path} interactionWidth={14}
         style={{
           stroke: color,
-          strokeWidth: on ? 2.6 : 1.1,
+          strokeWidth: (on ? 2.6 : 1.1) + (count > 1 ? 1 : 0),
           opacity: dim ? 0.12 : on ? 1 : 0.62,
           filter: on ? `drop-shadow(0 0 3px ${color})` : 'none',
           transition: 'stroke-width 120ms, opacity 120ms',
         }} />
+      {count > 1 && (
+        <EdgeLabelRenderer>
+          <div style={{
+            position: 'absolute', transform: `translate(-50%, -50%) translate(${lerp(0.5).x}px, ${lerp(0.5).y}px)`,
+            fontSize: 9, fontWeight: 800, lineHeight: 1.4, padding: '0 5px', borderRadius: 8,
+            background: color, color: '#000', border: '1px solid rgba(0,0,0,0.35)',
+            opacity: dim ? 0.2 : 1, pointerEvents: 'none', zIndex: 9,
+          }}>×{count}</div>
+        </EdgeLabelRenderer>
+      )}
       {on && showLabel && (
         <EdgeLabelRenderer>
           <CableLabel x={lerp(0.18).x} y={lerp(0.18).y} text={d.a} color={color} />
