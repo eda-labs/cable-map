@@ -27,7 +27,7 @@ export default function NodeView({ node, rows, occupied, showHeader = true, inte
       ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [hovered]);
 
-  const sorted = rows.slice().sort((a, b) => (portIdx(a.label) ?? 0) - (portIdx(b.label) ?? 0));
+  const sorted = rows.toSorted((a, b) => (portIdx(a.label) ?? 0) - (portIdx(b.label) ?? 0));
   // print leaves empty cells blank (room to write); the drawer shows a dash
   const blank = interactive ? <Box component="span" color="text.disabled">—</Box> : null;
 
@@ -58,11 +58,11 @@ export default function NodeView({ node, rows, occupied, showHeader = true, inte
           </TableRow>
         </TableHead>
         <TableBody>
-          {sorted.map((r, i) => {
+          {sorted.map((r) => {
             const port = portIdx(r.label);
             const isHot = interactive && hovered != null && port === hovered;
             return (
-              <TableRow key={i} hover selected={isHot} data-port={port ?? undefined}
+              <TableRow key={r.label} hover selected={isHot} data-port={port ?? undefined}
                 sx={{ scrollMarginTop: '40px' }}  /* clear the sticky header on scroll-into-view */
                 onMouseEnter={() => interactive && port && setHovered(port)}
                 onMouseLeave={() => interactive && setHovered(null)}>

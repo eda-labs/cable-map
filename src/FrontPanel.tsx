@@ -47,6 +47,7 @@ export default function FrontPanel({ platform, occupied, hovered = null, onHover
     if (!loaded || !ref.current || !indices) return;
     const paths = ref.current.querySelectorAll('svg path');
     const occ = new Set(occupied);
+    const cleanups: Array<() => void> = [];
     indices.forEach((pathIndex, i) => {
       const el = paths[pathIndex] as SVGPathElement | undefined;
       if (!el) return;
@@ -60,9 +61,20 @@ export default function FrontPanel({ platform, occupied, hovered = null, onHover
       el.style.vectorEffect = 'non-scaling-stroke';
       el.style.stroke = isOcc ? 'rgba(0,0,0,0.5)' : '';
       el.style.strokeWidth = isOcc ? '0.75px' : '';
-      el.onmouseenter = isOcc ? () => onHover?.(port) : null;
-      el.onmouseleave = isOcc ? () => onHover?.(null) : null;
+      if (isOcc) {
+        const onEnter = () => onHover?.(port);
+        const onLeave = () => onHover?.(null);
+        el.addEventListener('mouseenter', onEnter);
+        el.addEventListener('mouseleave', onLeave);
+        cleanups.push(() => {
+          el.removeEventListener('mouseenter', onEnter);
+          el.removeEventListener('mouseleave', onLeave);
+        });
+      }
     });
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
   }, [loaded, indices, occupied, hovered, onHover]);
 
   if (indices) return <div className="fp" ref={ref} style={{ width, lineHeight: 0 }} />;

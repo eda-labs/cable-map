@@ -1,14 +1,19 @@
-import express, { type Request, type Response } from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import type { Browser } from 'puppeteer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { getTopology } from './eda.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DIST = join(__dirname, '..', 'dist');
+const serverDir = dirname(fileURLToPath(import.meta.url));
+const DIST = join(serverDir, '..', 'dist');
 const PORT = Number(process.env.PORT || 8080);
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const asyncHandler =
+  (handler: (req: Request, res: Response) => Promise<void>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    void handler(req, res).catch(next);
+  };
 
 const app = express();
 
@@ -18,17 +23,17 @@ app.get('/healthz', (_req: Request, res: Response) => {
 
 // Always the real EDA API — no demo/fallback data. On failure the UI shows a
 // placeholder ("Didn't fetch anything from EDA").
-app.get('/api/topology', async (_req: Request, res: Response) => {
+app.get('/api/topology', asyncHandler(async (_req: Request, res: Response) => {
   try {
     res.json(await getTopology());
   } catch (e) {
     res.status(502).json({ error: errMsg(e) });
   }
-});
+}));
 
 // Render the front-panel + cable-table print page(s) to a single PDF.
 // ?nodes=leaf1,spine1  (omit -> all nodes). Multi-node = multi-page.
-app.get('/pdf', async (req: Request, res: Response) => {
+app.get('/pdf', asyncHandler(async (req: Request, res: Response) => {
   let browser: Browser | undefined;
   try {
     const { default: puppeteer } = await import('puppeteer');
@@ -49,7 +54,7 @@ app.get('/pdf', async (req: Request, res: Response) => {
   } finally {
     if (browser) await browser.close();
   }
-});
+}));
 
 // SPA: serve built app; /print and / both fall through to index.html (client routes).
 app.use(express.static(DIST));

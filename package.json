@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "build:server": "tsc -b tsconfig.server.json",
     "start": "node dist-server/server.js",
-    "lint": "oxlint . --react-plugin --ignore-pattern dist --ignore-pattern dist-server",
+    "lint": "oxlint .",
     "preview": "vite preview"
   },
   "dependencies": {
