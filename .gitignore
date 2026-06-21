@@ -1,6 +1,15 @@
 node_modules/
 dist/
 dist-server/
+coverage/
+playwright-report/
+test-results/
+.vite/
+.venv/
+.env
+.envrc
+.vscode/
+private/
 *.log
 *.zip
 .DS_Store

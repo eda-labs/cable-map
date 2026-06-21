@@ -1,0 +1,38 @@
+apiVersion: core.eda.nokia.com/v1
+kind: Manifest
+metadata:
+  name: cable-map
+spec:
+  appInfo:
+    categories:
+    - networking
+    documentation: cable_map/docs
+    license: cable_map/docs/LICENSE.md
+    readme: cable_map/docs/README.md
+  author: eda-labs
+  dependencies:
+  - container:
+      image: ghcr.io/eda-labs/cable-map-runtime:v0.1.0
+      name: cable-map
+  description: Cable-map topology and front-panel view for EDA fabrics.
+  group: cable-map.eda.labs
+  image: ghcr.io/eda-labs/cable-map:v0.1.0
+  supportedCoreVersions:
+  - v5.0.0-0
+  title: Cable Map
+  version: v1alpha1
+  components:
+  - cr:
+      path: cable_map/resources/service-account.yaml
+  - cr:
+      path: cable_map/resources/service.yaml
+  - cr:
+      path: cable_map/resources/deployment.yaml
+  - cr:
+      path: cable_map/resources/httpproxy.yaml
+  - view:
+      path: cable_map/ui/cable-map-dashboard.json
+      ui:
+        category: Topology
+        icon: Topology
+        name: Cable Map
