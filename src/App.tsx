@@ -6,6 +6,7 @@ import {
   CircularProgress, Chip, Divider, InputBase,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -20,6 +21,7 @@ import EndpointNode from './EndpointNode';
 import CableEdge from './CableEdge';
 import NodeView from './NodeView';
 import NamespacePicker from './NamespacePicker';
+import { exportXlsx } from './xlsx';
 import './app.css';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
@@ -133,6 +135,16 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
                 onClick={() => pdf(selected.length ? `?nodes=${selected.join(',')}` : '')}>
                 <Badge badgeContent={selected.length} color="primary">
                   <PictureAsPdfIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+          )}
+          {ready && topo && (
+            <Tooltip title={selected.length ? `Download XLSX (${selected.length} selected)` : 'Download XLSX (all nodes)'}>
+              <IconButton size="small" sx={{ color: 'text.primary' }}
+                onClick={() => { void exportXlsx(topo, selected.length ? selected : topo.nodes.map((n) => n.id)).catch(console.error); }}>
+                <Badge badgeContent={selected.length} color="primary">
+                  <TableChartIcon />
                 </Badge>
               </IconButton>
             </Tooltip>
