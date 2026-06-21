@@ -8,7 +8,7 @@
 | **Catalog**          | [eda-labs/catalog/cable-map][manifest]      |
 | **Source Code**      | [eda-labs/cable-map][source]                |
 
-[manifest]: https://github.com/FloSch62/catalog/tree/main/vendors/eda-labs/apps/cable-map
+[manifest]: https://github.com/eda-labs/catalog/tree/main/apps/cable-map.eda.labs
 [source]: https://github.com/eda-labs/cable-map
 
 Cable Map renders the live EDA physical topology as a cable map. Select a node

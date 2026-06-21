@@ -40,8 +40,8 @@ Build and publish the runtime image first, because the EDA app manifest
 references it as a dependency:
 
 ```sh
-docker build -t ghcr.io/flosch62/cable-map-runtime:v0.1.0 .
-docker push ghcr.io/flosch62/cable-map-runtime:v0.1.0
+docker build -t ghcr.io/eda-labs/cable-map-runtime:v0.1.0 .
+docker push ghcr.io/eda-labs/cable-map-runtime:v0.1.0
 ```
 
 ## EDA App Package
@@ -50,10 +50,10 @@ From `eda-app/`, publish the EDA app artifact into the catalog with
 `edabuilder`:
 
 ```sh
-edabuilder release https://github.com/FloSch62/catalog.git \
+edabuilder release https://github.com/<github-user>/catalog.git \
   --git-branch main \
   --clone-location /tmp/cable-map-release \
-  --app manifest=cable_map/manifest.yaml,context=.,version=v0.1.0,image=ghcr.io/flosch62/cable-map:v0.1.0
+  --app manifest=cable_map/manifest.yaml,context=.,version=v0.1.0,image=ghcr.io/eda-labs/cable-map:v0.1.0
 ```
 
 The app installs:
