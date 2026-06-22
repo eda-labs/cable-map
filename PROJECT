@@ -1,4 +1,5 @@
 builderVersion: v26.4.2
+catalog: https://github.com/eda-labs/catalog
 domain: eda.labs
 name: cable-map
 registry: ghcr.io/eda-labs

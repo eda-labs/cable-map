@@ -42,7 +42,7 @@ const makeTheme = (mode: Mode) => {
   });
 };
 
-const THEME_KEY = 'cablemap-theme';
+const THEME_KEY = 'cable-map-theme';
 const initialMode = (): Mode => {
   const saved = localStorage.getItem(THEME_KEY);
   if (saved === 'light' || saved === 'dark') return saved;

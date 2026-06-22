@@ -1,9 +1,0 @@
-node_modules
-dist
-dist-server
-eda-app
-.git
-.gitignore
-playwright-report
-test-results
-npm-debug.log*
