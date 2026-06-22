@@ -36,23 +36,34 @@ single OCI app image).
 
 ```sh
 pnpm install
-pnpm dev        # Vite dev server; /api/topology is mocked from fake-topology.json
+make dev        # Vite dev server; /api/topology is mocked from fake-topology.json
 ```
 
 The Go backend only returns live data inside the cluster (it needs the EDA internal
 certs). Use `pnpm dev` for UI work; deploy to a cluster to see real topology.
 
+## Common commands
+
+```sh
+make help           # show project-level and generated EDA targets
+make build          # vite build -> embed SPA -> build Go operator binary
+make binary         # alias for the embedded Go operator binary build
+make image          # build the local runtime image
+make deploy-local   # build, push to the in-cluster dev registry, and edabuilder deploy
+make check          # lint, Go tests, and full embedded binary build
+```
+
 ## Build the runtime image
 
 ```sh
-./scripts/build-image.sh           # vite build -> embed -> go build -> docker build
-IMAGE=myrepo/cable-map:dev ./scripts/build-image.sh
+make image                         # vite build -> embed -> go build -> docker build
+make image IMAGE=myrepo/cable-map:dev
 ```
 
 ## Local EDA dev deploy
 
 ```sh
-pnpm deploy:eda:local              # -> scripts/deploy-local.sh
+make deploy-local
 ```
 
 This builds the operator image with the SPA embedded, pushes it to the in-cluster
@@ -72,5 +83,5 @@ browser entrypoint, relative to the EDA host, is:
 ## Tests
 
 ```sh
-go -C cable_map test ./...          # topology port + JSON-contract round-trip vs fake-topology.json
+make test                           # topology port + JSON-contract round-trip vs fake-topology.json
 ```

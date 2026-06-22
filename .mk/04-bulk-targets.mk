@@ -73,6 +73,7 @@ $(if $(strip $(2)),$(call print-section-header,$(1))$(foreach t,$(sort $(2)),$(c
 endef
 
 help:
+	@$(if $(strip $(PROJECT_TARGETS)),$(info Project targets:)$(foreach t,$(PROJECT_TARGETS),$(call print-target-line,$(t),$(value HELP_$(t))))$(info ),)
 	@$(info Aggregate targets:)
 	@$(foreach t,$(sort all build-operators build-workflows package-operators package-workflows publish-apps mod-tidy test generate help),$(call print-target-line,$(t),$(value HELP_$(t))))
 	@$(foreach app,$(APPS),$(info )$(info $(shell printf "\033[32m%s\033[0m" "$(app)"))$(call print-target-list,app,$(filter $(app)-%,$(LIST_PUBLISH_APPS) $(LIST_MOD_TIDY) $(LIST_TESTS) $(LIST_GENERATE)))$(call print-target-list,operators,$(filter $(app)-%,$(LIST_BUILD_OPERATORS) $(LIST_PACKAGE_OPERATORS)))$(call print-target-list,workflows,$(filter $(app)-%,$(LIST_BUILD_WORKFLOWS) $(LIST_PACKAGE_WORKFLOWS))))
