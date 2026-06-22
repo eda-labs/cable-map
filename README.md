@@ -1,105 +1,87 @@
 # Cable Map
 
-Cable Map is a standalone React/Express application packaged as an EDA app.
-The runtime keeps the original cable-map experience: topology canvas, tables,
-front-panel view, and export/API endpoints. EDA installs the runtime as an
-in-cluster service and exposes it through the EDA HTTP proxy.
+Cable Map is an **EDA operator app**. A single Go binary (built with the EDA EDK)
+streams `toponode`/`topolink`/`interface` state from the EDA **State Aggregator** over
+gRPC/mTLS and serves the React + React-Flow UI — topology canvas, front-panel view,
+cable tables, xlsx and PDF export. EDA installs it as an in-cluster service and exposes
+it through the EDA HTTP proxy.
 
-## Repository Layout
+It is read-only: there is no CRD and no reconciler — the operator scaffold is used purely
+to package the app the EDA-native way (EDK wiring, build tooling, container baked into the
+single OCI app image).
 
-- `src/`, `server.ts`, `eda.ts`: Cable Map web UI and server.
-- `Dockerfile`: Runtime image for the in-cluster service.
-- `eda-app/PROJECT`: EDA Builder project metadata.
-- `eda-app/cable_map/manifest.yaml`: EDA app manifest.
-- `eda-app/cable_map/resources/`: Kubernetes resources installed by EDA.
-- `eda-app/cable_map/ui/`: Native EDA launcher view.
-- `eda-app/cable_map/docs/`: App catalog documentation.
+## Repository layout
 
-This repository intentionally does not keep the generated EDA CRD/script
-scaffold. The app does not define EDA APIs or custom script handlers; it only
-installs Kubernetes resources and a launcher view.
+- `src/`, `index.html`, `vite.config.ts` — the React SPA (unchanged frontend).
+- `cable_map/` — the `edabuilder` project app:
+  - `operators/cable-map/cmd/main.go` — operator entrypoint (EDK + HTTP server).
+  - `operators/cable-map/internal/topology` — pure topology derivation (+ tests).
+  - `operators/cable-map/internal/eda` — EDK state streams (`pkg/cr` + `pkg/state`).
+  - `operators/cable-map/internal/server` — JSON/SSE API, embedded SPA (`go:embed`), PDF.
+  - `operators/cable-map/Dockerfile` — runtime image (binary + Chromium for PDF).
+  - `operators/cable-map/config/` — Deployment (with EDA internal-cert mounts), Service, HttpProxy.
+  - `ui/cable-map-dashboard.json` — EDA launcher view.
+  - `manifest.yaml` — app manifest; bakes the runtime container as a `dependencies.container`.
+- `scripts/build-image.sh` — build the runtime image (SPA embedded) locally.
+- `scripts/deploy-local.sh` — local dev deploy to the in-cluster EDA dev target.
 
-## Local Development
+## Prerequisites
+
+- Go ≥ 1.26.4 (the workspace pins this; `go.work` / `go.mod` use it).
+- The EDK is wired from a local checkout via `replace eda.dev/edk => ../../edk` in
+  `cable_map/go.mod` (the canonical Nokia submodule isn't reachable here).
+- `pnpm`, `docker`, `kubectl`, `edabuilder`.
+
+## Local development (frontend)
 
 ```sh
 pnpm install
-pnpm dev
+make dev        # Vite dev server; /api/topology is mocked from fake-topology.json
 ```
 
-For a production build:
+The Go backend only returns live data inside the cluster (it needs the EDA internal
+certs). Use `pnpm dev` for UI work; deploy to a cluster to see real topology.
+
+## Common commands
 
 ```sh
-pnpm build
-pnpm build:server
-pnpm start
+make help           # show project-level and generated EDA targets
+make build          # vite build -> embed SPA -> build Go operator binary
+make binary         # alias for the embedded Go operator binary build
+make image          # build the local runtime image
+make deploy-local   # build, push to the in-cluster dev registry, and edabuilder deploy
+make check          # lint, Go tests, and full embedded binary build
 ```
 
-## Runtime Image
-
-Build and publish the runtime image first, because the EDA app manifest
-references it as a dependency:
+## Build the runtime image
 
 ```sh
-docker build -t ghcr.io/eda-labs/cable-map-runtime:v0.1.0 .
-docker push ghcr.io/eda-labs/cable-map-runtime:v0.1.0
+make image                         # vite build -> embed -> go build -> docker build
+make image IMAGE=myrepo/cable-map:dev
 ```
 
-## EDA Dev Deploy
-
-For local EDA development, use the pnpm helper. It keeps
-`eda-app/cable_map/manifest.yaml` pointed at GHCR, but deploys from a temporary
-manifest when you want to override the runtime image from your local build.
+## Local EDA dev deploy
 
 ```sh
-pnpm deploy:eda:local
+make deploy-local
 ```
 
-That command rebuilds `ghcr.io/eda-labs/cable-map-runtime:v0.1.0`, pushes the
-same tag into the in-cluster EDA dev registry, and deploys it. Reusing the same
-tag is intentional; the helper overwrites the registry tag before calling
-`edabuilder`.
+This builds the operator image with the SPA embedded, pushes it to the in-cluster
+`edabuilder` dev registry, and runs `edabuilder deploy` from a temp manifest pointing at
+that image. Nothing is pushed to GitHub/ghcr. The committed `manifest.yaml` keeps the
+`ghcr.io/eda-labs/...` reference for publishing.
 
-To redeploy the image that is already built locally:
-
-```sh
-pnpm deploy:eda:local -- --no-build
-```
-
-To publish the runtime image to GHCR first and deploy from GHCR:
-
-```sh
-pnpm deploy:eda:ghcr
-```
-
-Override the tag or image repository when needed:
-
-```sh
-pnpm deploy:eda:local -- --tag v0.1.1
-RUNTIME_IMAGE=ghcr.io/flosch62/cable-map-runtime pnpm deploy:eda:ghcr
-```
-
-## EDA App Package
-
-From `eda-app/`, publish the EDA app artifact into the catalog with
-`edabuilder`:
-
-```sh
-edabuilder release https://github.com/<github-user>/catalog.git \
-  --git-branch main \
-  --clone-location /tmp/cable-map-release \
-  --app manifest=cable_map/manifest.yaml,context=.,version=v0.1.0,image=ghcr.io/eda-labs/cable-map:v0.1.0
-```
-
-The app installs:
-
-- a service account
-- a deployment running the runtime image
-- a ClusterIP service on port 8080
-- an EDA `HttpProxy` named `cable-map` with `authType: atDestination`
-- an EDA launcher card under `Topology > Cable Map`
-
-The browser entrypoint is relative to the EDA host:
+The app installs a ServiceAccount, a Deployment (runtime image + cert-manager CSI +
+`eda-internal-trust-bundle` mounts), a ClusterIP Service on 8080, an `HttpProxy`
+(`authType: atDestination`), and a launcher card under **Topology → Cable Map**. The
+browser entrypoint, relative to the EDA host, is:
 
 ```text
 /core/httpproxy/v1/cable-map/
+```
+
+## Tests
+
+```sh
+make test                           # topology port + JSON-contract round-trip vs fake-topology.json
 ```

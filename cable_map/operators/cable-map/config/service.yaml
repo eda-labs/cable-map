@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    eda.labs/app: cable-map
+    eda.labs/app-group: app-cable-map
+  name: cable-map
+  namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
+spec:
+  selector:
+    eda.labs/app: cable-map
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

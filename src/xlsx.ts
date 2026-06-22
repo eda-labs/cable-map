@@ -37,5 +37,5 @@ export async function exportXlsx(topo: Topology, nodeIds: string[]): Promise<voi
     sheet: 'Cable Map',
     columns: WIDTHS.map((width) => ({ width })),
   });
-  await file.toFile(`cablemap${tag}.xlsx`);
+  await file.toFile(`cable-map${tag}.xlsx`);
 }

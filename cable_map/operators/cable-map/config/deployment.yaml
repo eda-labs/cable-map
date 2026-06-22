@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    eda.labs/app: app-cable-map
+    eda.labs/app-group: app-cable-map
+  name: cable-map
+  namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    eda.labs/app: cable-map
+    eda.labs/app-group: app-cable-map
+  name: cable-map
+  namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      eda.labs/app: cable-map
+      eda.labs/app-group: app-cable-map
+  template:
+    metadata:
+      labels:
+        eda.labs/app: cable-map
+        eda.labs/app-group: app-cable-map
+      name: cable-map
+      namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
+    spec:
+      serviceAccountName: cable-map
+      containers:
+        - name: cable-map
+          image: cable-map
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PORT
+              value: "8080"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          # EDK reads EDA state over gRPC/mTLS from the State Aggregator; these are the
+          # internal certs (client cert from cert-manager + trust bundle), mounted exactly
+          # as EDA core operators (e.g. eda-cx) receive them.
+          volumeMounts:
+            - name: tls
+              mountPath: /var/run/eda/tls/internal/client
+            - name: trustbundle
+              mountPath: /var/run/eda/tls/internal/trust
+      volumes:
+        - name: tls
+          csi:
+            driver: csi.cert-manager.io
+            readOnly: true
+            volumeAttributes:
+              csi.cert-manager.io/dns-names: cable-map.${POD_NAMESPACE}.svc,cable-map.${POD_NAMESPACE}.svc.cluster.local,cable-map,internal.eda.nokia.com
+              csi.cert-manager.io/duration: 720h0m0s
+              csi.cert-manager.io/issuer-name: eda-internal-issuer
+              csi.cert-manager.io/key-algorithm: ECDSA
+              csi.cert-manager.io/renew-before: 240h0m0s
+        - name: trustbundle
+          configMap:
+            defaultMode: 420
+            name: eda-internal-trust-bundle
+            optional: false

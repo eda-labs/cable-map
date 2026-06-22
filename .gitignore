@@ -1,6 +1,5 @@
 node_modules/
 dist/
-dist-server/
 coverage/
 playwright-report/
 test-results/
@@ -14,3 +13,8 @@ private/
 *.zip
 .DS_Store
 *.tsbuildinfo
+
+# EDA operator scaffold (Go build output, python venv, generated)
+build/
+*/build/
+.mk/*.tmp

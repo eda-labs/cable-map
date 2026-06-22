@@ -7,24 +7,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:server": "tsc -b tsconfig.server.json",
-    "start": "node dist-server/server.js",
     "lint": "oxlint .",
     "preview": "vite preview",
-    "deploy:eda": "node scripts/deploy-eda.mjs",
-    "deploy:eda:local": "node scripts/deploy-eda.mjs --source local",
-    "deploy:eda:ghcr": "node scripts/deploy-eda.mjs --source ghcr"
-  },
-  "dependencies": {
-    "express": "^4.22.2",
-    "puppeteer": "^24.43.1"
+    "deploy:eda:local": "bash scripts/deploy-local.sh"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.1.1",
     "@mui/material": "^9.1.1",
-    "@types/express": "^4.17.23",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
