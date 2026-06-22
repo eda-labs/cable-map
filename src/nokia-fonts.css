@@ -1,35 +1,32 @@
-/* Nokia Pure — imported from the same CDN as nokia-eda/docs
-   (docs/stylesheets/nokia-fonts.css). The full weight ramp is loaded so normal body
-   text renders in Regular (crisp) rather than the thin Light face, and 500 resolves to
-   a real Medium cut instead of being faked from Light. */
+/* Nokia pure font family */
 @font-face {
   font-family: 'NokiaPureText';
-  src: url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Lt.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Lt.woff') format('woff');
+  src: url('./fonts/NokiaPureText_Lt.woff2') format('woff2'),
+       url('./fonts/NokiaPureText_Lt.woff') format('woff');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NokiaPureText';
-  src: url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Rg.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Rg.woff') format('woff');
+  src: url('./fonts/NokiaPureText_Rg.woff2') format('woff2'),
+       url('./fonts/NokiaPureText_Rg.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NokiaPureText';
-  src: url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Md.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Md.woff') format('woff');
+  src: url('./fonts/NokiaPureText_Md.woff2') format('woff2'),
+       url('./fonts/NokiaPureText_Md.woff') format('woff');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NokiaPureText';
-  src: url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Bd.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/gh/hellt/fonts@v0.1.0/nokia/NokiaPureText_Bd.woff') format('woff');
+  src: url('./fonts/NokiaPureText_Bd.woff2') format('woff2'),
+       url('./fonts/NokiaPureText_Bd.woff') format('woff');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
