@@ -105,6 +105,8 @@
   --cell-free-line: #2c3645;
   --label-bg: var(--eda-blue-900);
   --edge-idle: 0.62;
+  --app-scrollbar-thumb: #FFFFFF7F;
+  --app-scrollbar-thumb-hover: #FFFFFF99;
   color-scheme: dark;
 }
 
@@ -120,8 +122,22 @@
   --cell-free-line: #C0C8D4;
   --label-bg: var(--eda-blue-100);
   --edge-idle: 0.95;
+  --app-scrollbar-thumb: #00000052;
+  --app-scrollbar-thumb-hover: #00000073;
   color-scheme: light;
 }
+
+/* EDA scrollbar: thin, transparent track, translucent rounded thumb (white in dark / dark in light) */
+* { scrollbar-width: thin; scrollbar-color: var(--app-scrollbar-thumb) transparent; }
+*::-webkit-scrollbar { width: 11px; height: 11px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--app-scrollbar-thumb-hover); background-clip: padding-box; }
 
 * {
   box-sizing: border-box;
@@ -132,6 +148,12 @@ body,
 #root {
   height: 100%;
   margin: 0;
+}
+
+/* fluid base font size: MUI's rem-based text scales a little with the viewport (bigger than the
+   16px default). Scoped to screen so the print/PDF layout keeps a fixed size. */
+@media screen {
+  html { font-size: clamp(16px, 0.9vw + 8px, 18px); }
 }
 
 body {

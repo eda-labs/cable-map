@@ -3,7 +3,7 @@ import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Pane
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
-  CircularProgress, Chip, Divider, InputBase,
+  CircularProgress, Chip, Divider, InputBase, Tabs, Tab,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableChartIcon from '@mui/icons-material/TableChart';
@@ -14,6 +14,8 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SensorsIcon from '@mui/icons-material/Sensors';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernet';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
 import { buildGraph, CABLE_COLOR, LLDP_COLOR } from './graph';
 import { trace, setAdjacency, useTrace } from './trace';
@@ -22,6 +24,7 @@ import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
 import CableEdge from './CableEdge';
 import NodeView from './NodeView';
+import NodeDetails from './NodeDetails';
 import NamespacePicker from './NamespacePicker';
 import { exportXlsx } from './xlsx';
 import { edgeRemote } from './edge-remote';
@@ -48,6 +51,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [namespace, setNamespace] = useState('');     // '' == All Namespaces
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [hideEdges, setHideEdges] = useState(false);
+  const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
+  useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
 
   // drag the top edge of the drawer to resize its height
@@ -246,6 +251,9 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
 
       <Drawer anchor="bottom" open={!!openNode} onClose={() => setOpen(null)}
         slotProps={{ paper: { sx: { height: drawerH, borderTopLeftRadius: 12, borderTopRightRadius: 12,
+          // EDA form-panel surface (formBody) so the drawer + Monaco editor blend like EDA;
+          // backgroundImage:none kills MUI's dark elevation overlay that lightens the paper
+          bgcolor: mode === 'dark' ? '#1A222E' : '#FFFFFF', backgroundImage: 'none',
           display: 'flex', flexDirection: 'column' } } }}>
         {openNode && (
           <>
@@ -267,10 +275,25 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               <IconButton onClick={() => setOpen(null)} size="small"><CloseIcon /></IconButton>
             </Box>
             <Divider />
-            <Box sx={{ flex: 1, minHeight: 0, px: 3, py: 2, display: 'flex', flexDirection: 'column' }}>
-              <NodeView node={openNode} rows={topo?.tables[openNode.id] || []}
-                occupied={topo?.occupied[openNode.id] || []} showHeader={false} onOpenNode={setOpen} fillHeight
-                panelMaxHeight={Math.round(drawerH * 0.4)} />
+            <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
+              <Tabs orientation="vertical" value={drawerTab} onChange={(_, v) => setDrawerTab(v)}
+                sx={{ borderRight: 1, borderColor: 'divider', minWidth: 44, flexShrink: 0,
+                  '& .MuiTab-root': { minWidth: 44, minHeight: 44 },
+                  '& .MuiSvgIcon-root': { fontSize: 18 } }}>
+                <Tab icon={<SettingsEthernetIcon />} aria-label="Ports" />
+                <Tab icon={<InfoOutlinedIcon />} aria-label="Details" />
+              </Tabs>
+              {drawerTab === 0 ? (
+                <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, px: 3, py: 2, display: 'flex', flexDirection: 'column' }}>
+                  <NodeView node={openNode} rows={topo?.tables[openNode.id] || []}
+                    occupied={topo?.occupied[openNode.id] || []} showHeader={false} onOpenNode={setOpen} fillHeight
+                    panelMaxHeight={Math.round(drawerH * 0.4)} />
+                </Box>
+              ) : (
+                <Box sx={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                  <NodeDetails node={openNode} dark={mode === 'dark'} />
+                </Box>
+              )}
             </Box>
           </>
         )}

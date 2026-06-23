@@ -1,4 +1,7 @@
-export type Node = { id: string; name: string; platform: string; os: string; role: string };
+export type Node = {
+  id: string; name: string; platform: string; os: string; role: string;
+  namespace?: string; version?: string; labels?: Record<string, string>;   // TopoNode details
+};
 export type Edge = {
   id: string; source: string; target: string;
   sourcePort: string; targetPort: string; type: string;
@@ -37,6 +40,15 @@ export async function fetchTopology(): Promise<Topology> {
   const res = await fetch(`${BASE}api/topology`);
   if (!res.ok) throw new Error(`topology ${res.status}: ${(await res.json()).error || ''}`);
   return res.json();
+}
+
+// Raw TopoNode CR (YAML) for the drawer's Details tab.
+export async function fetchNodeRaw(name: string, ns?: string): Promise<string> {
+  const q = new URLSearchParams({ name });
+  if (ns) q.set('ns', ns);
+  const res = await fetch(`${BASE}api/toponode?${q}`);
+  if (!res.ok) throw new Error(`toponode ${res.status}`);
+  return res.text();
 }
 
 // Live topology over Server-Sent Events. The server pushes the current snapshot on connect
