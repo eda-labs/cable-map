@@ -22,12 +22,12 @@ const tierOf = (role: string) => TIER[role] ?? 3;
 // mlag = multihomed/ESI bond (members span two leaves), isl = fabric uplink.
 export type CableKind = 'isl' | 'edge' | 'lag' | 'mlag';
 export const CABLE_COLOR: Record<CableKind, string> = {
-  isl: '#5B9BFF', edge: '#13C39A', lag: '#FFB020', mlag: '#C77DFF',
+  isl: 'var(--eda-blue-400)', edge: 'var(--eda-teal-500)', lag: 'var(--eda-yellow-500)', mlag: 'var(--eda-purple-400)',
 };
 
 // LLDP overlay palette (used in place of CABLE_COLOR while the overlay is on).
 export const LLDP_COLOR: Record<LldpStatus, string> = {
-  ok: '#22C55E', mismatch: '#FF4D4D', none: '#8A94A6',
+  ok: 'var(--eda-green-500)', mismatch: 'var(--eda-red-500)', none: 'var(--eda-gray-600)',
 };
 // Aggregating a bundle / bond to its worst member status — a mismatch anywhere wins.
 const LLDP_RANK: Record<LldpStatus, number> = { ok: 0, none: 1, mismatch: 2 };

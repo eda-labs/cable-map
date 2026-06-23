@@ -1,9 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Box, Paper, Typography, Table, TableHead, TableBody, TableRow, TableCell, Link,
+  Box, Paper, Typography, Table, TableHead, TableBody, TableRow, TableCell, Link, InputBase,
 } from '@mui/material';
 import FrontPanel from './FrontPanel';
 import { portIdx, type Node, type Row } from './api';
+import { edgeRemote, useEdgeRemote } from './edge-remote';
+
+function RemoteCell({ nodeId, port, field, placeholder, editable }:
+  { nodeId: string; port: string; field: 'node' | 'port'; placeholder: string; editable: boolean }) {
+  const value = useEdgeRemote(nodeId, port, field);
+  if (!editable) return value ? <>{value}</> : null;
+  return (
+    <InputBase value={value} onChange={(e) => edgeRemote.set(nodeId, port, field, e.target.value)}
+      placeholder={placeholder} fullWidth
+      sx={{ font: 'inherit', '& input': { p: 0, height: 'auto' }, '& input::placeholder': { opacity: 0.6 } }} />
+  );
+}
 
 type Props = {
   node: Node;
@@ -74,19 +86,32 @@ export default function NodeView({ node, rows, occupied, showHeader = true, inte
                   {r.type === 'interSwitch' ? 'ISL' : r.type === 'edge' ? 'edge' : r.type}
                   {r.lag && <Box component="span" color="warning.main" sx={{ fontSize: 11 }}>{' · LAG'}</Box>}
                 </TableCell>
-                <TableCell>
-                  {r.remoteNode
-                    ? (onOpenNode
-                        ? <Link component="button" underline="hover" sx={{ font: 'inherit' }}
-                            onClick={() => onOpenNode(r.remoteNode)}>{r.remoteNode}</Link>
-                        : r.remoteNode)
-                    : r.peer
-                      ? <Box component="span" color="text.secondary">{r.peer}</Box>
-                      : blank}
-                </TableCell>
-                <TableCell>
-                  {r.remotePort || blank}
-                </TableCell>
+                {r.type === 'edge' ? (
+                  <>
+                    <TableCell>
+                      <RemoteCell nodeId={node.id} port={r.label} field="node" placeholder="remote node…" editable={interactive} />
+                    </TableCell>
+                    <TableCell>
+                      <RemoteCell nodeId={node.id} port={r.label} field="port" placeholder="remote port…" editable={interactive} />
+                    </TableCell>
+                  </>
+                ) : (
+                  <>
+                    <TableCell>
+                      {r.remoteNode
+                        ? (onOpenNode
+                            ? <Link component="button" underline="hover" sx={{ font: 'inherit' }}
+                                onClick={() => onOpenNode(r.remoteNode)}>{r.remoteNode}</Link>
+                            : r.remoteNode)
+                        : r.peer
+                          ? <Box component="span" color="text.secondary">{r.peer}</Box>
+                          : blank}
+                    </TableCell>
+                    <TableCell>
+                      {r.remotePort || blank}
+                    </TableCell>
+                  </>
+                )}
                 <TableCell>
                   {r.lldpStatus === 'mismatch'
                     ? <Box component="span" color="error.main" sx={{ fontWeight: 600 }}>⚠ {r.lldpPeer}</Box>

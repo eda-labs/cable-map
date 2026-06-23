@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchTopology, BASE, type Topology } from './api';
 import NodeView from './NodeView';
+import { edgeRemote } from './edge-remote';
 import './print.css';
 
 // Printable page: one node per page (front panel + cable table). Puppeteer hits
@@ -8,6 +9,10 @@ import './print.css';
 export default function Print() {
   const [topo, setTopo] = useState<Topology | null>(null);
   useEffect(() => { fetchTopology().then(setTopo); }, []);
+  useEffect(() => {
+    const p = new URLSearchParams(location.search).get('remote');
+    if (p) { try { edgeRemote.hydrate(JSON.parse(p)); } catch { /* malformed param */ } }
+  }, []);
   // the app sets color-scheme:dark globally, which makes the PDF page background
   // black outside the content — force a white, light-scheme page for printing.
   useEffect(() => {

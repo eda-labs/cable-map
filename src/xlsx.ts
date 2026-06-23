@@ -1,6 +1,7 @@
 import type { Cell } from 'write-excel-file/browser';
 import type { Topology, LagInfo } from './api';
 import { portIdx } from './api';
+import { edgeRemote } from './edge-remote';
 
 // readable LAG classification for the spreadsheet's LAG column
 const lagLabel = (lag?: LagInfo): string =>
@@ -24,8 +25,8 @@ export async function exportXlsx(topo: Topology, nodeIds: string[]): Promise<voi
         r.label,
         r.type === 'interSwitch' ? 'ISL' : r.type,
         lagLabel(r.lag ? topo.lags[r.lag] : undefined) || null,
-        r.remoteNode || r.peer || null,
-        r.remotePort || null,
+        r.type === 'edge' ? (edgeRemote.get(id, r.label, 'node') || null) : (r.remoteNode || r.peer || null),
+        r.type === 'edge' ? (edgeRemote.get(id, r.label, 'port') || null) : (r.remotePort || null),
         r.desc || null,
         r.lldpPeer || null,
         r.lldpStatus && r.lldpStatus !== 'none' ? r.lldpStatus : null,

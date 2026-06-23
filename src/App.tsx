@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, Panel, useNodesState, type Node as RFNode, type NodeTypes, type EdgeTypes } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Node as RFNode, type NodeTypes, type EdgeTypes } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
@@ -12,9 +12,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SensorsIcon from '@mui/icons-material/Sensors';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
 import { buildGraph, CABLE_COLOR, LLDP_COLOR } from './graph';
-import { trace, setAdjacency } from './trace';
+import { trace, setAdjacency, useTrace } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
 import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
@@ -22,12 +24,11 @@ import CableEdge from './CableEdge';
 import NodeView from './NodeView';
 import NamespacePicker from './NamespacePicker';
 import { exportXlsx } from './xlsx';
+import { edgeRemote } from './edge-remote';
 import './app.css';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
 const edgeTypes: EdgeTypes = { cable: CableEdge };
-
-const pdf = (q = '') => window.open(`${BASE}pdf${q}`, '_blank');
 
 const LEGEND: Array<[string, string]> = [
   ['Fabric (ISL)', CABLE_COLOR.isl], ['Edge', CABLE_COLOR.edge], ['Local LAG', CABLE_COLOR.lag], ['ESI / MH-LAG', CABLE_COLOR.mlag],
@@ -46,6 +47,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [query, setQuery] = useState('');
   const [namespace, setNamespace] = useState('');     // '' == All Namespaces
   const [namespaces, setNamespaces] = useState<string[]>([]);
+  const [hideEdges, setHideEdges] = useState(false);
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
 
   // drag the top edge of the drawer to resize its height
@@ -105,9 +107,28 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     return () => window.removeEventListener('keydown', onKey);
   }, [setNodes]);
 
+  const hasEdgeLinks = useMemo(() => edges.some((e) => e.id.startsWith('stub|')), [edges]);
+  const displayNodes = useMemo(() => hideEdges ? nodes.filter((n) => n.type !== 'endpoint') : nodes, [hideEdges, nodes]);
+  const traceKey = useTrace((s) => s.key);
+  const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
+  const displayEdges = useMemo(() => {
+    const base = hideEdges ? edges.filter((e) => !e.id.startsWith('stub|')) : edges;
+    return elevatedEdge ? base.map((e) => (e.id === elevatedEdge ? { ...e, zIndex: 1 } : e)) : base;
+  }, [hideEdges, edges, elevatedEdge]);
+
   const ready = !!topo && topo.nodes.length > 0;
   const openNode = topo?.nodes.find((n) => n.id === open);
   const lldpOn = useLldp();
+
+  const openPdf = (ids: string[]) => {
+    const targets = ids.length ? ids : (topo?.nodes.map((n) => n.id) ?? []);
+    const params = new URLSearchParams();
+    if (ids.length) params.set('nodes', ids.join(','));
+    const sub = edgeRemote.subset(targets);
+    if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
+    const qs = params.toString();
+    window.open(`${BASE}pdf${qs ? `?${qs}` : ''}`, '_blank');
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -132,7 +153,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           {ready && (
             <Tooltip title={selected.length ? `Download PDF (${selected.length} selected)` : 'Download PDF (all nodes)'}>
               <IconButton size="small" sx={{ color: 'text.primary' }}
-                onClick={() => pdf(selected.length ? `?nodes=${selected.join(',')}` : '')}>
+                onClick={() => openPdf(selected)}>
                 <Badge badgeContent={selected.length} color="primary">
                   <PictureAsPdfIcon />
                 </Badge>
@@ -167,7 +188,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
-            nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={displayNodes} edges={displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
             proOptions={{ hideAttribution: true }}
@@ -181,7 +202,16 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             fitView fitViewOptions={{ padding: 0.12 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-            <Controls position="top-right" showInteractive={false} />
+            <Controls position="top-right" showInteractive={false}>
+              {hasEdgeLinks && (
+                <ControlButton
+                  onClick={() => setHideEdges((v) => !v)}
+                  title={hideEdges ? 'Show edge links' : 'Hide edge links'}
+                >
+                  {hideEdges ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </ControlButton>
+              )}
+            </Controls>
             <Panel position="bottom-left">
               <Box sx={{ bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1.5, px: 1.5, py: 1, boxShadow: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2, mb: 0.75 }}>
@@ -230,7 +260,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               <Box sx={{ flex: 1 }} />
               <Tooltip title="Download PDF">
                 <IconButton size="small" sx={{ color: 'text.primary' }}
-                  onClick={() => pdf(`?nodes=${openNode.id}`)}>
+                  onClick={() => openPdf([openNode.id])}>
                   <PictureAsPdfIcon />
                 </IconButton>
               </Tooltip>

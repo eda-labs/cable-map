@@ -1,25 +1,8 @@
-/* Nokia pure font family */
 @font-face {
   font-family: 'NokiaPureText';
   src: url('./fonts/NokiaPureText_Lt.woff2') format('woff2'),
        url('./fonts/NokiaPureText_Lt.woff') format('woff');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'NokiaPureText';
-  src: url('./fonts/NokiaPureText_Rg.woff2') format('woff2'),
-       url('./fonts/NokiaPureText_Rg.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'NokiaPureText';
-  src: url('./fonts/NokiaPureText_Md.woff2') format('woff2'),
-       url('./fonts/NokiaPureText_Md.woff') format('woff');
-  font-weight: 500;
+  font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
@@ -27,7 +10,7 @@
   font-family: 'NokiaPureText';
   src: url('./fonts/NokiaPureText_Bd.woff2') format('woff2'),
        url('./fonts/NokiaPureText_Bd.woff') format('woff');
-  font-weight: 700;
+  font-weight: bold;
   font-style: normal;
   font-display: swap;
 }

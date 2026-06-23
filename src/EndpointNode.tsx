@@ -29,9 +29,8 @@ function EndpointNode({ id, data }: NodeProps) {
         display: 'flex', alignItems: 'center', gap: 5, padding: '3px 6px',
         borderRadius: 5, background: 'var(--panel)',
         border: `1px solid ${mode === 'on' ? color : 'var(--line)'}`,
-        borderLeft: `3px solid ${color}`,
         opacity: mode === 'dim' ? 0.3 : 1, transition: 'opacity 140ms, border-color 140ms',
-        boxShadow: mode === 'on' ? `0 0 8px -1px ${color}` : 'none', cursor: 'pointer',
+        cursor: 'pointer',
       }}
     >
       <Handle type="target" id="in" position={Position.Top} isConnectable={false}

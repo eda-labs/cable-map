@@ -17,9 +17,10 @@ const fillFor = (info: PortInfo, lldp: boolean) =>
   info.kind === 'free' ? 'transparent' : lldp ? LLDP_COLOR[info.lldp ?? 'none'] : CABLE_COLOR[info.kind];
 
 // A single front-panel cage. Occupied ports carry the handles cables attach to,
-// and glow when their cable is being traced.
+// and gain a highlight ring when their cable is being traced.
 function PortCell({ info, hot, lldp }: { info: PortInfo; hot: boolean; lldp: boolean }) {
   const free = info.kind === 'free';
+  const fill = fillFor(info, lldp);
   const side = info.side === 'top' ? Position.Top : Position.Bottom;
   return (
     <div
@@ -31,11 +32,11 @@ function PortCell({ info, hot, lldp }: { info: PortInfo; hot: boolean; lldp: boo
         position: 'relative', width: CELL, height: CELL, borderRadius: 2,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 7, lineHeight: 1, fontWeight: 700,
-        color: free ? 'var(--cell-free-fg)' : 'rgba(0,0,0,0.78)',
-        background: free ? 'var(--cell-free-bg)' : fillFor(info, lldp),
-        outline: hot ? '2px solid var(--port-hot-ring)' : free ? '1px solid var(--cell-free-line)' : '1px solid rgba(0,0,0,0.35)',
+        color: free ? 'var(--cell-free-fg)' : 'var(--panel)',
+        background: free ? 'var(--cell-free-bg)' : fill,
+        // occupied ports ring in their own cable colour; on hover, a brighter shade of it
+        outline: hot ? `1px solid color-mix(in srgb, ${fill}, white 45%)` : free ? '1px solid var(--cell-free-line)' : `1px solid ${fill}`,
         outlineOffset: hot ? 0 : -1,
-        boxShadow: hot ? `0 0 8px 1px ${fillFor(info, lldp)}` : 'none',
         cursor: free ? 'default' : 'pointer', zIndex: hot ? 2 : 1,
       }}
     >
@@ -85,9 +86,8 @@ function SwitchNode({ id, data, selected }: NodeProps) {
       onMouseLeave={() => trace.hover(null)}
       style={{
         background: 'var(--panel)', borderRadius: 8, padding: 8,
-        border: `1.5px solid ${selected ? '#5B9BFF' : mode === 'on' ? 'var(--node-ring)' : 'var(--line)'}`,
+        border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
         opacity: mode === 'dim' ? 0.32 : 1, transition: 'opacity 140ms, border-color 140ms',
-        boxShadow: mode === 'on' ? '0 0 0 1px var(--node-ring-soft)' : 'none',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, height: 20 }}>
