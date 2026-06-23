@@ -3,19 +3,20 @@ import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Pane
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
-  CircularProgress, Chip, Divider, InputBase, Tabs, Tab,
+  CircularProgress, Chip, Divider, TextField, Tabs, Tab,
 } from '@mui/material';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import CloseIcon from '@mui/icons-material/Close';
-import SearchIcon from '@mui/icons-material/Search';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import SensorsIcon from '@mui/icons-material/Sensors';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernet';
+import CloseIcon from '@mui/icons-material/CloseOutlined';
+import SearchIcon from '@mui/icons-material/SearchOutlined';
+import LightModeIcon from '@mui/icons-material/LightModeOutlined';
+import DarkModeIcon from '@mui/icons-material/DarkModeOutlined';
+import SensorsIcon from '@mui/icons-material/SensorsOutlined';
+import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOffOutlined';
+import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernetOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import SvgGlyph from './icons/SvgGlyph';
+import pdfIcon from './icons/pdf.svg?raw';
+import excelIcon from './icons/excel.svg?raw';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
 import { buildGraph, CABLE_COLOR, LLDP_COLOR } from './graph';
 import { trace, setAdjacency, useTrace } from './trace';
@@ -138,18 +139,21 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
-        <Toolbar variant="dense" sx={{ gap: 1.5 }}>
+        <Toolbar variant="dense" sx={{ gap: 1.5, position: 'relative' }}>
           <img src={`${BASE}eda.svg`} alt="EDA" style={{ height: 26 }} />
           <Typography variant="h6" sx={{ fontWeight: 200, color: 'text.primary' }}>EDA Cable Map</Typography>
           <Box sx={{ flex: 1 }} />
           {ready && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'background.default', px: 1, borderRadius: 1, border: 1, borderColor: 'divider' }}>
-              <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-              <InputBase value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find node / server / port…"
-                sx={{ fontSize: 13, color: 'text.primary', width: 200 }} />
-              {query && (
-                <IconButton size="small" sx={{ p: 0.25 }} onClick={() => setQuery('')}><CloseIcon sx={{ fontSize: 15 }} /></IconButton>
-              )}
+            <Box sx={{ position: 'absolute', left: '50%', top: 0, bottom: 0, transform: 'translateX(-50%)', display: 'flex', alignItems: 'center' }}>
+              <TextField variant="standard" value={query} onChange={(e) => setQuery(e.target.value)}
+                placeholder="Find node / server / port…" sx={{ width: 280 }}
+                slotProps={{ input: {
+                  sx: { fontSize: 13, color: 'text.primary' },
+                  startAdornment: <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 1 }} />,
+                  endAdornment: query
+                    ? <IconButton size="small" sx={{ p: 0.25 }} onClick={() => setQuery('')}><CloseIcon sx={{ fontSize: 15 }} /></IconButton>
+                    : null,
+                } }} />
             </Box>
           )}
           {namespaces.length > 0 && (
@@ -160,7 +164,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               <IconButton size="small" sx={{ color: 'text.primary' }}
                 onClick={() => openPdf(selected)}>
                 <Badge badgeContent={selected.length} color="primary">
-                  <PictureAsPdfIcon />
+                  <SvgGlyph src={pdfIcon} />
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -170,7 +174,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               <IconButton size="small" sx={{ color: 'text.primary' }}
                 onClick={() => { void exportXlsx(topo, selected.length ? selected : topo.nodes.map((n) => n.id)).catch(console.error); }}>
                 <Badge badgeContent={selected.length} color="primary">
-                  <TableChartIcon />
+                  <SvgGlyph src={excelIcon} />
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -269,9 +273,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               <Tooltip title="Download PDF">
                 <IconButton size="small" sx={{ color: 'text.primary' }}
                   onClick={() => openPdf([openNode.id])}>
-                  <PictureAsPdfIcon />
+                  <SvgGlyph src={pdfIcon} />
                 </IconButton>
               </Tooltip>
+              {topo && (
+                <Tooltip title="Download XLSX">
+                  <IconButton size="small" sx={{ color: 'text.primary' }}
+                    onClick={() => { void exportXlsx(topo, [openNode.id]).catch(console.error); }}>
+                    <SvgGlyph src={excelIcon} />
+                  </IconButton>
+                </Tooltip>
+              )}
               <IconButton onClick={() => setOpen(null)} size="small"><CloseIcon /></IconButton>
             </Box>
             <Divider />

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Menu, MenuItem, ListItemIcon, Typography } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CheckIcon from '@mui/icons-material/CheckOutlined';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDownOutlined';
 
 // EDA-style namespace picker: a labelled button that opens a menu of namespaces, the active
 // one marked with a check (mirrors EDA's own NamespacePicker). '' is the All Namespaces entry.

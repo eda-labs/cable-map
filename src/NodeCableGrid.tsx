@@ -19,7 +19,6 @@ export default function NodeCableGrid({ node, rows, hovered, onHoverPort, onOpen
 }) {
   const apiRef = useGridApiRef();
   const rootRef = useRef<HTMLDivElement>(null);
-  const overGrid = useRef(false);
   const gridRows: GridRow[] = rows.map((r) => {
     const isEdge = r.type === 'edge';
     return {
@@ -73,33 +72,33 @@ export default function NodeCableGrid({ node, rows, hovered, onHoverPort, onOpen
   // port<->row hover cross-highlight, done at the DOM level so it survives DataGrid's row memoization:
   // row hover -> port via event delegation on the wrapper; hovered port -> row via a data-id CSS rule.
   const hoveredLabel = gridRows.find((r) => r.port === hovered)?.label;
-  // scroll the hovered row into view. DataGrid virtualizes rows, so we scroll its virtual scroller
-  // to the computed row offset — apiRef.scrollToIndexes jumps instantly, so go to the scroller
-  // element directly for `behavior: 'smooth'`. Only scrolls when the row is off-view, and never when
-  // the hover originates from the table itself (pointer over the grid) — only from the front panel.
+  // scroll the hovered row into view — but only for hovers coming from the front panel, never while
+  // the pointer is over the grid (`:hover` is a realtime signal, so it can't go stale). scrollToIndexes
+  // computes the exact header-aware target and sets scrollTop synchronously (a no-op when already in
+  // view); we capture that target, rewind, then animate to it for a smooth scroll.
   useEffect(() => {
     const api = apiRef.current;
-    const scroller = rootRef.current?.querySelector('.MuiDataGrid-virtualScroller') as HTMLElement | null;
-    if (overGrid.current || !hoveredLabel || !api?.getSortedRowIds || !scroller) return;
+    const root = rootRef.current;
+    const scroller = root?.querySelector('.MuiDataGrid-virtualScroller') as HTMLElement | null;
+    if (!hoveredLabel || !scroller || !api?.getSortedRowIds || root?.matches(':hover')) return;
     const idx = api.getSortedRowIds().indexOf(hoveredLabel);
     if (idx < 0) return;
-    const rowH = (scroller.querySelector('.MuiDataGrid-row') as HTMLElement | null)?.offsetHeight || 36;
-    const target = idx * rowH;
-    const { scrollTop, clientHeight } = scroller;
-    if (target < scrollTop || target + rowH > scrollTop + clientHeight) {
-      scroller.scrollTo({ top: target - (clientHeight - rowH) / 2, behavior: 'smooth' });
+    const from = scroller.scrollTop;
+    api.scrollToIndexes({ rowIndex: idx });
+    const to = scroller.scrollTop;
+    if (to !== from) {
+      scroller.scrollTop = from;
+      scroller.scrollTo({ top: to, behavior: 'smooth' });
     }
   }, [hoveredLabel, apiRef]);
 
   const onMouseOver = (e: MouseEvent<HTMLElement>) => {
-    overGrid.current = true;
     const id = (e.target as HTMLElement).closest('.MuiDataGrid-row')?.getAttribute('data-id');
     onHoverPort(id ? portIdx(id) ?? null : null);
   };
-  const onMouseLeave = () => { overGrid.current = false; onHoverPort(null); };
 
   return (
-    <Box ref={rootRef} onMouseOver={onMouseOver} onMouseLeave={onMouseLeave}
+    <Box ref={rootRef} onMouseOver={onMouseOver} onMouseLeave={() => onHoverPort(null)}
       sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>
       <DataGrid
         apiRef={apiRef}
