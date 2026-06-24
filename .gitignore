@@ -18,3 +18,5 @@ private/
 build/
 */build/
 .mk/*.tmp
+
+stencils/
