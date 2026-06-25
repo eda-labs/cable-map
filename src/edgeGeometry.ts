@@ -134,12 +134,30 @@ function pushBend(out: XY[], a: XY, b: XY, c: XY, size: number) {
   const k = Math.max(3, Math.min(16, Math.round(bendSize / 2)));
   for (let i = 1; i <= k; i++) out.push(quadAt(leadIn, b, leadOut, i / k));
 }
-function smoothStepPolyline(s: XY, sp: Position, t: XY, tp: Position, borderRadius: number): XY[] {
-  const points = getPoints(s, sp, t, tp, 20, 0.5); // offset/stepPosition = React Flow defaults
-  const out: XY[] = [points[0]];
-  for (let i = 1; i < points.length - 1; i++) pushBend(out, points[i - 1], points[i], points[i + 1], borderRadius);
-  out.push(points[points.length - 1]);
+function roundedPolyline(wp: XY[], borderRadius: number): XY[] {
+  const pts = wp.filter((p, i) => i === 0 || p.x !== wp[i - 1].x || p.y !== wp[i - 1].y); // drop dupes
+  const out: XY[] = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) pushBend(out, pts[i - 1], pts[i], pts[i + 1], borderRadius);
+  out.push(pts[pts.length - 1]);
   return out;
+}
+function smoothStepPolyline(s: XY, sp: Position, t: XY, tp: Position, borderRadius: number, sDx: number, tDx: number): XY[] {
+  const sDir = handleDirections[sp], tDir = handleDirections[tp];
+  const vertical = sDir.x === 0 && tDir.x === 0 && sDir.y * tDir.y === -1; // Top<->Bottom elbow
+  // offset the vertical stems with an ORTHOGONAL jog (out of the port, step sideways, then straight to
+  // the bus) so stacked ports separate without an angled lead-out. Only for the vertical opposite case;
+  // otherwise fall back to React Flow's faithful smoothstep.
+  if (vertical && (sDx || tDx)) {
+    const off = 5;                                 // step right at the port edge (compact, not a long stem)
+    const sGapY = s.y + sDir.y * off, tGapY = t.y + tDir.y * off;
+    const midY = (s.y + t.y) / 2;                  // bus midpoint
+    // short out-of-port segments keep the step corners tight; the long stem->bus corners get the full radius
+    return roundedPolyline([
+      s, { x: s.x, y: sGapY }, { x: s.x + sDx, y: sGapY }, { x: s.x + sDx, y: midY },
+      { x: t.x + tDx, y: midY }, { x: t.x + tDx, y: tGapY }, { x: t.x, y: tGapY }, t,
+    ], borderRadius);
+  }
+  return roundedPolyline(getPoints(s, sp, t, tp, 20, 0.5), borderRadius);
 }
 
 // peer-arch: same-tier ISL (both ports on Top) arched up over the open gap, instead of a flat bezier
@@ -159,9 +177,9 @@ function archPolyline(s: XY, t: XY): XY[] {
 
 // Public: the polyline for one cable, matching the SVG edge's routing. Precedence mirrors CableEdge:
 // peer-arch first, then grouped (smoothstep), else bezier.
-export function cablePolyline(s: XY, sp: Position, t: XY, tp: Position, grouped: boolean, peerArch = false, borderRadius = 16): XY[] {
+export function cablePolyline(s: XY, sp: Position, t: XY, tp: Position, grouped: boolean, peerArch = false, sDx = 0, tDx = 0, borderRadius = 16): XY[] {
   if (peerArch) return archPolyline(s, t);
-  return grouped ? smoothStepPolyline(s, sp, t, tp, borderRadius) : bezierPolyline(s, sp, t, tp);
+  return grouped ? smoothStepPolyline(s, sp, t, tp, borderRadius, sDx, tDx) : bezierPolyline(s, sp, t, tp);
 }
 
 // point at arc-length fraction f along a polyline (for label anchoring: 0.5 = midpoint, 0.18/0.82 = ends)

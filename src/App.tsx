@@ -675,7 +675,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             <Controls position="top-right" showInteractive={false}>
               <ControlButton
                 onClick={() => edgeRoute.toggle()}
-                title={grouped ? 'Direct cabling' : 'Group cables through a shared bus'}
+                title={grouped ? 'Use direct links' : 'Use elbow link style'}
                 aria-label="Toggle cable routing"
               >
                 <PolylineIcon style={{ color: grouped ? 'var(--eda-blue-400)' : undefined }} />

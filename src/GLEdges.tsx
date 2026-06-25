@@ -58,6 +58,25 @@ function handlePoint(node: InternalNode<RFNode> | undefined, handleId: string | 
   return { x: abs.x + h.x + h.width / 2, y: abs.y + h.y + h.height / 2, pos: h.position };
 }
 
+// Per-port elbow-stem offset: ports stacked in the same column are spread across the port width so
+// their vertical stems don't overlap on the way to the bus — 2 stacked -> ±width/4 (gap width/2),
+// 4 stacked -> gap width/4, etc. Keyed by source-handle id (`pN`); target handles (`pNt`) strip the 't'.
+function buildStemOffsets(handles: { id?: string | null; x: number; y: number; width: number }[]): Map<string, number> {
+  const m = new Map<string, number>();
+  const cols = new Map<number, { id: string; y: number; w: number }[]>();
+  for (const h of handles) {
+    if (!h.id) continue;
+    const k = Math.round(h.x);
+    (cols.get(k) ?? cols.set(k, []).get(k)!).push({ id: h.id, y: h.y, w: h.width });
+  }
+  for (const g of cols.values()) {
+    g.sort((a, b) => a.y - b.y);
+    const n = g.length, w = g[0].w;
+    g.forEach((p, i) => m.set(p.id, n > 1 ? (i - (n - 1) / 2) * (w / n) : 0));
+  }
+  return m;
+}
+
 // resolve a CSS color (incl. var(--x), theme-dependent) to [r,g,b] 0..1 via a 1px 2d probe
 const colorCache = new Map<string, [number, number, number]>();
 let probe: CanvasRenderingContext2D | null = null;
@@ -161,6 +180,12 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     const labelOut: Label[] = [];
     const smallTrace = tracedEdges.size <= 4;   // matches the SVG edge: only label a small trace
     let totalVerts = 0;
+    const offsetCache = new Map<string, Map<string, number>>();
+    const stemOffsets = (nodeId: string) => {
+      let m = offsetCache.get(nodeId);
+      if (!m) { m = buildStemOffsets(nodeLookup.get(nodeId)?.internals.handleBounds?.source ?? []); offsetCache.set(nodeId, m); }
+      return m;
+    };
     for (const e of ordered) {
       const s = handlePoint(nodeLookup.get(e.source), e.sourceHandle, 'source');
       const t = handlePoint(nodeLookup.get(e.target), e.targetHandle, 'target');
@@ -174,7 +199,9 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
       const cnt = d?.count ?? 1;
       const half = ((on ? 2.6 : 1.1) + (cnt > 1 ? 1 : 0)) / 2;
       const peerArch = d?.kind === 'isl' && s.pos === Position.Top && t.pos === Position.Top;
-      const pts = cablePolyline({ x: s.x, y: s.y }, s.pos, { x: t.x, y: t.y }, t.pos, grouped, peerArch);
+      const sDx = grouped ? (stemOffsets(e.source).get(e.sourceHandle ?? '') ?? 0) : 0;
+      const tDx = grouped ? (stemOffsets(e.target).get((e.targetHandle ?? '').replace(/t$/, '')) ?? 0) : 0;
+      const pts = cablePolyline({ x: s.x, y: s.y }, s.pos, { x: t.x, y: t.y }, t.pos, grouped, peerArch, sDx, tDx);
       if (pts.length < 2) continue;
       items.push({ id: e.id, pts, col, alpha, half });
       totalVerts += (pts.length - 1) * 6;
