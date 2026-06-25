@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useStore, useStoreApi, useReactFlow, Position, type Edge as RFEdge, type InternalNode, type Node as RFNode } from '@xyflow/react';
+import { useStore, useStoreApi, useReactFlow, useNodesInitialized, Position, type Edge as RFEdge, type InternalNode, type Node as RFNode } from '@xyflow/react';
 import { CABLE_COLOR, LLDP_COLOR, type CableKind } from './graph';
 import type { LldpStatus } from './api';
 import { trace, useTrace } from './trace';
@@ -48,10 +48,13 @@ void main() { gl_FragColor = vec4(v_color.rgb * v_color.a, v_color.a); }`;
 
 function handlePoint(node: InternalNode<RFNode> | undefined, handleId: string | null | undefined, kind: 'source' | 'target'): Pt | null {
   if (!node) return null;
-  const abs = node.internals.positionAbsolute;
   const list = node.internals.handleBounds?.[kind];
-  const h = (handleId && list?.find((b) => b.id === handleId)) || list?.[0];
-  if (!h) return { x: abs.x + (node.measured?.width ?? 0) / 2, y: abs.y + (node.measured?.height ?? 0) / 2, pos: Position.Top };
+  // require the EXACT handle. A center/first-handle fallback draws garbage geometry and can spuriously
+  // flip the routing (both ends defaulting to Top -> peer-arch) while handles are mid-(re)measure on an
+  // EDA update. Returning null skips the cable for that frame; it redraws once handles are back.
+  const h = handleId ? list?.find((b) => b.id === handleId) : list?.[0];
+  if (!h) return null;
+  const abs = node.internals.positionAbsolute;
   return { x: abs.x + h.x + h.width / 2, y: abs.y + h.y + h.height / 2, pos: h.position };
 }
 
@@ -100,6 +103,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   });
   const lldpOn = useLldp();
   const grouped = useGroupedEdges();
+  const nodesReady = useNodesInitialized();
   const tracedEdges = useTrace((s) => s.edges);
   const traceAny = useTrace((s) => s.any);
 
@@ -144,6 +148,9 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   const rebuild = useCallback(() => {
     const context = gl.current;
     if (!context) return;
+    // don't rebuild against un-measured nodes (handles missing) — keep the last good buffer; the
+    // nodesReady dep re-runs this once measurement settles, so an EDA update can't draw garbage.
+    if (!nodesReady) return;
     const { nodeLookup } = store.getState();
     const theme = dark ? 'd' : 'l';
     const ordered = edges.toSorted((a, b) => Number(tracedEdges.has(a.id)) - Number(tracedEdges.has(b.id))); // traced last (on top)
@@ -218,7 +225,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     context.bufferData(context.ARRAY_BUFFER, data.subarray(0, o), context.DYNAMIC_DRAW);
     // posHash isn't read directly (positions come from the live store) but retriggers rebuild on node move
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, store]);
+  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store]);
 
   const draw = useCallback(() => {
     const context = gl.current, p = prog.current, l = loc.current;
