@@ -1,0 +1,6098 @@
+apiVersion: topologies.eda.nokia.com/v1
+kind: NetworkTopology
+metadata:
+  name: cm-50-nodes
+  namespace: eda
+spec:
+  operation: ReplaceAll
+  nodeTemplates:
+    - name: pod1-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod1
+    - name: pod1-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod1
+    - name: pod2-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod2
+    - name: pod2-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod2
+    - name: pod3-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod3
+    - name: pod3-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod3
+    - name: pod4-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod4
+    - name: pod4-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod4
+    - name: pod5-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod5
+    - name: pod5-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod5
+    - name: pod6-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod6
+    - name: pod6-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod6
+    - name: pod7-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod7
+    - name: pod7-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod7
+    - name: pod8-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod8
+    - name: pod8-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod8
+    - name: pod9-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod9
+    - name: pod9-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod9
+    - name: pod10-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod10
+    - name: pod10-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod10
+    - name: pod11-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod11
+    - name: pod11-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod11
+    - name: pod12-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod12
+    - name: pod12-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod12
+    - name: pod13-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod13
+    - name: pod13-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod13
+    - name: pod14-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod14
+    - name: pod14-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod14
+    - name: pod15-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod15
+    - name: pod15-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod15
+    - name: pod16-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod16
+    - name: pod16-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod16
+    - name: pod17-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod17
+    - name: pod17-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod17
+    - name: pod18-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod18
+    - name: pod18-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod18
+    - name: pod19-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod19
+    - name: pod19-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod19
+    - name: pod20-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod20
+    - name: pod20-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod20
+    - name: pod21-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod21
+    - name: pod21-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod21
+    - name: pod22-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod22
+    - name: pod22-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod22
+    - name: pod23-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod23
+    - name: pod23-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod23
+    - name: pod24-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod24
+    - name: pod24-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod24
+    - name: pod25-leaf
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: leaf
+        eda.nokia.com/pod: pod25
+    - name: pod25-spine
+      nodeProfile: srlinux-ghcr-26.3.1
+      platform: "7220 IXR-D3L"
+      labels:
+        eda.nokia.com/security-profile: managed
+        eda.nokia.com/role: spine
+        eda.nokia.com/pod: pod25
+  nodes:
+    - name: leaf1
+      template: pod1-leaf
+    - name: spine1
+      template: pod1-spine
+    - name: leaf2
+      template: pod2-leaf
+    - name: spine2
+      template: pod2-spine
+    - name: leaf3
+      template: pod3-leaf
+    - name: spine3
+      template: pod3-spine
+    - name: leaf4
+      template: pod4-leaf
+    - name: spine4
+      template: pod4-spine
+    - name: leaf5
+      template: pod5-leaf
+    - name: spine5
+      template: pod5-spine
+    - name: leaf6
+      template: pod6-leaf
+    - name: spine6
+      template: pod6-spine
+    - name: leaf7
+      template: pod7-leaf
+    - name: spine7
+      template: pod7-spine
+    - name: leaf8
+      template: pod8-leaf
+    - name: spine8
+      template: pod8-spine
+    - name: leaf9
+      template: pod9-leaf
+    - name: spine9
+      template: pod9-spine
+    - name: leaf10
+      template: pod10-leaf
+    - name: spine10
+      template: pod10-spine
+    - name: leaf11
+      template: pod11-leaf
+    - name: spine11
+      template: pod11-spine
+    - name: leaf12
+      template: pod12-leaf
+    - name: spine12
+      template: pod12-spine
+    - name: leaf13
+      template: pod13-leaf
+    - name: spine13
+      template: pod13-spine
+    - name: leaf14
+      template: pod14-leaf
+    - name: spine14
+      template: pod14-spine
+    - name: leaf15
+      template: pod15-leaf
+    - name: spine15
+      template: pod15-spine
+    - name: leaf16
+      template: pod16-leaf
+    - name: spine16
+      template: pod16-spine
+    - name: leaf17
+      template: pod17-leaf
+    - name: spine17
+      template: pod17-spine
+    - name: leaf18
+      template: pod18-leaf
+    - name: spine18
+      template: pod18-spine
+    - name: leaf19
+      template: pod19-leaf
+    - name: spine19
+      template: pod19-spine
+    - name: leaf20
+      template: pod20-leaf
+    - name: spine20
+      template: pod20-spine
+    - name: leaf21
+      template: pod21-leaf
+    - name: spine21
+      template: pod21-spine
+    - name: leaf22
+      template: pod22-leaf
+    - name: spine22
+      template: pod22-spine
+    - name: leaf23
+      template: pod23-leaf
+    - name: spine23
+      template: pod23-spine
+    - name: leaf24
+      template: pod24-leaf
+    - name: spine24
+      template: pod24-spine
+    - name: leaf25
+      template: pod25-leaf
+    - name: spine25
+      template: pod25-spine
+  linkTemplates:
+    - name: isl
+      type: InterSwitch
+      labels:
+        eda.nokia.com/role: interSwitch
+  links:
+    - name: leaf1-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-1
+    - name: leaf1-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-1
+    - name: leaf1-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-1
+    - name: leaf1-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-1
+    - name: leaf1-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-1
+    - name: leaf1-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-1
+    - name: leaf1-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-1
+    - name: leaf1-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-1
+    - name: leaf1-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-1
+    - name: leaf1-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-1
+    - name: leaf1-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-1
+    - name: leaf1-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-1
+    - name: leaf1-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-1
+    - name: leaf1-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-1
+    - name: leaf1-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-1
+    - name: leaf1-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-1
+    - name: leaf1-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-1
+    - name: leaf1-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-1
+    - name: leaf1-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-1
+    - name: leaf1-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-1
+    - name: leaf1-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-1
+    - name: leaf1-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-1
+    - name: leaf1-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-1
+    - name: leaf1-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-1
+    - name: leaf1-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf1
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-1
+    - name: leaf2-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-2
+    - name: leaf2-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-2
+    - name: leaf2-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-2
+    - name: leaf2-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-2
+    - name: leaf2-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-2
+    - name: leaf2-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-2
+    - name: leaf2-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-2
+    - name: leaf2-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-2
+    - name: leaf2-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-2
+    - name: leaf2-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-2
+    - name: leaf2-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-2
+    - name: leaf2-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-2
+    - name: leaf2-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-2
+    - name: leaf2-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-2
+    - name: leaf2-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-2
+    - name: leaf2-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-2
+    - name: leaf2-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-2
+    - name: leaf2-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-2
+    - name: leaf2-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-2
+    - name: leaf2-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-2
+    - name: leaf2-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-2
+    - name: leaf2-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-2
+    - name: leaf2-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-2
+    - name: leaf2-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-2
+    - name: leaf2-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf2
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-2
+    - name: leaf3-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-3
+    - name: leaf3-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-3
+    - name: leaf3-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-3
+    - name: leaf3-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-3
+    - name: leaf3-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-3
+    - name: leaf3-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-3
+    - name: leaf3-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-3
+    - name: leaf3-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-3
+    - name: leaf3-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-3
+    - name: leaf3-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-3
+    - name: leaf3-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-3
+    - name: leaf3-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-3
+    - name: leaf3-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-3
+    - name: leaf3-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-3
+    - name: leaf3-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-3
+    - name: leaf3-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-3
+    - name: leaf3-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-3
+    - name: leaf3-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-3
+    - name: leaf3-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-3
+    - name: leaf3-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-3
+    - name: leaf3-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-3
+    - name: leaf3-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-3
+    - name: leaf3-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-3
+    - name: leaf3-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-3
+    - name: leaf3-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf3
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-3
+    - name: leaf4-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-4
+    - name: leaf4-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-4
+    - name: leaf4-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-4
+    - name: leaf4-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-4
+    - name: leaf4-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-4
+    - name: leaf4-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-4
+    - name: leaf4-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-4
+    - name: leaf4-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-4
+    - name: leaf4-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-4
+    - name: leaf4-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-4
+    - name: leaf4-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-4
+    - name: leaf4-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-4
+    - name: leaf4-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-4
+    - name: leaf4-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-4
+    - name: leaf4-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-4
+    - name: leaf4-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-4
+    - name: leaf4-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-4
+    - name: leaf4-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-4
+    - name: leaf4-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-4
+    - name: leaf4-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-4
+    - name: leaf4-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-4
+    - name: leaf4-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-4
+    - name: leaf4-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-4
+    - name: leaf4-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-4
+    - name: leaf4-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf4
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-4
+    - name: leaf5-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-5
+    - name: leaf5-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-5
+    - name: leaf5-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-5
+    - name: leaf5-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-5
+    - name: leaf5-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-5
+    - name: leaf5-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-5
+    - name: leaf5-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-5
+    - name: leaf5-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-5
+    - name: leaf5-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-5
+    - name: leaf5-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-5
+    - name: leaf5-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-5
+    - name: leaf5-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-5
+    - name: leaf5-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-5
+    - name: leaf5-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-5
+    - name: leaf5-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-5
+    - name: leaf5-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-5
+    - name: leaf5-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-5
+    - name: leaf5-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-5
+    - name: leaf5-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-5
+    - name: leaf5-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-5
+    - name: leaf5-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-5
+    - name: leaf5-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-5
+    - name: leaf5-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-5
+    - name: leaf5-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-5
+    - name: leaf5-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf5
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-5
+    - name: leaf6-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-6
+    - name: leaf6-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-6
+    - name: leaf6-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-6
+    - name: leaf6-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-6
+    - name: leaf6-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-6
+    - name: leaf6-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-6
+    - name: leaf6-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-6
+    - name: leaf6-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-6
+    - name: leaf6-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-6
+    - name: leaf6-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-6
+    - name: leaf6-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-6
+    - name: leaf6-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-6
+    - name: leaf6-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-6
+    - name: leaf6-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-6
+    - name: leaf6-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-6
+    - name: leaf6-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-6
+    - name: leaf6-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-6
+    - name: leaf6-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-6
+    - name: leaf6-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-6
+    - name: leaf6-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-6
+    - name: leaf6-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-6
+    - name: leaf6-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-6
+    - name: leaf6-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-6
+    - name: leaf6-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-6
+    - name: leaf6-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf6
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-6
+    - name: leaf7-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-7
+    - name: leaf7-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-7
+    - name: leaf7-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-7
+    - name: leaf7-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-7
+    - name: leaf7-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-7
+    - name: leaf7-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-7
+    - name: leaf7-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-7
+    - name: leaf7-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-7
+    - name: leaf7-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-7
+    - name: leaf7-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-7
+    - name: leaf7-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-7
+    - name: leaf7-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-7
+    - name: leaf7-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-7
+    - name: leaf7-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-7
+    - name: leaf7-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-7
+    - name: leaf7-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-7
+    - name: leaf7-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-7
+    - name: leaf7-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-7
+    - name: leaf7-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-7
+    - name: leaf7-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-7
+    - name: leaf7-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-7
+    - name: leaf7-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-7
+    - name: leaf7-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-7
+    - name: leaf7-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-7
+    - name: leaf7-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf7
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-7
+    - name: leaf8-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-8
+    - name: leaf8-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-8
+    - name: leaf8-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-8
+    - name: leaf8-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-8
+    - name: leaf8-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-8
+    - name: leaf8-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-8
+    - name: leaf8-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-8
+    - name: leaf8-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-8
+    - name: leaf8-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-8
+    - name: leaf8-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-8
+    - name: leaf8-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-8
+    - name: leaf8-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-8
+    - name: leaf8-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-8
+    - name: leaf8-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-8
+    - name: leaf8-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-8
+    - name: leaf8-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-8
+    - name: leaf8-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-8
+    - name: leaf8-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-8
+    - name: leaf8-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-8
+    - name: leaf8-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-8
+    - name: leaf8-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-8
+    - name: leaf8-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-8
+    - name: leaf8-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-8
+    - name: leaf8-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-8
+    - name: leaf8-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf8
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-8
+    - name: leaf9-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-9
+    - name: leaf9-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-9
+    - name: leaf9-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-9
+    - name: leaf9-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-9
+    - name: leaf9-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-9
+    - name: leaf9-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-9
+    - name: leaf9-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-9
+    - name: leaf9-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-9
+    - name: leaf9-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-9
+    - name: leaf9-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-9
+    - name: leaf9-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-9
+    - name: leaf9-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-9
+    - name: leaf9-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-9
+    - name: leaf9-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-9
+    - name: leaf9-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-9
+    - name: leaf9-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-9
+    - name: leaf9-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-9
+    - name: leaf9-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-9
+    - name: leaf9-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-9
+    - name: leaf9-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-9
+    - name: leaf9-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-9
+    - name: leaf9-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-9
+    - name: leaf9-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-9
+    - name: leaf9-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-9
+    - name: leaf9-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf9
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-9
+    - name: leaf10-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-10
+    - name: leaf10-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-10
+    - name: leaf10-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-10
+    - name: leaf10-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-10
+    - name: leaf10-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-10
+    - name: leaf10-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-10
+    - name: leaf10-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-10
+    - name: leaf10-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-10
+    - name: leaf10-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-10
+    - name: leaf10-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-10
+    - name: leaf10-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-10
+    - name: leaf10-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-10
+    - name: leaf10-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-10
+    - name: leaf10-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-10
+    - name: leaf10-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-10
+    - name: leaf10-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-10
+    - name: leaf10-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-10
+    - name: leaf10-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-10
+    - name: leaf10-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-10
+    - name: leaf10-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-10
+    - name: leaf10-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-10
+    - name: leaf10-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-10
+    - name: leaf10-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-10
+    - name: leaf10-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-10
+    - name: leaf10-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf10
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-10
+    - name: leaf11-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-11
+    - name: leaf11-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-11
+    - name: leaf11-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-11
+    - name: leaf11-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-11
+    - name: leaf11-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-11
+    - name: leaf11-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-11
+    - name: leaf11-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-11
+    - name: leaf11-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-11
+    - name: leaf11-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-11
+    - name: leaf11-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-11
+    - name: leaf11-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-11
+    - name: leaf11-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-11
+    - name: leaf11-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-11
+    - name: leaf11-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-11
+    - name: leaf11-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-11
+    - name: leaf11-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-11
+    - name: leaf11-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-11
+    - name: leaf11-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-11
+    - name: leaf11-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-11
+    - name: leaf11-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-11
+    - name: leaf11-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-11
+    - name: leaf11-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-11
+    - name: leaf11-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-11
+    - name: leaf11-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-11
+    - name: leaf11-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf11
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-11
+    - name: leaf12-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-12
+    - name: leaf12-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-12
+    - name: leaf12-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-12
+    - name: leaf12-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-12
+    - name: leaf12-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-12
+    - name: leaf12-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-12
+    - name: leaf12-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-12
+    - name: leaf12-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-12
+    - name: leaf12-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-12
+    - name: leaf12-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-12
+    - name: leaf12-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-12
+    - name: leaf12-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-12
+    - name: leaf12-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-12
+    - name: leaf12-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-12
+    - name: leaf12-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-12
+    - name: leaf12-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-12
+    - name: leaf12-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-12
+    - name: leaf12-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-12
+    - name: leaf12-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-12
+    - name: leaf12-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-12
+    - name: leaf12-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-12
+    - name: leaf12-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-12
+    - name: leaf12-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-12
+    - name: leaf12-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-12
+    - name: leaf12-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf12
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-12
+    - name: leaf13-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-13
+    - name: leaf13-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-13
+    - name: leaf13-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-13
+    - name: leaf13-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-13
+    - name: leaf13-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-13
+    - name: leaf13-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-13
+    - name: leaf13-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-13
+    - name: leaf13-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-13
+    - name: leaf13-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-13
+    - name: leaf13-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-13
+    - name: leaf13-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-13
+    - name: leaf13-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-13
+    - name: leaf13-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-13
+    - name: leaf13-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-13
+    - name: leaf13-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-13
+    - name: leaf13-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-13
+    - name: leaf13-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-13
+    - name: leaf13-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-13
+    - name: leaf13-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-13
+    - name: leaf13-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-13
+    - name: leaf13-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-13
+    - name: leaf13-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-13
+    - name: leaf13-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-13
+    - name: leaf13-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-13
+    - name: leaf13-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf13
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-13
+    - name: leaf14-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-14
+    - name: leaf14-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-14
+    - name: leaf14-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-14
+    - name: leaf14-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-14
+    - name: leaf14-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-14
+    - name: leaf14-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-14
+    - name: leaf14-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-14
+    - name: leaf14-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-14
+    - name: leaf14-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-14
+    - name: leaf14-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-14
+    - name: leaf14-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-14
+    - name: leaf14-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-14
+    - name: leaf14-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-14
+    - name: leaf14-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-14
+    - name: leaf14-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-14
+    - name: leaf14-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-14
+    - name: leaf14-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-14
+    - name: leaf14-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-14
+    - name: leaf14-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-14
+    - name: leaf14-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-14
+    - name: leaf14-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-14
+    - name: leaf14-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-14
+    - name: leaf14-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-14
+    - name: leaf14-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-14
+    - name: leaf14-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf14
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-14
+    - name: leaf15-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-15
+    - name: leaf15-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-15
+    - name: leaf15-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-15
+    - name: leaf15-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-15
+    - name: leaf15-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-15
+    - name: leaf15-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-15
+    - name: leaf15-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-15
+    - name: leaf15-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-15
+    - name: leaf15-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-15
+    - name: leaf15-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-15
+    - name: leaf15-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-15
+    - name: leaf15-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-15
+    - name: leaf15-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-15
+    - name: leaf15-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-15
+    - name: leaf15-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-15
+    - name: leaf15-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-15
+    - name: leaf15-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-15
+    - name: leaf15-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-15
+    - name: leaf15-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-15
+    - name: leaf15-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-15
+    - name: leaf15-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-15
+    - name: leaf15-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-15
+    - name: leaf15-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-15
+    - name: leaf15-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-15
+    - name: leaf15-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf15
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-15
+    - name: leaf16-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-16
+    - name: leaf16-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-16
+    - name: leaf16-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-16
+    - name: leaf16-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-16
+    - name: leaf16-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-16
+    - name: leaf16-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-16
+    - name: leaf16-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-16
+    - name: leaf16-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-16
+    - name: leaf16-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-16
+    - name: leaf16-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-16
+    - name: leaf16-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-16
+    - name: leaf16-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-16
+    - name: leaf16-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-16
+    - name: leaf16-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-16
+    - name: leaf16-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-16
+    - name: leaf16-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-16
+    - name: leaf16-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-16
+    - name: leaf16-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-16
+    - name: leaf16-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-16
+    - name: leaf16-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-16
+    - name: leaf16-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-16
+    - name: leaf16-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-16
+    - name: leaf16-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-16
+    - name: leaf16-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-16
+    - name: leaf16-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf16
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-16
+    - name: leaf17-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-17
+    - name: leaf17-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-17
+    - name: leaf17-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-17
+    - name: leaf17-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-17
+    - name: leaf17-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-17
+    - name: leaf17-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-17
+    - name: leaf17-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-17
+    - name: leaf17-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-17
+    - name: leaf17-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-17
+    - name: leaf17-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-17
+    - name: leaf17-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-17
+    - name: leaf17-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-17
+    - name: leaf17-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-17
+    - name: leaf17-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-17
+    - name: leaf17-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-17
+    - name: leaf17-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-17
+    - name: leaf17-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-17
+    - name: leaf17-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-17
+    - name: leaf17-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-17
+    - name: leaf17-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-17
+    - name: leaf17-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-17
+    - name: leaf17-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-17
+    - name: leaf17-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-17
+    - name: leaf17-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-17
+    - name: leaf17-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf17
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-17
+    - name: leaf18-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-18
+    - name: leaf18-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-18
+    - name: leaf18-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-18
+    - name: leaf18-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-18
+    - name: leaf18-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-18
+    - name: leaf18-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-18
+    - name: leaf18-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-18
+    - name: leaf18-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-18
+    - name: leaf18-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-18
+    - name: leaf18-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-18
+    - name: leaf18-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-18
+    - name: leaf18-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-18
+    - name: leaf18-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-18
+    - name: leaf18-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-18
+    - name: leaf18-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-18
+    - name: leaf18-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-18
+    - name: leaf18-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-18
+    - name: leaf18-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-18
+    - name: leaf18-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-18
+    - name: leaf18-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-18
+    - name: leaf18-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-18
+    - name: leaf18-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-18
+    - name: leaf18-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-18
+    - name: leaf18-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-18
+    - name: leaf18-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf18
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-18
+    - name: leaf19-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-19
+    - name: leaf19-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-19
+    - name: leaf19-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-19
+    - name: leaf19-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-19
+    - name: leaf19-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-19
+    - name: leaf19-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-19
+    - name: leaf19-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-19
+    - name: leaf19-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-19
+    - name: leaf19-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-19
+    - name: leaf19-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-19
+    - name: leaf19-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-19
+    - name: leaf19-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-19
+    - name: leaf19-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-19
+    - name: leaf19-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-19
+    - name: leaf19-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-19
+    - name: leaf19-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-19
+    - name: leaf19-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-19
+    - name: leaf19-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-19
+    - name: leaf19-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-19
+    - name: leaf19-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-19
+    - name: leaf19-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-19
+    - name: leaf19-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-19
+    - name: leaf19-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-19
+    - name: leaf19-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-19
+    - name: leaf19-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf19
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-19
+    - name: leaf20-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-20
+    - name: leaf20-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-20
+    - name: leaf20-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-20
+    - name: leaf20-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-20
+    - name: leaf20-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-20
+    - name: leaf20-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-20
+    - name: leaf20-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-20
+    - name: leaf20-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-20
+    - name: leaf20-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-20
+    - name: leaf20-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-20
+    - name: leaf20-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-20
+    - name: leaf20-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-20
+    - name: leaf20-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-20
+    - name: leaf20-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-20
+    - name: leaf20-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-20
+    - name: leaf20-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-20
+    - name: leaf20-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-20
+    - name: leaf20-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-20
+    - name: leaf20-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-20
+    - name: leaf20-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-20
+    - name: leaf20-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-20
+    - name: leaf20-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-20
+    - name: leaf20-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-20
+    - name: leaf20-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-20
+    - name: leaf20-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf20
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-20
+    - name: leaf21-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-21
+    - name: leaf21-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-21
+    - name: leaf21-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-21
+    - name: leaf21-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-21
+    - name: leaf21-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-21
+    - name: leaf21-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-21
+    - name: leaf21-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-21
+    - name: leaf21-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-21
+    - name: leaf21-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-21
+    - name: leaf21-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-21
+    - name: leaf21-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-21
+    - name: leaf21-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-21
+    - name: leaf21-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-21
+    - name: leaf21-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-21
+    - name: leaf21-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-21
+    - name: leaf21-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-21
+    - name: leaf21-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-21
+    - name: leaf21-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-21
+    - name: leaf21-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-21
+    - name: leaf21-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-21
+    - name: leaf21-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-21
+    - name: leaf21-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-21
+    - name: leaf21-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-21
+    - name: leaf21-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-21
+    - name: leaf21-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf21
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-21
+    - name: leaf22-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-22
+    - name: leaf22-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-22
+    - name: leaf22-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-22
+    - name: leaf22-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-22
+    - name: leaf22-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-22
+    - name: leaf22-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-22
+    - name: leaf22-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-22
+    - name: leaf22-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-22
+    - name: leaf22-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-22
+    - name: leaf22-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-22
+    - name: leaf22-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-22
+    - name: leaf22-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-22
+    - name: leaf22-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-22
+    - name: leaf22-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-22
+    - name: leaf22-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-22
+    - name: leaf22-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-22
+    - name: leaf22-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-22
+    - name: leaf22-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-22
+    - name: leaf22-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-22
+    - name: leaf22-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-22
+    - name: leaf22-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-22
+    - name: leaf22-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-22
+    - name: leaf22-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-22
+    - name: leaf22-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-22
+    - name: leaf22-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf22
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-22
+    - name: leaf23-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-23
+    - name: leaf23-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-23
+    - name: leaf23-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-23
+    - name: leaf23-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-23
+    - name: leaf23-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-23
+    - name: leaf23-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-23
+    - name: leaf23-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-23
+    - name: leaf23-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-23
+    - name: leaf23-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-23
+    - name: leaf23-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-23
+    - name: leaf23-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-23
+    - name: leaf23-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-23
+    - name: leaf23-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-23
+    - name: leaf23-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-23
+    - name: leaf23-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-23
+    - name: leaf23-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-23
+    - name: leaf23-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-23
+    - name: leaf23-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-23
+    - name: leaf23-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-23
+    - name: leaf23-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-23
+    - name: leaf23-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-23
+    - name: leaf23-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-23
+    - name: leaf23-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-23
+    - name: leaf23-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-23
+    - name: leaf23-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf23
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-23
+    - name: leaf24-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-24
+    - name: leaf24-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-24
+    - name: leaf24-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-24
+    - name: leaf24-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-24
+    - name: leaf24-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-24
+    - name: leaf24-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-24
+    - name: leaf24-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-24
+    - name: leaf24-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-24
+    - name: leaf24-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-24
+    - name: leaf24-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-24
+    - name: leaf24-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-24
+    - name: leaf24-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-24
+    - name: leaf24-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-24
+    - name: leaf24-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-24
+    - name: leaf24-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-24
+    - name: leaf24-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-24
+    - name: leaf24-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-24
+    - name: leaf24-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-24
+    - name: leaf24-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-24
+    - name: leaf24-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-24
+    - name: leaf24-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-24
+    - name: leaf24-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-24
+    - name: leaf24-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-24
+    - name: leaf24-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-24
+    - name: leaf24-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf24
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-24
+    - name: leaf25-spine1
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-1
+          remote:
+            node: spine1
+            interface: ethernet-1-25
+    - name: leaf25-spine2
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-2
+          remote:
+            node: spine2
+            interface: ethernet-1-25
+    - name: leaf25-spine3
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-3
+          remote:
+            node: spine3
+            interface: ethernet-1-25
+    - name: leaf25-spine4
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-4
+          remote:
+            node: spine4
+            interface: ethernet-1-25
+    - name: leaf25-spine5
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-5
+          remote:
+            node: spine5
+            interface: ethernet-1-25
+    - name: leaf25-spine6
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-6
+          remote:
+            node: spine6
+            interface: ethernet-1-25
+    - name: leaf25-spine7
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-7
+          remote:
+            node: spine7
+            interface: ethernet-1-25
+    - name: leaf25-spine8
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-8
+          remote:
+            node: spine8
+            interface: ethernet-1-25
+    - name: leaf25-spine9
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-9
+          remote:
+            node: spine9
+            interface: ethernet-1-25
+    - name: leaf25-spine10
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-10
+          remote:
+            node: spine10
+            interface: ethernet-1-25
+    - name: leaf25-spine11
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-11
+          remote:
+            node: spine11
+            interface: ethernet-1-25
+    - name: leaf25-spine12
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-12
+          remote:
+            node: spine12
+            interface: ethernet-1-25
+    - name: leaf25-spine13
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-13
+          remote:
+            node: spine13
+            interface: ethernet-1-25
+    - name: leaf25-spine14
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-14
+          remote:
+            node: spine14
+            interface: ethernet-1-25
+    - name: leaf25-spine15
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-15
+          remote:
+            node: spine15
+            interface: ethernet-1-25
+    - name: leaf25-spine16
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-16
+          remote:
+            node: spine16
+            interface: ethernet-1-25
+    - name: leaf25-spine17
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-17
+          remote:
+            node: spine17
+            interface: ethernet-1-25
+    - name: leaf25-spine18
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-18
+          remote:
+            node: spine18
+            interface: ethernet-1-25
+    - name: leaf25-spine19
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-19
+          remote:
+            node: spine19
+            interface: ethernet-1-25
+    - name: leaf25-spine20
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-20
+          remote:
+            node: spine20
+            interface: ethernet-1-25
+    - name: leaf25-spine21
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-21
+          remote:
+            node: spine21
+            interface: ethernet-1-25
+    - name: leaf25-spine22
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-22
+          remote:
+            node: spine22
+            interface: ethernet-1-25
+    - name: leaf25-spine23
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-23
+          remote:
+            node: spine23
+            interface: ethernet-1-25
+    - name: leaf25-spine24
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-24
+          remote:
+            node: spine24
+            interface: ethernet-1-25
+    - name: leaf25-spine25
+      template: isl
+      endpoints:
+        - local:
+            node: leaf25
+            interface: ethernet-1-25
+          remote:
+            node: spine25
+            interface: ethernet-1-25
+  simulation:
+    simNodes:
+      - name: testman
+        type: TestMan
+    topologies:
+      - node: "*"
+        interface: "*"
+        simNode: testman
