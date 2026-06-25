@@ -13,15 +13,16 @@ cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
 
 FWD_PORT="${FWD_PORT:-15055}"
+REGISTRY_SVC="${REGISTRY_SVC:-edabuilder-in-cluster-dev-registry}"
 PUSH_IMAGE="localhost:${FWD_PORT}/eda-labs/cable-map/operators/cable-map:dev"
 # How edabuilder/the cluster resolve the same registry when baking the app image:
-DEP_IMAGE="edabuilder-in-cluster-dev-registry:5555/eda-labs/cable-map/operators/cable-map:dev"
+DEP_IMAGE="${REGISTRY_SVC}:5555/eda-labs/cable-map/operators/cable-map:dev"
 
 echo "==> build operator image (SPA embedded)"
 IMAGE="$PUSH_IMAGE" ./scripts/build-image.sh
 
 echo "==> port-forward dev registry (localhost:${FWD_PORT})"
-kubectl -n eda-system port-forward svc/edabuilder-in-cluster-dev-registry "${FWD_PORT}:5555" >/tmp/cable-map-regfwd.log 2>&1 &
+kubectl -n eda-system port-forward "svc/${REGISTRY_SVC}" "${FWD_PORT}:5555" >/tmp/cable-map-regfwd.log 2>&1 &
 FWD=$!
 TMP="$(mktemp -d)"
 trap 'kill "$FWD" 2>/dev/null || true; rm -rf "$TMP" 2>/dev/null || true' EXIT
