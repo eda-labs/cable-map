@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Node as RFNode, type NodeTypes, type EdgeTypes } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
-  CircularProgress, Chip, Divider, TextField, Tabs, Tab, Autocomplete, Grow,
+  CircularProgress, Chip, Divider, TextField, Tabs, Tab, Grow,
+  FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
@@ -18,7 +19,7 @@ import SvgGlyph from './icons/SvgGlyph';
 import pdfIcon from './icons/pdf.svg?raw';
 import excelIcon from './icons/excel.svg?raw';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
-import { buildGraph, CABLE_COLOR, LLDP_COLOR } from './graph';
+import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, switchPortCenter, type SwitchData } from './graph';
 import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
 import SwitchNode from './SwitchNode';
@@ -42,6 +43,151 @@ const LLDP_LEGEND: Array<[string, string]> = [
 ];
 
 type Mode = 'light' | 'dark';
+const NODE_LABEL_FILTER_ALL = '__all__';
+const SEARCH_PORT_ZOOM = 3.2;
+
+type SearchMatcher = {
+  raw: string;
+  terms: string[];
+  isRegex: boolean;
+  error?: string;
+  matches: (value: string) => boolean;
+};
+
+type PortSearchTarget = { x: number; y: number; nodeId: string; port: string };
+type SearchHighlight = { nodes: string[]; edges: string[]; ports: string[] };
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function removeNameToken(query: string, name: string): string {
+  return query.replace(new RegExp(`(^|\\s)${escapeRegExp(name)}(?=\\s|$)`, 'i'), ' ');
+}
+
+function buildSearchMatcher(query: string): SearchMatcher | null {
+  const raw = query.trim();
+  if (!raw) return null;
+
+  const regexMatch = raw.match(/^\/(.+)\/([dgimsuvy]*)$/);
+  if (regexMatch) {
+    const flags = [...new Set(regexMatch[2].replace(/[gy]/g, '').split(''))].join('');
+    const normalizedFlags = flags.includes('i') ? flags : `${flags}i`;
+    try {
+      const regex = new RegExp(regexMatch[1], normalizedFlags);
+      return { raw, terms: [], isRegex: true, matches: (value) => regex.test(value) };
+    } catch (e) {
+      return {
+        raw,
+        terms: [],
+        isRegex: true,
+        error: String((e as Error).message || e),
+        matches: () => false,
+      };
+    }
+  }
+
+  const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
+  return {
+    raw,
+    terms,
+    isRegex: false,
+    matches: (value) => {
+      const hay = value.toLowerCase();
+      return terms.every((term) => hay.includes(term));
+    },
+  };
+}
+
+function switchSearchText(node: RFNode, data: SwitchData): string {
+  return [node.id, data.name, data.role, data.platform].join(' ').toLowerCase();
+}
+
+function removeOneTerm(terms: string[], index: number): string[] {
+  return terms.filter((_, i) => i !== index);
+}
+
+function portSearchTarget(matcher: SearchMatcher | null, nodes: RFNode[]): PortSearchTarget | null {
+  if (!matcher || matcher.error || matcher.isRegex) return null;
+  const normalized = matcher.raw.toLowerCase();
+  const tokens = new Set(matcher.terms);
+  const switches = nodes
+    .filter((node) => node.type === 'switch')
+    .map((node) => {
+      const data = node.data as SwitchData;
+      const names = [...new Set([node.id, data.name].filter(Boolean).map((name) => name.toLowerCase()))];
+      return { node, data, names };
+    });
+
+  const exactCandidates = switches
+    .filter(({ names }) => names.some((name) => tokens.has(name)))
+    .toSorted((left, right) => Math.max(...right.names.map((name) => name.length)) - Math.max(...left.names.map((name) => name.length)));
+
+  for (const { node, data, names } of exactCandidates) {
+    let portText = normalized;
+    for (const name of names) portText = removeNameToken(portText, name);
+    const port = findSwitchPort(data, portText);
+    if (!port) continue;
+    const center = switchPortCenter(data, port);
+    if (!center) continue;
+    return { x: node.position.x + center.x, y: node.position.y + center.y, nodeId: node.id, port };
+  }
+
+  const numericTerms = matcher.terms
+    .map((term, index) => ({ term, index }))
+    .filter(({ term }) => /\d/.test(term))
+    .toReversed();
+  for (const { node, data } of switches) {
+    const nodeText = switchSearchText(node, data);
+    for (const { term, index } of numericTerms) {
+      const nodeTerms = removeOneTerm(matcher.terms, index);
+      if (!nodeTerms.length || !nodeTerms.every((nodeTerm) => nodeText.includes(nodeTerm))) continue;
+      const port = findSwitchPort(data, term);
+      if (!port) continue;
+      const center = switchPortCenter(data, port);
+      if (!center) continue;
+      return { x: node.position.x + center.x, y: node.position.y + center.y, nodeId: node.id, port };
+    }
+  }
+  return null;
+}
+
+function edgesForPort(adjacency: Adjacency, nodeId: string, port: string): string[] {
+  const key = `${nodeId}:${port}`;
+  const edges: string[] = [];
+  for (const [edgeId, ports] of adjacency.edgePorts) {
+    if (ports.includes(key)) edges.push(edgeId);
+  }
+  return edges;
+}
+
+function searchHighlight(
+  matcher: SearchMatcher | null,
+  displayNodes: RFNode[],
+  adjacency: Adjacency,
+  shown: Set<string> | null,
+  portTarget: PortSearchTarget | null,
+): SearchHighlight {
+  if (!matcher || matcher.error) return { nodes: [], edges: [], ports: [] };
+  if (portTarget) {
+    return {
+      nodes: [portTarget.nodeId],
+      edges: edgesForPort(adjacency, portTarget.nodeId, portTarget.port),
+      ports: [`${portTarget.nodeId}:${portTarget.port}`],
+    };
+  }
+
+  const displayNodeIds = new Set(displayNodes.map((node) => node.id));
+  const nodes = new Set<string>();
+  const edges = new Set<string>();
+  for (const [id, hay] of adjacency.search) {
+    if (shown && !shown.has(id)) continue;
+    if (!matcher.matches(hay)) continue;
+    if (displayNodeIds.has(id)) nodes.add(id);
+    for (const edgeId of adjacency.nodeEdges.get(id) ?? []) edges.add(edgeId);
+  }
+  return { nodes: [...nodes], edges: [...edges], ports: [] };
+}
 
 export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: () => void }) {
   const [topo, setTopo] = useState<Topology | null>(null);
@@ -49,7 +195,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [open, setOpen] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
-  const [labelFilter, setLabelFilter] = useState<string[]>([]);   // selected "key=value" chips
+  const [selectedNodeLabelFilter, setSelectedNodeLabelFilter] = useState(NODE_LABEL_FILTER_ALL);
   const [namespace, setNamespace] = useState('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [namespacesReady, setNamespacesReady] = useState(false);
@@ -58,6 +204,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
   useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
+  const [flow, setFlow] = useState<ReactFlowInstance | null>(null);
 
   // drag the top edge of the drawer to resize its height
   const startResize = (e: React.PointerEvent) => {
@@ -113,27 +260,41 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const onSel = useCallback(({ nodes: sel }: { nodes: RFNode[] }) =>
     setSelected(sel.filter((n) => n.type === 'switch').map((n) => n.id)), []);
 
-  // label filter tokens are "label:key=value", suggested from the labels EDA reports
-  const labelOptions = useMemo(
-    () => Object.entries(topo?.labels ?? {}).flatMap(([k, vs]) => vs.map((v) => `label:${k}=${v}`)).sort(),
-    [topo?.labels],
+  const nodeLabelFilterOptions = useMemo(
+    () => {
+      const labels = new Set<string>();
+      for (const nodeLabels of adjacency.nodeLabels.values()) {
+        for (const label of nodeLabels) labels.add(label);
+      }
+      return [
+        { value: NODE_LABEL_FILTER_ALL, label: 'Labels: All Nodes' },
+        ...[...labels]
+          .toSorted((left, right) => left.localeCompare(right))
+          .map((value) => ({ value, label: value })),
+      ];
+    },
+    [adjacency],
   );
 
-  // the search HIDES everything that doesn't match: a node must carry every selected label AND, if
-  // free text is typed, match it (name / platform / port). A matched switch keeps its endpoint chips
+  useEffect(() => {
+    setSelectedNodeLabelFilter(NODE_LABEL_FILTER_ALL);
+  }, [namespace]);
+
+  useEffect(() => {
+    if (selectedNodeLabelFilter === NODE_LABEL_FILTER_ALL) return;
+    const optionExists = nodeLabelFilterOptions.some((option) => option.value === selectedNodeLabelFilter);
+    if (!optionExists) setSelectedNodeLabelFilter(NODE_LABEL_FILTER_ALL);
+  }, [nodeLabelFilterOptions, selectedNodeLabelFilter]);
+
+  // the label filter HIDES everything that doesn't match: a node must carry the selected label.
+  // A matched switch keeps its endpoint chips
   // (servers) so its cabling stays intact. null = no filter (show everything).
-  const filterActive = !!query.trim() || labelFilter.length > 0;
+  const filterActive = selectedNodeLabelFilter !== NODE_LABEL_FILTER_ALL;
   const shown = useMemo<Set<string> | null>(() => {
     if (!filterActive) return null;
-    const term = query.trim().toLowerCase();
-    const labels = labelFilter.map((l) => l.replace(/^label:/, ''));
     const out = new Set<string>();
-    for (const [id, hay] of adjacency.search) {
-      if (labels.length) {
-        const set = adjacency.nodeLabels.get(id);                 // only switches carry labels
-        if (!set || !labels.every((l) => set.has(l))) continue;
-      }
-      if (term && !hay.includes(term)) continue;
+    for (const [id, set] of adjacency.nodeLabels) {
+      if (!set.has(selectedNodeLabelFilter)) continue;
       out.add(id);
     }
     // keep a matched node's directly-attached context: a switch pulls in its endpoint chips (servers),
@@ -149,7 +310,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       }
     }
     return out;
-  }, [filterActive, query, labelFilter, adjacency, switchIds]);
+  }, [filterActive, selectedNodeLabelFilter, adjacency, switchIds]);
 
   // Ctrl/Cmd+A selects all switches (ignored while typing in an input)
   useEffect(() => {
@@ -165,11 +326,71 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   }, [setNodes]);
 
   const hasEdgeLinks = useMemo(() => edges.some((e) => e.id.startsWith('stub|')), [edges]);
+  const ready = !!topo && topo.nodes.length > 0;
   const displayNodes = useMemo(() => {
     let ns = hideEdges ? nodes.filter((n) => n.type !== 'endpoint') : nodes;
     if (shown) ns = ns.filter((n) => shown.has(n.id));
     return ns;
   }, [hideEdges, nodes, shown]);
+  const searchMatcher = useMemo(() => buildSearchMatcher(query), [query]);
+  const displayNodeIds = useMemo(() => new Set(displayNodes.map((n) => n.id)), [displayNodes]);
+  const searchTargetIds = useMemo(() => {
+    if (!searchMatcher || searchMatcher.error) return [];
+
+    const targets = new Set<string>();
+    for (const [id, hay] of adjacency.search) {
+      if (!searchMatcher.matches(hay)) continue;
+      if (shown && !shown.has(id)) continue;
+      if (displayNodeIds.has(id)) {
+        targets.add(id);
+        continue;
+      }
+
+      for (const edgeId of adjacency.nodeEdges.get(id) ?? []) {
+        const ends = adjacency.edgeEnds.get(edgeId);
+        if (!ends) continue;
+        const other = ends[0] === id ? ends[1] : ends[0];
+        if (displayNodeIds.has(other)) targets.add(other);
+      }
+    }
+    return [...targets];
+  }, [searchMatcher, adjacency, shown, displayNodeIds]);
+  const searchTargetNodes = useMemo(
+    () => displayNodes.filter((node) => searchTargetIds.includes(node.id)),
+    [displayNodes, searchTargetIds],
+  );
+  const searchPortTarget = useMemo(() => portSearchTarget(searchMatcher, displayNodes), [searchMatcher, displayNodes]);
+  const highlightedSearch = useMemo(
+    () => searchHighlight(searchMatcher, displayNodes, adjacency, shown, searchPortTarget),
+    [searchMatcher, displayNodes, adjacency, shown, searchPortTarget],
+  );
+  useEffect(() => {
+    if (!ready || !searchMatcher || searchMatcher.error) {
+      trace.clearSearch();
+      return;
+    }
+    trace.highlight(highlightedSearch.nodes, highlightedSearch.edges, highlightedSearch.ports);
+  }, [ready, searchMatcher, highlightedSearch]);
+  useEffect(() => {
+    if (!flow || !ready || !searchMatcher || searchMatcher.error) return;
+    const handle = window.setTimeout(() => {
+      if (searchPortTarget) {
+        void flow.setCenter(searchPortTarget.x, searchPortTarget.y, {
+          zoom: SEARCH_PORT_ZOOM,
+          duration: 350,
+        });
+        return;
+      }
+      if (searchTargetNodes.length === 0) return;
+      void flow.fitView({
+        nodes: searchTargetNodes,
+        padding: searchTargetNodes.length === 1 ? 0.45 : 0.25,
+        duration: 350,
+        maxZoom: 1.4,
+      });
+    }, 160);
+    return () => window.clearTimeout(handle);
+  }, [flow, ready, searchMatcher, searchPortTarget, searchTargetNodes]);
   const traceKey = useTrace((s) => s.key);
   const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
   const displayEdges = useMemo(() => {
@@ -178,7 +399,6 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     return elevatedEdge ? base.map((e) => (e.id === elevatedEdge ? { ...e, zIndex: 1 } : e)) : base;
   }, [hideEdges, edges, elevatedEdge, shown, adjacency]);
 
-  const ready = !!topo && topo.nodes.length > 0;
   const openNode = topo?.nodes.find((n) => n.name === open);
   const lldpOn = useLldp();
 
@@ -202,33 +422,42 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           <Box sx={{ flex: 1 }} />
           {ready && (
             <Box sx={{ position: 'absolute', left: '50%', top: 0, bottom: 0, transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.75, width: 400, maxWidth: 400, overflow: 'hidden' }}>
-              {/* type a node / server / port to narrow, or `label:key=value` (chips) to filter by label —
-                  both AND together, and anything that doesn't match is hidden from the canvas. */}
+              {/* Search locates matches by fitting the viewport; filtering is handled by the label dropdown. */}
               <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', flexShrink: 0 }} />
-              <Autocomplete multiple size="small" disableCloseOnSelect clearOnBlur={false} limitTags={2}
-                options={labelOptions} value={labelFilter} onChange={(_, v) => setLabelFilter(v)}
-                inputValue={query} onInputChange={(_, v) => setQuery(v)}
+              <TextField size="small" variant="outlined" value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search node / port · /regex/"
+                error={!!searchMatcher?.error}
+                title={searchMatcher?.error}
                 sx={{
-                  // flex item must allow shrinking (min-width:0) or nowrap chips push it past 400px
                   flex: 1, minWidth: 0,
-                  // one fixed-height line matching the namespace button; chips scroll sideways, never wrap
                   '& .MuiOutlinedInput-root': {
-                    height: 31, flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden',
-                    py: 0, fontSize: 13, bgcolor: 'background.paper',
-                    scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
+                    height: 31, fontSize: 13, bgcolor: 'background.paper',
                   },
-                  '& .MuiAutocomplete-input': { py: '3px', minWidth: 50, flex: '1 1 50px' },
-                  '& .MuiChip-root': { height: 22, my: 0, flexShrink: 0 },
+                  '& .MuiInputBase-input': { py: '3px' },
                 }}
-                renderValue={(value, getItemProps) => value.map((option, index) => {
-                  const { key, ...rest } = getItemProps({ index });
-                  return <Chip key={key} size="small" variant="outlined" label={option.replace(/^label:/, '')} {...rest} />;
-                })}
-                renderInput={(params) => (
-                  <TextField {...params} variant="outlined"
-                    placeholder={labelFilter.length ? '' : 'Search node / server / port · label:key=value'} />
-                )} />
+              />
             </Box>
+          )}
+          {ready && (
+            <FormControl size="small" sx={{ minWidth: 220, maxWidth: 280 }}>
+              <InputLabel id="label-filter-select-label" sx={{ bgcolor: 'background.paper', px: 0.5 }}>
+                Label filter
+              </InputLabel>
+              <Select
+                labelId="label-filter-select-label"
+                value={selectedNodeLabelFilter}
+                label="Label filter"
+                onChange={(e) => setSelectedNodeLabelFilter(e.target.value)}
+                sx={{ height: 31, fontSize: 13, bgcolor: 'background.paper' }}
+              >
+                {nodeLabelFilterOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           )}
           {namespaces.length > 1 && namespace && (
             <NamespacePicker value={namespace} options={namespaces} onChange={setNamespace} />
@@ -276,9 +505,11 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           <ReactFlow
             nodes={displayNodes} edges={displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
+            onInit={setFlow}
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
             proOptions={{ hideAttribution: true }}
             minZoom={0.15}
+            maxZoom={4}
             onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
             onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
             onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}

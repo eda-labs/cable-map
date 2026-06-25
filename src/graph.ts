@@ -87,6 +87,8 @@ export const switchHOf = (platform: string) =>
   layoutOf(platform)
     ? HEAD_H + panelDims(rowsOf(platform), aspectOf(platform)).h + STRIP_PAD * 2
     : switchH(rowsOf(platform));
+const SWITCH_HEADER_H = 20, SWITCH_HEADER_MB = 6;
+const SWITCH_PANEL_X = STRIP_PAD, SWITCH_PANEL_Y = STRIP_PAD + SWITCH_HEADER_H + SWITCH_HEADER_MB;
 const EP_W = 112, EP_H = 22, EP_VGAP = 6, EP_HGAP = 10, EP_COLS = 2;
 const SPINE_Y = 0, LEAF_Y = 320, EP_TOP_GAP = 34;
 
@@ -98,6 +100,81 @@ function shortEndpoint(leafId: string, remote: string): string {
 }
 
 export type BuiltGraph = { nodes: RFNode[]; edges: RFEdge[]; adjacency: Adjacency };
+
+export function switchCages(d: SwitchData): string[] {
+  return d.layout ? d.layout.map((p) => p.p) : Array.from({ length: d.portCount }, (_, i) => String(i + 1));
+}
+
+export function findSwitchPort(d: SwitchData, text: string): string | null {
+  const cages = switchCages(d);
+  const cageSet = new Set(cages);
+  const slotted = cages.some((cage) => cage.includes('-'));
+  const tokens = text.toLowerCase().split(/\s+/).filter(Boolean);
+  const candidates = new Set<string>();
+
+  for (const token of [text.toLowerCase(), ...tokens]) {
+    const key = cageKey(token, slotted);
+    if (key) candidates.add(key);
+
+    const normalized = token
+      .replace(/^ethernet-/, '')
+      .replace(/^et-/, '')
+      .replace(/\//g, '-')
+      .replace(/[^a-z0-9-]+/g, '');
+    if (normalized) candidates.add(normalized);
+
+    const numbers = token.match(/\d+/g) ?? [];
+    if (numbers.length >= 2) candidates.add(`${numbers[0]}-${numbers[1]}`);
+    if (numbers.length >= 1) candidates.add(numbers.at(-1)!);
+  }
+
+  for (const candidate of candidates) {
+    if (cageSet.has(candidate)) return candidate;
+  }
+  for (const candidate of candidates) {
+    if (!/^\d+$/.test(candidate)) continue;
+    const match = cages.find((cage) => cage === candidate || cage.endsWith(`-${candidate}`));
+    if (match) return match;
+  }
+  return null;
+}
+
+export function switchPortCenter(d: SwitchData, port: string): { x: number; y: number } | null {
+  const rows = Math.max(1, d.rows);
+  if (d.layout) {
+    const p = d.layout.find((pos) => pos.p === port);
+    if (!p) return null;
+    const { w: W, h: H } = panelDims(rows, d.aspect ?? 4);
+    return { x: SWITCH_PANEL_X + p.x * W, y: SWITCH_PANEL_Y + p.y * H };
+  }
+
+  const index = Number(port) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= d.portCount) return null;
+  const row = index % rows;
+  const col = Math.floor(index / rows);
+  return {
+    x: SWITCH_PANEL_X + col * (CELL + CELL_GAP) + CELL / 2,
+    y: SWITCH_PANEL_Y + row * (CELL + CELL_GAP) + CELL / 2,
+  };
+}
+
+function nodeLabelPairs(n: Topology['nodes'][number]): string[] {
+  const labels = new Map<string, string>();
+  const rawLabels = n.raw?.metadata?.labels;
+
+  if (rawLabels && typeof rawLabels === 'object' && !Array.isArray(rawLabels)) {
+    for (const [key, value] of Object.entries(rawLabels)) {
+      if (value == null) continue;
+      labels.set(key, String(value));
+    }
+  }
+  for (const [key, value] of Object.entries(n.labels ?? {})) labels.set(key, value);
+  if (n.role && !labels.has('eda.nokia.com/role')) labels.set('eda.nokia.com/role', n.role);
+
+  return [...labels.entries()]
+    .filter(([key, value]) => key.trim() && value.trim())
+    .map(([key, value]) => `${key}=${value}`);
+}
 
 export function buildGraph(topo: Topology): BuiltGraph {
   const byName = new Map(topo.nodes.map((n) => [n.name, n]));
@@ -245,7 +322,7 @@ export function buildGraph(topo: Topology): BuiltGraph {
   // per-node label set ("key=value") for the label filter; also fold labels into the free-text haystack
   const nodeLabels = new Map<string, Set<string>>();
   for (const n of topo.nodes) {
-    const pairs = Object.entries(n.labels ?? {}).map(([k, v]) => `${k}=${v}`);
+    const pairs = nodeLabelPairs(n);
     nodeLabels.set(n.name, new Set(pairs));
     search.set(n.name, [...(haystacks.get(n.name) ?? [n.name, n.platform, n.role]), ...pairs].join(' ').toLowerCase());
   }

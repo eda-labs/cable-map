@@ -99,8 +99,13 @@ type RawBreakout struct {
 // the first "<num><sep><num>" match. A 3rd number is a breakout channel, not a cage, so it must not
 // be captured.
 var portIndexRE = regexp.MustCompile(`\d+\D+(\d+)`)
+var srosConnectorRE = regexp.MustCompile(`(?i)(?:^|[/_-])c(\d+)(?:[/_-]|$)`)
 
 func portIndex(iface string) (int, bool) {
+	if m := srosConnectorRE.FindStringSubmatch(iface); m != nil {
+		n, err := strconv.Atoi(m[1])
+		return n, err == nil
+	}
 	m := portIndexRE.FindStringSubmatch(iface)
 	if m == nil {
 		return 0, false

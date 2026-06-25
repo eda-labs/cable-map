@@ -255,6 +255,214 @@
           "operatingSystem": "srl"
         }
       }
+    },
+    {
+      "name": "sros-sr1",
+      "platform": "7750 SR-1-24D",
+      "os": "sros",
+      "role": "leaf",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "lab/chassis": "7750-sr-1-24d"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "native SROS fixed connector c1",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "sros-server-a",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "1/1/c6/1",
+          "desc": "native SROS fixed connector c6",
+          "remoteNode": "sros-sr2s",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2s 1/1/c1/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "1/1/c12/1",
+          "desc": "native SROS fixed connector c12",
+          "remoteNode": "",
+          "remotePort": "eth1",
+          "type": "edge",
+          "peer": "sros-server-b",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "1/1/c24/1",
+          "desc": "native SROS fixed connector c24",
+          "remoteNode": "sros-sr2se",
+          "remotePort": "2/1/c36/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2se 2/1/c36/1",
+          "lldpStatus": "ok"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "sros-sr1",
+          "namespace": "",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "lab/chassis": "7750-sr-1-24d"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1-24D",
+          "operatingSystem": "sros"
+        }
+      }
+    },
+    {
+      "name": "sros-sr2s",
+      "platform": "7750 SR-2s 6p_6p",
+      "os": "sros",
+      "role": "leaf",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "lab/chassis": "7750-sr-2s"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "native SROS slot 1 connector c1",
+          "remoteNode": "sros-sr1",
+          "remotePort": "1/1/c6/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr1 1/1/c6/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "1/1/c6/1",
+          "desc": "native SROS slot 1 connector c6",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "sros-host-1",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "2/1/c1/1",
+          "desc": "native SROS slot 2 connector c1",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "sros-host-2",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "2/1/c6/1",
+          "desc": "native SROS slot 2 connector c6",
+          "remoteNode": "sros-sr2se",
+          "remotePort": "1/1/c36/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2se 1/1/c36/1",
+          "lldpStatus": "ok"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "sros-sr2s",
+          "namespace": "",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "lab/chassis": "7750-sr-2s"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-2s 6p_6p",
+          "operatingSystem": "sros"
+        }
+      }
+    },
+    {
+      "name": "sros-sr2se",
+      "platform": "7750 SR-2se DC 400G_400G",
+      "os": "sros",
+      "role": "spine",
+      "labels": {
+        "eda.nokia.com/role": "spine",
+        "eda.nokia.com/os": "sros",
+        "lab/chassis": "7750-sr-2se"
+      },
+      "table": [
+        {
+          "label": "1/1/c36/1",
+          "desc": "native SROS slot 1 connector c36",
+          "remoteNode": "sros-sr2s",
+          "remotePort": "2/1/c6/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2s 2/1/c6/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "2/1/c36/1",
+          "desc": "native SROS slot 2 connector c36",
+          "remoteNode": "sros-sr1",
+          "remotePort": "1/1/c24/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr1 1/1/c24/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-a-12-1",
+          "desc": "EDA-normalized SROS slot 1 connector 12",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "eda-normalized-sros-a",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-2-a-32-1",
+          "desc": "EDA-normalized SROS slot 2 connector 32",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "eda-normalized-sros-b",
+          "lldpStatus": "none"
+        }
+      ],
+      "breakouts": {
+        "1-36": {
+          "channels": 4,
+          "speed": "400G"
+        },
+        "2-36": {
+          "channels": 4,
+          "speed": "400G"
+        }
+      },
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "sros-sr2se",
+          "namespace": "",
+          "labels": {
+            "eda.nokia.com/role": "spine",
+            "eda.nokia.com/os": "sros",
+            "lab/chassis": "7750-sr-2se"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-2se DC 400G_400G",
+          "operatingSystem": "sros"
+        }
+      }
     }
   ],
   "links": [
@@ -304,6 +512,30 @@
       "target": "spine1",
       "sourcePort": "ethernet-1-2",
       "targetPort": "ethernet-1-4",
+      "type": "interSwitch"
+    },
+    {
+      "id": "sros-sr1-sros-sr2s-isl-1",
+      "source": "sros-sr1",
+      "target": "sros-sr2s",
+      "sourcePort": "1/1/c6/1",
+      "targetPort": "1/1/c1/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "sros-sr2s-sros-sr2se-isl-1",
+      "source": "sros-sr2s",
+      "target": "sros-sr2se",
+      "sourcePort": "2/1/c6/1",
+      "targetPort": "1/1/c36/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "sros-sr1-sros-sr2se-isl-1",
+      "source": "sros-sr1",
+      "target": "sros-sr2se",
+      "sourcePort": "1/1/c24/1",
+      "targetPort": "2/1/c36/1",
       "type": "interSwitch"
     }
   ],
@@ -415,6 +647,14 @@
     "eda.nokia.com/role": [
       "leaf",
       "spine"
+    ],
+    "eda.nokia.com/os": [
+      "sros"
+    ],
+    "lab/chassis": [
+      "7750-sr-1-24d",
+      "7750-sr-2s",
+      "7750-sr-2se"
     ],
     "region": [
       "akl"
