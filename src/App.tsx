@@ -4,7 +4,7 @@ import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
   CircularProgress, Chip, Divider, TextField, Tabs, Tab, Grow,
-  FormControl, InputLabel, Select, MenuItem,
+  FormControl, InputAdornment, Select, MenuItem,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
@@ -545,33 +545,31 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           {ready && (
             <Box sx={{ position: 'absolute', left: '50%', top: 0, bottom: 0, transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.75, width: 400, maxWidth: 400, overflow: 'hidden' }}>
               {/* Search locates matches by fitting the viewport; filtering is handled by the label dropdown. */}
-              <SearchIcon sx={{ fontSize: 18, color: 'text.secondary', flexShrink: 0 }} />
               <TextField size="small" variant="outlined" value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search node / port · /regex/"
                 error={!!searchMatcher?.error}
                 title={searchMatcher?.error}
+                slotProps={{ input: { startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  </InputAdornment>
+                ) } }}
                 sx={{
                   flex: 1, minWidth: 0,
-                  '& .MuiOutlinedInput-root': {
-                    height: 31, fontSize: 13, bgcolor: 'background.paper',
-                  },
+                  '& .MuiOutlinedInput-root': { height: 31 },
                   '& .MuiInputBase-input': { py: '3px' },
                 }}
               />
             </Box>
           )}
           {ready && (
-            <FormControl size="small" sx={{ minWidth: 220, maxWidth: 280 }}>
-              <InputLabel id="label-filter-select-label" sx={{ bgcolor: 'background.paper', px: 0.5 }}>
-                Label filter
-              </InputLabel>
+            <FormControl size="small" sx={{ width: 260 }}>
               <Select
-                labelId="label-filter-select-label"
                 value={selectedNodeLabelFilter}
-                label="Label filter"
                 onChange={(e) => setSelectedNodeLabelFilter(e.target.value)}
-                sx={{ height: 31, fontSize: 13, bgcolor: 'background.paper' }}
+                inputProps={{ 'aria-label': 'Label filter' }}
+                sx={{ height: 31 }}
               >
                 {nodeLabelFilterOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -671,7 +669,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
                         </Box>
                       ))}
                     </Box>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 11 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                       {lldpOn
                         ? 'LLDP overlay — cables coloured by neighbour match vs the configured remote'
                         : 'Hover to trace · click a cable or port to pin · click a switch for its panel'}

@@ -43,7 +43,7 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
       {showHeader && (
         <Typography variant="h5" gutterBottom>
           {node.name}{' '}
-          <Typography component="span" color="text.secondary" sx={{ fontSize: 14 }}>
+          <Typography component="span" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
             {node.platform}
           </Typography>
         </Typography>
