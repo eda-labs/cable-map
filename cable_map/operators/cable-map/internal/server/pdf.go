@@ -23,6 +23,9 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 	if nodes != "" {
 		params.Set("nodes", nodes)
 	}
+	if ns := strings.TrimSpace(r.URL.Query().Get("ns")); ns != "" {
+		params.Set("ns", ns)
+	}
 	if remote := r.URL.Query().Get("remote"); remote != "" {
 		params.Set("remote", remote)
 	}

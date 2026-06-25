@@ -50,8 +50,9 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const [labelFilter, setLabelFilter] = useState<string[]>([]);   // selected "key=value" chips
-  const [namespace, setNamespace] = useState('');     // '' == All Namespaces
+  const [namespace, setNamespace] = useState('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
+  const [namespacesReady, setNamespacesReady] = useState(false);
   const [hideEdges, setHideEdges] = useState(false);
   const [legendOpen, setLegendOpen] = useState(true);
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
@@ -68,15 +69,27 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     window.addEventListener('pointerup', up);
   };
 
-  // the EDA namespaces to choose from — streamed so the picker updates live
-  useEffect(() => streamNamespaces(setNamespaces), []);
+  // the EDA namespaces to choose from — streamed so the picker updates live.
+  useEffect(() => streamNamespaces((next) => {
+    setNamespaces(next);
+    setNamespacesReady(true);
+    setErr('');
+    setNamespace((current) => (current && next.includes(current) ? current : (next[0] ?? '')));
+  }, (msg) => {
+    setNamespacesReady(true);
+    setErr(msg);
+  }), []);
 
   // live topology stream for the selected namespace — pushes the snapshot then live updates.
   // Reconnects when the namespace changes; clears first so stale data never lingers.
   useEffect(() => {
     setTopo(null);
+    if (!namespace) {
+      setErr((current) => current || (namespacesReady ? 'no namespaces with topology resources' : ''));
+      return;
+    }
     return streamTopology(namespace, (t) => { setTopo(t); setErr(''); }, setErr);
-  }, [namespace]);
+  }, [namespace, namespacesReady]);
 
   const { nodes: builtNodes, edges, switchIds, adjacency } = useMemo(() => {
     const empty: Adjacency = { nodeEdges: new Map(), edgeEnds: new Map(), edgePorts: new Map(), search: new Map(), nodeLabels: new Map() };
@@ -125,6 +138,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     }
     // keep a matched node's directly-attached context: a switch pulls in its endpoint chips (servers),
     // an endpoint pulls in the switch(es) it lands on. Peer switches across an ISL stay hidden.
+    // oxlint-disable-next-line unicorn/no-useless-spread -- snapshot the seed matches before adding context nodes.
     for (const id of [...out]) {
       const idIsSwitch = switchIds.has(id);
       for (const ed of adjacency.nodeEdges.get(id) ?? []) {
@@ -172,6 +186,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     const targets = ids.length ? ids : (topo?.nodes.map((n) => n.name) ?? []);
     const params = new URLSearchParams();
     if (ids.length) params.set('nodes', ids.join(','));
+    if (namespace) params.set('ns', namespace);
     const sub = edgeRemote.subset(targets);
     if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
     const qs = params.toString();
@@ -215,8 +230,11 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
                 )} />
             </Box>
           )}
-          {namespaces.length > 0 && (
+          {namespaces.length > 1 && namespace && (
             <NamespacePicker value={namespace} options={namespaces} onChange={setNamespace} />
+          )}
+          {namespaces.length === 1 && namespace && (
+            <Chip size="small" variant="outlined" label={namespace} sx={{ maxWidth: 180 }} />
           )}
           {ready && (
             <Tooltip title={selected.length ? `Download PDF (${selected.length} selected)` : 'Download PDF (all nodes)'}>

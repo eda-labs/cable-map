@@ -36,7 +36,7 @@ PROJECT_TARGETS += check
 PROJECT_TARGETS += clean
 
 .PHONY: dev
-HELP_dev := Start the Vite dev server (proxies /api + /pdf to a backend at EDA_API, else :8080)
+HELP_dev := Start the Vite dev server (mock /api by default; set EDA_API to proxy a real backend)
 dev:
 	$(PNPM) dev
 

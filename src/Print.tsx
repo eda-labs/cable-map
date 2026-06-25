@@ -10,11 +10,13 @@ import './print.css';
 // PDF can capture before the larger SVG panels load, dropping them.
 export default function Print() {
   const [topo, setTopo] = useState<Topology | null>(null);
-  useEffect(() => { fetchTopology().then(setTopo); }, []);
+  const params = useMemo(() => new URLSearchParams(location.search), []);
+  const namespace = params.get('ns') ?? '';
+  useEffect(() => { fetchTopology(namespace).then(setTopo); }, [namespace]);
   useEffect(() => {
-    const p = new URLSearchParams(location.search).get('remote');
+    const p = params.get('remote');
     if (p) { try { edgeRemote.hydrate(JSON.parse(p)); } catch { /* malformed param */ } }
-  }, []);
+  }, [params]);
   // the app sets color-scheme:dark globally, which makes the PDF page background
   // black outside the content — force a white, light-scheme page for printing.
   useEffect(() => {
@@ -24,10 +26,10 @@ export default function Print() {
 
   const nodes = useMemo(() => {
     if (!topo) return [];
-    const want = new URLSearchParams(location.search).get('nodes');
+    const want = params.get('nodes');
     const ids = want ? want.split(',').filter(Boolean) : topo.nodes.map((n) => n.name);
     return ids.map((id) => topo.nodes.find((n) => n.name === id)).filter((n) => !!n);
-  }, [topo]);
+  }, [params, topo]);
 
   // signal readiness only after every front panel reports done (ready or missing)
   const total = nodes.length;

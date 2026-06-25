@@ -4,13 +4,13 @@ import CheckIcon from '@mui/icons-material/CheckOutlined';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDownOutlined';
 
 // EDA-style namespace picker: a labelled button that opens a menu of namespaces, the active
-// one marked with a check (mirrors EDA's own NamespacePicker). '' is the All Namespaces entry.
+// one marked with a check (mirrors EDA's own NamespacePicker).
 export default function NamespacePicker({ value, options, onChange }: {
   value: string; options: string[]; onChange: (ns: string) => void;
 }) {
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
-  const items = [{ id: '', label: 'All Namespaces' }, ...options.map((n) => ({ id: n, label: n }))];
-  const current = items.find((i) => i.id === value)?.label ?? 'All Namespaces';
+  const items = options.map((n) => ({ id: n, label: n }));
+  const current = items.find((i) => i.id === value)?.label ?? options[0] ?? 'Namespace';
 
   return (
     <>

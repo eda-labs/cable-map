@@ -7,8 +7,9 @@ export type { Node, Edge, Row, LagInfo, LagMember, Breakout, Topology, LldpStatu
 // the EDA HttpProxy sub-path as well as at the root.
 export const BASE = import.meta.env.BASE_URL;
 
-export async function fetchTopology(): Promise<Topology> {
-  const res = await fetch(`${BASE}api/topology`);
+export async function fetchTopology(namespace = ''): Promise<Topology> {
+  const qs = namespace ? `?ns=${encodeURIComponent(namespace)}` : '';
+  const res = await fetch(`${BASE}api/topology${qs}`);
   if (!res.ok) throw new Error(`topology ${res.status}: ${(await res.json()).error || ''}`);
   return res.json();
 }
@@ -24,11 +25,12 @@ export async function fetchNamespaces(): Promise<string[]> {
 }
 
 // Live EDA namespace list — the picker updates as namespaces are created/deleted.
-export function streamNamespaces(onList: (names: string[]) => void): () => void {
+export function streamNamespaces(onList: (names: string[]) => void, onError?: (msg: string) => void): () => void {
   const es = new EventSource(`${BASE}api/namespaces/stream`);
   es.addEventListener('message', (ev) => {
     try { onList(JSON.parse(ev.data) as string[]); } catch { /* ignore malformed frame */ }
   });
+  es.addEventListener('error', () => onError?.('namespace stream disconnected — reconnecting…'));
   return () => es.close();
 }
 

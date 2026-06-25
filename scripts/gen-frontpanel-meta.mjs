@@ -9,6 +9,9 @@ import { fileURLToPath } from 'node:url'
 // Diagonal affine (no rotation/skew) mapping a point inner->parent: (a·x+e, d·y+f).
 const ID = { a: 1, d: 1, e: 0, f: 0 }
 const compose = (o, i) => ({ a: o.a * i.a, d: o.d * i.d, e: o.a * i.e + o.e, f: o.d * i.f + o.f })
+const nums = (s) => [...s.matchAll(/-?\d+\.?\d*/g)].map((m) => +m[0])
+const round = (n) => +n.toFixed(4)
+const pk = (p) => p.split('-').map(Number)
 // inner->parent transform for a nested <svg> viewport: uniform xMidYMid-meet scale, then centre.
 // Composites stack cards as nested viewports, so cage coords must be mapped through these to reach
 // root space; a flat read would mix per-card coordinate systems.
@@ -22,8 +25,6 @@ function viewport(tag) {
 }
 
 function readFrontpanelMeta(dir) {
-  const nums = (s) => [...s.matchAll(/-?\d+\.?\d*/g)].map((m) => +m[0])
-  const round = (n) => +n.toFixed(4)
   const out = {}
   for (const file of readdirSync(dir).filter((f) => f.endsWith('.svg'))) {
     const svg = readFileSync(`${dir}/${file}`, 'utf8')
@@ -52,8 +53,8 @@ function readFrontpanelMeta(dir) {
     // rows = distinct horizontal cage bands. The gap threshold is relative to the median cage height
     // so it works across exporters: Cairo coords run 0–1368 (cages ~30 tall), the flat SR-1/X-series
     // run 0–170 (cages ~3.5 tall) — an absolute threshold would collapse the flat panels to one row.
-    const medH = cages.map((c) => c.h).sort((a, b) => a - b)[Math.floor(cages.length / 2)] || 1
-    const ys = cages.map((c) => c.cy).sort((a, b) => a - b)
+    const medH = cages.map((c) => c.h).toSorted((a, b) => a - b)[Math.floor(cages.length / 2)] || 1
+    const ys = cages.map((c) => c.cy).toSorted((a, b) => a - b)
     let rows = 0, prev = -Infinity
     for (const y of ys) { if (y - prev > medH * 0.5) rows++; prev = y }
     // frame = the cage bounding box, so the ports fill the canvas panel with no chassis-body whitespace
@@ -63,9 +64,8 @@ function readFrontpanelMeta(dir) {
     const fw = (maxX - fx) || 1, fh = (maxY - fy) || 1
     // slotted (modular) when any cage id carries a "<slot>-" prefix; sort by slot then port
     const slotted = cages.some((c) => c.p.includes('-'))
-    const pk = (p) => p.split('-').map(Number)
     const layout = cages.map((c) => ({ p: c.p, x: round((c.cx - fx) / fw), y: round((c.cy - fy) / fh), w: round(c.w / fw), h: round(c.h / fh) }))
-      .sort((a, b) => { const A = pk(a.p), B = pk(b.p); return (A[0] - B[0]) || ((A[1] ?? 0) - (B[1] ?? 0)) })
+      .toSorted((a, b) => { const A = pk(a.p), B = pk(b.p); return (A[0] - B[0]) || ((A[1] ?? 0) - (B[1] ?? 0)) })
     out[file.slice(0, -4)] = { ports: cages.length, rows, aspect: round(fw / fh), slotted, layout }
   }
   return out
