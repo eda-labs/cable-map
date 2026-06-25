@@ -43,6 +43,7 @@ type RawNode struct {
 	OperatingSystem string                 // spec.operatingSystem
 	StatusPlatform  string                 // status.platform
 	Version         string                 // status.version, falling back to spec.version
+	StatusVersion   string                 // status.version
 	Raw             map[string]interface{} // the full TopoNode CR (managedFields/resourceVersion stripped)
 }
 
@@ -121,7 +122,8 @@ var rolePrefixRE = regexp.MustCompile(`^(edge|local-lag|mh-lag|esi-lag|isl-lag|l
 
 // peerLabel strips known node-name prefixes and the link-role token from a topolink name
 // to get a compact endpoint label, e.g.
-//   "leaf1-leaf2-mh-lag-server-d" -> "server-d", "leaf1-edge-server-a" -> "server-a".
+//
+//	"leaf1-leaf2-mh-lag-server-d" -> "server-d", "leaf1-edge-server-a" -> "server-a".
 func peerLabel(linkName string, nodes map[string]struct{}) string {
 	s := linkName
 	for changed := true; changed; {
@@ -204,13 +206,17 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 		if platform == "" {
 			platform = n.StatusPlatform
 		}
+		version := n.Version
+		if n.StatusVersion != "" {
+			version = n.StatusVersion
+		}
 		outNodes = append(outNodes, Node{
 			Name:      n.Name,
 			Platform:  platform,
 			OS:        n.OperatingSystem,
 			Role:      n.Labels["eda.nokia.com/role"],
 			Namespace: n.Namespace,
-			Version:   n.Version,
+			Version:   version,
 			Labels:    n.Labels,
 			Raw:       n.Raw,
 		})

@@ -8,4 +8,4 @@ metadata:
   namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
 spec:
   authType: atDestination
-  rootUrl: http://cable-map.eda-system.svc:8080/
+  rootUrl: http://cable-map.eda-system.svc:8080/ # eda-set: http://cable-map.${EDA_BASE_NAMESPACE}.svc:8080/

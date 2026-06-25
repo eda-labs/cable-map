@@ -10,6 +10,7 @@ package eda
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"sort"
 	"strings"
@@ -38,6 +39,11 @@ var kinds = []crKind{
 }
 
 const debounce = 300 * time.Millisecond
+
+var (
+	ErrTopoNodeNotFound  = errors.New("toponode not found")
+	ErrTopoNodeAmbiguous = errors.New("toponode name exists in multiple namespaces")
+)
 
 type topoSub struct {
 	filter []string
@@ -231,6 +237,38 @@ func (s *Store) Namespaces() []string {
 	return s.namespacesLocked()
 }
 
+// TopoNode returns a cached TopoNode object from the EDK State Aggregator stream.
+func (s *Store) TopoNode(name, namespace string) (*unstructured.Unstructured, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	cache := s.caches[edav1.KTopoNodeGVK.Kind]
+	if namespace != "" {
+		u := cache[namespace+"|"+name]
+		if u == nil {
+			return nil, ErrTopoNodeNotFound
+		}
+		return cloneTopoNode(u, namespace), nil
+	}
+
+	var found *unstructured.Unstructured
+	foundNS := ""
+	for key, u := range cache {
+		if nameOf(key) != name {
+			continue
+		}
+		if found != nil {
+			return nil, ErrTopoNodeAmbiguous
+		}
+		found = u
+		foundNS = nsOf(key)
+	}
+	if found == nil {
+		return nil, ErrTopoNodeNotFound
+	}
+	return cloneTopoNode(found, foundNS), nil
+}
+
 func (s *Store) snapshotLocked(filter []string) topology.Topology {
 	in := inFilter(filter)
 	var nodes []topology.RawNode
@@ -238,7 +276,7 @@ func (s *Store) snapshotLocked(filter []string) topology.Topology {
 	var ifaces []topology.RawIface
 	for key, u := range s.caches[edav1.KTopoNodeGVK.Kind] {
 		if in(nsOf(key)) {
-			nodes = append(nodes, projNode(u))
+			nodes = append(nodes, projNode(nsOf(key), u))
 		}
 	}
 	for key, u := range s.caches[edav1.KTopoLinkGVK.Kind] {
@@ -308,6 +346,21 @@ func nsOf(cacheKey string) string {
 	return ""
 }
 
+func nameOf(cacheKey string) string {
+	if i := strings.IndexByte(cacheKey, '|'); i >= 0 {
+		return cacheKey[i+1:]
+	}
+	return cacheKey
+}
+
+func cloneTopoNode(u *unstructured.Unstructured, namespace string) *unstructured.Unstructured {
+	out := u.DeepCopy()
+	if out.GetNamespace() == "" {
+		out.SetNamespace(namespace)
+	}
+	return out
+}
+
 func keyAt(jp jspath.JsPath, idx int) (out string) {
 	defer func() { _ = recover() }()
 	if v, ok := jp.GetKeyByIdx(idx).(string); ok {
@@ -358,21 +411,31 @@ func sendNS(sub *nsSub, list []string) {
 // ---- projections from unstructured CRs ------------------------------------------
 
 // projNode/projLink decode the EDK typed TopoNode/TopoLink via the EDK *FromUnstructured helpers.
-func projNode(u *unstructured.Unstructured) topology.RawNode {
+func projNode(namespace string, u *unstructured.Unstructured) topology.RawNode {
 	tn := edav1.TopoNodeFromUnstructured(u)
 	version := tn.Status.Version
 	if version == "" {
 		version = tn.Spec.Version
 	}
+	ns := u.GetNamespace()
+	raw := u
+	if ns == "" {
+		ns = namespace
+		if namespace != "" {
+			raw = u.DeepCopy()
+			raw.SetNamespace(namespace)
+		}
+	}
 	return topology.RawNode{
 		Name:            u.GetName(),
-		Namespace:       u.GetNamespace(),
+		Namespace:       ns,
 		Labels:          u.GetLabels(),
 		Platform:        tn.Spec.Platform,
 		OperatingSystem: string(tn.Spec.OperatingSystem),
 		StatusPlatform:  tn.Status.Platform,
 		Version:         version,
-		Raw:             strippedCR(u),
+		StatusVersion:   tn.Status.Version,
+		Raw:             strippedCR(raw),
 	}
 }
 
