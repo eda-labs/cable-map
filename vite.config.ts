@@ -29,6 +29,16 @@ const sendSSE = (req: IncomingMessage, res: ServerResponse, payload: string) => 
   req.on('close', () => clearInterval(timer))
 }
 
+const sendHeartbeatSSE = (req: IncomingMessage, res: ServerResponse) => {
+  res.statusCode = 200
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.write('retry: 3000\n\n')
+  const timer = setInterval(() => res.write(': ping\n\n'), 25000)
+  req.on('close', () => clearInterval(timer))
+}
+
 const mockApiPlugin = (): Plugin => ({
   name: 'cable-map-dev-api',
   configureServer(server: ViteDevServer) {
@@ -55,7 +65,8 @@ const mockApiPlugin = (): Plugin => ({
         return
       }
       if (url.pathname === '/api/topology/stream') {
-        sendSSE(req, res, topology)
+        if (topology.length > 1_000_000) sendHeartbeatSSE(req, res)
+        else sendSSE(req, res, topology)
         return
       }
       if (url.pathname === '/pdf') {

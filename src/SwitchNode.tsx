@@ -1,6 +1,9 @@
 import { memo, useMemo, type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { CABLE_COLOR, LLDP_COLOR, panelDims, portHandle, type PortInfo, type SwitchData } from './graph';
+import {
+  CABLE_COLOR, LLDP_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W,
+  compactSwitchHandle, panelDims, portHandle, type PortInfo, type SwitchData,
+} from './graph';
 import type { Breakout } from './api';
 import { trace, useTrace, modeFor } from './trace';
 import { useLldp } from './lldp';
@@ -125,7 +128,80 @@ function renderCage(cage: string, infos: PortInfo[] | undefined, bo: Breakout | 
   return <PortCell key={cage} info={infos?.[0] ?? freeCell(cage)} hot={hot} lldp={lldp} showEdgeStub={showEdgeStubs} box={box} />;
 }
 
-function SwitchNode({ id, data, selected }: NodeProps) {
+function CompactSwitchNode({ id, data, selected }: NodeProps) {
+  const d = data as SwitchData;
+  const icon = RoleIcons[d.role];
+  const mode = useTrace(modeFor((s) => s.nodes.has(id)));
+  const lldp = useLldp();
+  const counts = useMemo(() => {
+    const out = new Map<string, number>();
+    for (const p of d.ports) {
+      const key = lldp ? p.lldp ?? 'none' : p.kind;
+      out.set(key, (out.get(key) ?? 0) + 1);
+    }
+    return [...out.entries()];
+  }, [d.ports, lldp]);
+  const used = d.ports.length;
+  const colorOf = (key: string) => {
+    if (lldp && (key === 'ok' || key === 'mismatch' || key === 'none')) return LLDP_COLOR[key];
+    return key in CABLE_COLOR ? CABLE_COLOR[key as keyof typeof CABLE_COLOR] : CABLE_COLOR.edge;
+  };
+  const handleStyle = {
+    opacity: 0,
+    border: 0,
+    background: 'transparent',
+    width: COMPACT_SWITCH_W,
+    height: 10,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    pointerEvents: 'none',
+  } as const;
+
+  return (
+    <div
+      className="switch-node"
+      data-mode={mode}
+      onMouseEnter={() => trace.hover(`node:${id}`)}
+      onMouseLeave={() => trace.hover(null)}
+      style={{
+        position: 'relative',
+        width: COMPACT_SWITCH_W,
+        height: COMPACT_SWITCH_H,
+        background: 'var(--panel)',
+        borderRadius: 6,
+        padding: '6px 7px',
+        border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
+        opacity: mode === 'dim' ? 0.32 : 1,
+        transition: 'opacity 120ms, border-color 120ms',
+        boxShadow: mode === 'on' ? '0 0 0 1px var(--eda-blue-400)' : undefined,
+      }}
+    >
+      <Handle type="source" id={compactSwitchHandle('top')} position={Position.Top} isConnectable={false}
+        style={{ ...handleStyle, top: -5 }} />
+      <Handle type="target" id={compactSwitchHandle('top', true)} position={Position.Top} isConnectable={false}
+        style={{ ...handleStyle, top: -5 }} />
+      <Handle type="source" id={compactSwitchHandle('bottom')} position={Position.Bottom} isConnectable={false}
+        style={{ ...handleStyle, bottom: -5, top: 'auto' }} />
+      <Handle type="target" id={compactSwitchHandle('bottom', true)} position={Position.Bottom} isConnectable={false}
+        style={{ ...handleStyle, bottom: -5, top: 'auto' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+        {icon && <span style={{ lineHeight: 0, width: 15, height: 15, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: icon.replace(/width="\d+"/, 'width="15"').replace(/height="\d+"/, 'height="15"') }} />}
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+        <span style={{ fontSize: 8.5, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{d.role}</span>
+        <span style={{ fontSize: 8.5, color: 'var(--muted)', fontWeight: 700 }}>{used}/{d.portCount}</span>
+      </div>
+      <div style={{ display: 'flex', height: 4, marginTop: 5, borderRadius: 999, overflow: 'hidden', background: 'var(--cell-free-bg)' }}>
+        {counts.map(([key, count]) => (
+          <span key={key} style={{ width: `${(count / Math.max(1, used)) * 100}%`, background: colorOf(key) }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DetailedSwitchNode({ id, data, selected }: NodeProps) {
   const d = data as SwitchData;
   const rows = Math.max(1, d.rows);
   const cols = Math.ceil(d.portCount / rows);
@@ -208,6 +284,11 @@ function SwitchNode({ id, data, selected }: NodeProps) {
       )}
     </div>
   );
+}
+
+function SwitchNode(props: NodeProps) {
+  const d = props.data as SwitchData;
+  return d.compact ? <CompactSwitchNode {...props} /> : <DetailedSwitchNode {...props} />;
 }
 
 export default memo(SwitchNode);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance, type Viewport } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
@@ -19,7 +19,7 @@ import SvgGlyph from './icons/SvgGlyph';
 import pdfIcon from './icons/pdf.svg?raw';
 import excelIcon from './icons/excel.svg?raw';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
-import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, switchPortCenter, type SwitchData } from './graph';
+import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, isLargeTopology, switchPortCenter, type SwitchData } from './graph';
 import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
 import { edgeRoute, useGroupedEdges } from './edgeRoute';
@@ -31,6 +31,7 @@ import CableEdge from './CableEdge';
 import NodeView from './NodeView';
 import NodeDetails from './NodeDetails';
 import NamespacePicker from './NamespacePicker';
+import WebGLEdgeLayer from './WebGLEdgeLayer';
 import { exportXlsx } from './xlsx';
 import { edgeRemote } from './edge-remote';
 import './app.css';
@@ -55,6 +56,8 @@ type Mode = 'light' | 'dark';
 type EdgeLinkMode = 'enabled' | 'stub' | 'hidden';
 const SEARCH_PORT_ZOOM = 3.2;
 const EDGE_LINK_MODE_ORDER: EdgeLinkMode[] = ['enabled', 'stub', 'hidden'];
+const LARGE_DEFAULT_VIEWPORT: Viewport = { x: 24, y: 24, zoom: 0.35 };
+const LARGE_VIEWPORT_PAD = 900;
 
 type SearchMatcher = {
   raw: string;
@@ -273,6 +276,29 @@ function edgeLinkModeIcon(mode: EdgeLinkMode) {
   }
 }
 
+function nodeIntersectsViewport(node: RFNode, viewport: Viewport, width: number, height: number): boolean {
+  const nodeWidth = node.width ?? node.measured?.width ?? 160;
+  const nodeHeight = node.height ?? node.measured?.height ?? 80;
+  const left = node.position.x * viewport.zoom + viewport.x;
+  const top = node.position.y * viewport.zoom + viewport.y;
+  const right = (node.position.x + nodeWidth) * viewport.zoom + viewport.x;
+  const bottom = (node.position.y + nodeHeight) * viewport.zoom + viewport.y;
+  return right >= -LARGE_VIEWPORT_PAD &&
+    left <= width + LARGE_VIEWPORT_PAD &&
+    bottom >= -LARGE_VIEWPORT_PAD &&
+    top <= height + LARGE_VIEWPORT_PAD;
+}
+
+function useWindowSize() {
+  const [size, setSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  useEffect(() => {
+    const update = () => setSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return size;
+}
+
 export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: () => void }) {
   const [topo, setTopo] = useState<Topology | null>(null);
   const [err, setErr] = useState('');
@@ -285,11 +311,16 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [namespacesReady, setNamespacesReady] = useState(false);
   const [edgeLinkMode, setEdgeLinkMode] = useState<EdgeLinkMode>('enabled');
   const [legendOpen, setLegendOpen] = useState(true);
+  const [hideEdges, setHideEdges] = useState(false); // dev: drop all cables to isolate edge render cost
+  const [webglEdgesUnavailable, setWebglEdgesUnavailable] = useState(false);
   const grouped = useGroupedEdges();
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
   useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
   const [flow, setFlow] = useState<ReactFlowInstance | null>(null);
+  const [largeViewport, setLargeViewport] = useState<Viewport>(LARGE_DEFAULT_VIEWPORT);
+  const windowSize = useWindowSize();
+  const markWebglEdgesUnavailable = useCallback(() => setWebglEdgesUnavailable(true), []);
 
   // drag the top edge of the drawer to resize its height
   const startResize = (e: React.PointerEvent) => {
@@ -316,6 +347,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   // Reconnects when the namespace changes; clears first so stale data never lingers.
   useEffect(() => {
     setTopo(null);
+    setWebglEdgesUnavailable(false);
     if (!namespace) {
       setErr((current) => current || (namespacesReady ? 'no namespaces with topology resources' : ''));
       return;
@@ -323,13 +355,20 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     return streamTopology(namespace, (t) => { setTopo(t); setErr(''); }, setErr);
   }, [namespace, namespacesReady]);
 
+  const largeTopology = useMemo(() => topo ? isLargeTopology(topo) : false, [topo]);
+  const effectiveEdgeLinkMode: EdgeLinkMode = edgeLinkMode;
+
+  useEffect(() => {
+    if (largeTopology) setLargeViewport(LARGE_DEFAULT_VIEWPORT);
+  }, [largeTopology, namespace]);
+
   const { nodes: builtNodes, edges, switchIds, adjacency } = useMemo(() => {
     const empty: Adjacency = { nodeEdges: new Map(), edgeEnds: new Map(), edgePorts: new Map(), search: new Map(), nodeLabels: new Map() };
     if (!topo) return { nodes: [] as RFNode[], edges: [], switchIds: new Set<string>(), adjacency: empty };
-    const g = buildGraph(topo);
+    const g = buildGraph(topo, { compact: false, tiered: largeTopology });
     setAdjacency(g.adjacency);
     return { nodes: g.nodes, edges: g.edges, switchIds: new Set(topo.nodes.map((n) => n.name)), adjacency: g.adjacency };
-  }, [topo]);
+  }, [topo, largeTopology]);
 
   // nodes live in React Flow state so dragging + selection apply. On a live update we keep
   // each existing node's current position (so a stream tick never snaps a dragged node back)
@@ -436,16 +475,16 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   });
   const directlyActiveStubEdges = useMemo(() => new Set(activeStubEdgeIds ? activeStubEdgeIds.split('\n') : []), [activeStubEdgeIds]);
   const activeStubEdges = useMemo(
-    () => edgeLinkMode === 'stub' ? expandActiveStubEdges(edges, directlyActiveStubEdges) : directlyActiveStubEdges,
-    [edgeLinkMode, edges, directlyActiveStubEdges],
+    () => effectiveEdgeLinkMode === 'stub' ? expandActiveStubEdges(edges, directlyActiveStubEdges) : directlyActiveStubEdges,
+    [effectiveEdgeLinkMode, edges, directlyActiveStubEdges],
   );
   const activeStubPortIds = useMemo(
-    () => edgeLinkMode === 'stub' ? activeStubPorts(activeStubEdges, adjacency, switchIds) : [],
-    [edgeLinkMode, activeStubEdges, adjacency, switchIds],
+    () => effectiveEdgeLinkMode === 'stub' ? activeStubPorts(activeStubEdges, adjacency, switchIds) : [],
+    [effectiveEdgeLinkMode, activeStubEdges, adjacency, switchIds],
   );
   const activeStubEndpointIds = useMemo(() => {
     const out = new Set<string>();
-    if (edgeLinkMode !== 'stub') return out;
+    if (effectiveEdgeLinkMode !== 'stub') return out;
     for (const edgeId of activeStubEdges) {
       if (!edgeVisibleForShown(edgeId, shown, adjacency)) continue;
       const ends = adjacency.edgeEnds.get(edgeId);
@@ -455,13 +494,13 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       }
     }
     return out;
-  }, [edgeLinkMode, activeStubEdges, shown, adjacency, switchIds]);
+  }, [effectiveEdgeLinkMode, activeStubEdges, shown, adjacency, switchIds]);
   const displayNodes = useMemo(() => {
-    let ns = edgeLinkMode === 'enabled'
+    let ns = effectiveEdgeLinkMode === 'enabled'
       ? nodes
       : nodes.filter((n) => n.type !== 'endpoint' || activeStubEndpointIds.has(n.id));
     if (shown) ns = ns.filter((n) => shown.has(n.id));
-    if (edgeLinkMode !== 'stub') return ns;
+    if (effectiveEdgeLinkMode !== 'stub') return ns;
     const out: RFNode[] = [];
     for (const node of ns) {
       out.push(node.type === 'switch'
@@ -469,7 +508,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         : node);
     }
     return out;
-  }, [edgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds]);
+  }, [effectiveEdgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds]);
   const searchMatcher = useMemo(() => buildSearchMatcher(query), [query]);
   const displayNodeIds = useMemo(() => new Set(displayNodes.map((n) => n.id)), [displayNodes]);
   const searchTargetIds = useMemo(() => {
@@ -533,21 +572,35 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
   const displayEdges = useMemo(() => {
     let base = edges;
-    if (edgeLinkMode === 'stub') {
+    if (effectiveEdgeLinkMode === 'stub') {
       base = edges
         .filter((e) => !isStubEdge(e.id) || activeStubEdges.has(e.id))
         .map((e) => activeStubEdges.has(e.id)
           ? Object.assign({}, e, { data: Object.assign({}, e.data, { forceOn: true }) })
           : e);
-    } else if (edgeLinkMode === 'hidden') {
+    } else if (effectiveEdgeLinkMode === 'hidden') {
       base = edges.filter((e) => !isStubEdge(e.id));
     }
     if (shown) base = base.filter((e) => edgeVisibleForShown(e.id, shown, adjacency));
     return elevatedEdge ? base.map((e) => (e.id === elevatedEdge ? { ...e, zIndex: 1 } : e)) : base;
-  }, [edgeLinkMode, edges, activeStubEdges, elevatedEdge, shown, adjacency]);
+  }, [effectiveEdgeLinkMode, edges, activeStubEdges, elevatedEdge, shown, adjacency]);
 
   const openNode = topo?.nodes.find((n) => n.name === open);
   const lldpOn = useLldp();
+  const useWebglEdges = largeTopology && WEBGL_OK && !hideEdges && !webglEdgesUnavailable;
+  const usePolishGlEdges = !largeTopology && WEBGL_OK && !hideEdges;
+  const flowNodes = useMemo(
+    () => largeTopology
+      ? displayNodes.filter((node) => nodeIntersectsViewport(node, largeViewport, windowSize.width, windowSize.height))
+      : displayNodes,
+    [largeTopology, displayNodes, largeViewport, windowSize],
+  );
+  const flowNodeIds = useMemo(() => new Set(flowNodes.map((node) => node.id)), [flowNodes]);
+  const flowEdges = useMemo(() => {
+    if (useWebglEdges || usePolishGlEdges) return NO_EDGES;
+    if (!largeTopology) return displayEdges;
+    return displayEdges.filter((edge) => flowNodeIds.has(String(edge.source)) && flowNodeIds.has(String(edge.target)));
+  }, [useWebglEdges, usePolishGlEdges, largeTopology, displayEdges, flowNodeIds]);
 
   const openPdf = (ids: string[]) => {
     const targets = ids.length ? ids : (topo?.nodes.map((n) => n.name) ?? []);
@@ -655,23 +708,30 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
-            nodes={displayNodes} edges={WEBGL_OK ? NO_EDGES : displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={flowNodes} edges={hideEdges ? NO_EDGES : flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onInit={setFlow}
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
             proOptions={{ hideAttribution: true }}
-            minZoom={0.15}
-            maxZoom={4}
+            onlyRenderVisibleElements={largeTopology}
+            minZoom={largeTopology ? 0.02 : 0.15}
+            maxZoom={largeTopology ? 2 : 4}
             onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
             onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
             onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}
             onEdgeMouseLeave={() => trace.hover(null)}
             onSelectionChange={onSel}
             onPaneClick={() => { setSelected([]); trace.clear(); }}
-            fitView fitViewOptions={{ padding: 0.12 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
+            onMove={largeTopology ? (_, nextViewport) => setLargeViewport(nextViewport) : undefined}
+            fitView={!largeTopology}
+            defaultViewport={largeTopology ? LARGE_DEFAULT_VIEWPORT : undefined}
+            fitViewOptions={{ padding: largeTopology ? 0.05 : 0.12, maxZoom: largeTopology ? 0.5 : 1.5 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-            {WEBGL_OK && <GLEdges edges={displayEdges} dark={mode === 'dark'} />}
+            {usePolishGlEdges && <GLEdges edges={displayEdges} dark={mode === 'dark'} />}
+            {useWebglEdges && (
+              <WebGLEdgeLayer nodes={displayNodes} edges={displayEdges} lldp={lldpOn} mode={mode} grouped={grouped} onUnavailable={markWebglEdgesUnavailable} />
+            )}
             <Controls position="top-right" showInteractive={false}>
               <ControlButton
                 onClick={() => edgeRoute.toggle()}
@@ -680,13 +740,22 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               >
                 <PolylineIcon style={{ color: grouped ? 'var(--eda-blue-400)' : undefined }} />
               </ControlButton>
+              {import.meta.env.DEV && (
+                <ControlButton
+                  onClick={() => setHideEdges((v) => !v)}
+                  title={hideEdges ? 'Show links (dev)' : 'Hide links — perf test (dev)'}
+                  aria-label="Toggle links (dev)"
+                >
+                  <SettingsEthernetIcon style={{ opacity: hideEdges ? 0.4 : 1 }} />
+                </ControlButton>
+              )}
               {hasEdgeLinks && (
                 <ControlButton
                   onClick={() => setEdgeLinkMode((current) => nextEdgeLinkMode(current))}
                   title={edgeLinkModeTitle(edgeLinkMode)}
                   aria-label={edgeLinkModeTitle(edgeLinkMode)}
                 >
-                  {edgeLinkModeIcon(edgeLinkMode)}
+                  {edgeLinkModeIcon(effectiveEdgeLinkMode)}
                 </ControlButton>
               )}
             </Controls>

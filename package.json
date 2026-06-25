@@ -11,7 +11,8 @@
     "lint": "oxlint .",
     "preview": "vite preview",
     "deploy:eda:local": "bash scripts/deploy-local.sh",
-    "gen:frontpanel-meta": "node scripts/gen-frontpanel-meta.mjs"
+    "gen:frontpanel-meta": "node scripts/gen-frontpanel-meta.mjs",
+    "gen:golden-topology": "node scripts/gen-golden-topology.mjs"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",

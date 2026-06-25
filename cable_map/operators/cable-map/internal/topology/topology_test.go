@@ -176,3 +176,28 @@ func TestContractRoundTrip(t *testing.T) {
 		t.Errorf("round-trip differs from golden contract.\nThis means the Go structs drop or add a field vs the frontend's expected JSON.\ngolden=%s\n   got=%s", raw, remarshaled)
 	}
 }
+
+func TestGoldenTopologyScale(t *testing.T) {
+	raw, err := os.ReadFile("testdata/golden-topology.json")
+	if err != nil {
+		t.Fatalf("read golden: %v", err)
+	}
+	var topo Topology
+	if err := json.Unmarshal(raw, &topo); err != nil {
+		t.Fatalf("unmarshal golden: %v", err)
+	}
+
+	rows := 0
+	for _, node := range topo.Nodes {
+		rows += len(node.Table)
+	}
+	if len(topo.Nodes) < 1000 {
+		t.Fatalf("golden topology nodes = %d, want at least 1000", len(topo.Nodes))
+	}
+	if len(topo.Links) < 8000 {
+		t.Fatalf("golden topology links = %d, want at least 8000", len(topo.Links))
+	}
+	if rows < 20000 {
+		t.Fatalf("golden topology table rows = %d, want at least 20000", rows)
+	}
+}

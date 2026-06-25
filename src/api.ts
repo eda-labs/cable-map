@@ -35,12 +35,18 @@ export function streamNamespaces(onList: (names: string[]) => void, onError?: (m
 }
 
 export function streamTopology(namespace: string, onTopo: (t: Topology) => void, onError: (msg: string) => void): () => void {
+  let closed = false;
+  void fetchTopology(namespace)
+    .then((t) => { if (!closed) onTopo(t); })
+    .catch((e) => { if (!closed) onError(String((e as Error).message || e)); });
+
   const es = new EventSource(`${BASE}api/topology/stream?ns=${encodeURIComponent(namespace)}`);
   es.addEventListener('message', (ev) => {
+    if (closed || !ev.data) return;
     try { onTopo(JSON.parse(ev.data) as Topology); } catch (e) { onError(String((e as Error).message || e)); }
   });
-  es.addEventListener('error', () => onError('live stream disconnected — reconnecting…'));
-  return () => es.close();
+  es.addEventListener('error', () => { if (!closed) onError('live stream disconnected — reconnecting…'); });
+  return () => { closed = true; es.close(); };
 }
 
 const srosConnector = (label: string) => label.match(/(?:^|[/_-])c(\d+)(?:[/_-]|$)/i)?.[1] ?? null;
