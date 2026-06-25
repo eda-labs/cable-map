@@ -259,8 +259,10 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 		if remote.Interface != "" {
 			row.RemotePort = portLabel(remote.Interface)
 		}
-		if iface != "" && strings.HasPrefix(iface, "lag-") {
-			row.Lag = iface
+		if iface != "" {
+			if _, ok := lags[iface]; ok {
+				row.Lag = iface
+			}
 		}
 		if typ == "edge" && remote.Node == "" {
 			row.Peer = peerLabel(linkName, known)

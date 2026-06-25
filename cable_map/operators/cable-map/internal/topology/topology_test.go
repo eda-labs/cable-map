@@ -25,8 +25,8 @@ func nodeByName(t Topology, name string) Node {
 	return Node{}
 }
 
-// Covers the load-bearing derivations: LLDP ok/mismatch/none, peer label, lag- gate,
-// LAG isl/multihomed/lacp classification, occupancy, and edge emission.
+// Covers the load-bearing derivations: LLDP ok/mismatch/none, peer label, LAG resource
+// detection, LAG isl/multihomed/lacp classification, occupancy, and edge emission.
 func TestBuildTopology(t *testing.T) {
 	nodes := []RawNode{
 		{Name: "leaf1", Labels: map[string]string{"eda.nokia.com/role": "leaf"}, Platform: "7220 IXR-D3L", OperatingSystem: "srl"},
@@ -39,6 +39,11 @@ func TestBuildTopology(t *testing.T) {
 			Name: "lag-1", Type: "LAG", LagType: "LACP", LagMode: "AllActive",
 			Labels:  map[string]string{"eda.nokia.com/role": "InterSwitch"},
 			Members: []IfMember{{Node: "leaf1", Interface: "ethernet-1-49"}, {Node: "leaf2", Interface: "ethernet-1-49"}},
+		},
+		{
+			Name: "lag1-l1-l2-eth-1-1", Type: "LAG", LagType: "LACP", LagMode: "AllActive",
+			Labels:  map[string]string{"eda.nokia.com/role": "edge"},
+			Members: []IfMember{{Node: "leaf1", Interface: "ethernet-1-11"}, {Node: "leaf2", Interface: "ethernet-1-11"}},
 		},
 		{StatusMembers: []IfStatusMember{
 			{Node: "leaf1", Interface: "ethernet-1/49", Neighbors: []IfNeighbor{{Node: "spine1", Interface: "ethernet-1/1"}}},
@@ -60,6 +65,16 @@ func TestBuildTopology(t *testing.T) {
 			Type:  "edge",
 			Local: LinkEnd{Node: "leaf1", Interface: "ethernet-1-10"},
 		}}},
+		{Name: "lag1-l1-l2-eth-1-1", Links: []LinkEntry{
+			{
+				Type:  "edge",
+				Local: LinkEnd{Node: "leaf1", Interface: "ethernet-1-11", InterfaceResource: "lag1-l1-l2-eth-1-1"},
+			},
+			{
+				Type:  "edge",
+				Local: LinkEnd{Node: "leaf2", Interface: "ethernet-1-11", InterfaceResource: "lag1-l1-l2-eth-1-1"},
+			},
+		}},
 	}
 
 	breakouts := []RawBreakout{
@@ -103,10 +118,16 @@ func TestBuildTopology(t *testing.T) {
 	if r, _ := findRow(leaf1, "ethernet-1-50"); r.LldpStatus != "mismatch" {
 		t.Errorf("e1-50 lldpStatus: got %q want mismatch", r.LldpStatus)
 	} else if r.Lag != "" {
-		t.Errorf("e1-50 lag should be empty for isl-lag- prefix, got %q", r.Lag)
+		t.Errorf("e1-50 lag should be empty when interface resource is not a typed LAG, got %q", r.Lag)
 	}
 	if r, _ := findRow(leaf1, "ethernet-1-10"); r.Type != "edge" || r.Peer != "server-a" || r.LldpStatus != "none" {
 		t.Errorf("edge row: type=%q peer=%q lldp=%q", r.Type, r.Peer, r.LldpStatus)
+	}
+	if r, _ := findRow(leaf1, "ethernet-1-11"); r.Lag != "lag1-l1-l2-eth-1-1" {
+		t.Errorf("non-prefixed edge lag: got %q want lag1-l1-l2-eth-1-1", r.Lag)
+	}
+	if r, _ := findRow(nodeByName(topo, "leaf2").Table, "ethernet-1-11"); r.Lag != "lag1-l1-l2-eth-1-1" {
+		t.Errorf("remote non-prefixed edge lag: got %q want lag1-l1-l2-eth-1-1", r.Lag)
 	}
 
 	// LAG classification
@@ -116,6 +137,10 @@ func TestBuildTopology(t *testing.T) {
 	}
 	if len(lag.Nodes) != 2 {
 		t.Errorf("lag-1 nodes: got %v", lag.Nodes)
+	}
+	edgeLag := topo.Lags["lag1-l1-l2-eth-1-1"]
+	if !edgeLag.Lacp || edgeLag.Isl || !edgeLag.Multihomed || edgeLag.Mode != "AllActive" {
+		t.Errorf("non-prefixed edge lag classification: %+v", edgeLag)
 	}
 
 	// edges: only interSwitch links with both endpoints known
