@@ -150,12 +150,6 @@ body,
   margin: 0;
 }
 
-/* fluid base font size: MUI's rem-based text scales a little with the viewport (bigger than the
-   16px default). Scoped to screen so the print/PDF layout keeps a fixed size. */
-@media screen {
-  html { font-size: clamp(16px, 0.9vw + 8px, 18px); }
-}
-
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
