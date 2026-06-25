@@ -36,11 +36,12 @@ single OCI app image).
 
 ```sh
 pnpm install
-make dev        # Vite dev server; /api/topology is mocked from fake-topology.json
+make dev        # Vite dev server; /api is mocked from the golden topology fixture
 ```
 
 The Go backend only returns live data inside the cluster (it needs the EDA internal
-certs). Use `pnpm dev` for UI work; deploy to a cluster to see real topology.
+certs). Use `pnpm dev` for UI work against the built-in mock topology. To proxy
+to a real backend instead, run with `EDA_API=http://host:port pnpm dev`.
 
 ## Common commands
 

@@ -19,11 +19,15 @@ GOARCH ?= amd64
 CGO_ENABLED ?= 0
 
 PROJECT_TARGETS += dev
+PROJECT_TARGETS += dev-cluster
 PROJECT_TARGETS += preview
 PROJECT_TARGETS += lint
+PROJECT_TARGETS += ts-contract
+PROJECT_TARGETS += ts-contract-check
 PROJECT_TARGETS += ui-build
 PROJECT_TARGETS += ui-embed
 PROJECT_TARGETS += operator-build
+PROJECT_TARGETS += operator-build-dev
 PROJECT_TARGETS += binary
 PROJECT_TARGETS += build
 PROJECT_TARGETS += image
@@ -32,9 +36,14 @@ PROJECT_TARGETS += check
 PROJECT_TARGETS += clean
 
 .PHONY: dev
-HELP_dev := Start the Vite dev server with mocked topology data
+HELP_dev := Start the Vite dev server (mock /api by default; set EDA_API to proxy a real backend)
 dev:
 	$(PNPM) dev
+
+.PHONY: dev-cluster
+HELP_dev-cluster := DevSpace: hot-reload the operator in the deployed pod + run the frontend (HMR)
+dev-cluster:
+	$(PNPM) dev:cluster
 
 .PHONY: preview
 HELP_preview := Preview the production Vite build locally
@@ -46,14 +55,27 @@ HELP_lint := Run frontend lint checks
 lint:
 	$(PNPM) lint
 
+TYGO ?= github.com/gzuidhof/tygo@v0.2.21
+
+.PHONY: ts-contract
+HELP_ts-contract := Generate src/topology.gen.ts from the Go output contract (internal/topology/contract.go)
+ts-contract:
+	go -C "$(APP_DIR)" run $(TYGO) generate
+
+.PHONY: ts-contract-check
+HELP_ts-contract-check := Fail if src/topology.gen.ts is stale vs the Go contract (CI drift guard)
+ts-contract-check: ts-contract
+	git diff --exit-code src/topology.gen.ts
+
 .PHONY: ui-build
 HELP_ui-build := Build the React SPA into dist/
-ui-build:
+ui-build: ts-contract
 	$(PNPM) build
 
 .PHONY: ui-embed
 HELP_ui-embed := Build and copy the React SPA into the Go embed directory
 ui-embed: ui-build
+	mkdir -p "$(EMBED_DIR)"
 	find "$(EMBED_DIR)" -mindepth 1 ! -name '.keep' ! -name '.gitignore' -exec rm -rf {} +
 	cp -R dist/. "$(EMBED_DIR)/"
 
@@ -61,6 +83,11 @@ ui-embed: ui-build
 HELP_operator-build := Build the embedded Go operator binary (vars: GOOS, GOARCH, CGO_ENABLED)
 operator-build: ui-embed
 	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go -C "$(APP_DIR)" build -a -trimpath -ldflags "-s -w" -o "$(OPERATOR_BIN)" "./operators/$(OPERATOR)/cmd"
+
+.PHONY: operator-build-dev
+HELP_operator-build-dev := Fast incremental Go build for dev hot-reload (no -a; stripped; assumes embed populated)
+operator-build-dev:
+	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go -C "$(APP_DIR)" build -ldflags "-s -w" -o "$(OPERATOR_BIN)" "./operators/$(OPERATOR)/cmd"
 
 .PHONY: binary
 HELP_binary := Alias for operator-build
@@ -81,8 +108,8 @@ deploy-local:
 	./scripts/deploy-local.sh
 
 .PHONY: check
-HELP_check := Run lint, Go tests, and a full embedded binary build
-check: lint test build
+HELP_check := Run lint, the contract-drift guard, Go tests, and a full embedded binary build
+check: lint ts-contract-check test build
 
 .PHONY: clean
 HELP_clean := Remove generated frontend, embedded frontend, and operator build output

@@ -1,6 +1,6 @@
 ifndef DISABLE_MAKE_DEFAULTS
-# Always run jobs in parallel
-NO_OF_JOBS ?= $(shell nproc)
+# Always run jobs in parallel (nproc on Linux, sysctl on macOS, 4 as a last resort)
+NO_OF_JOBS ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 MAKEFLAGS += --jobs=$(NO_OF_JOBS)
 # Force synced output per target always
 MAKEFLAGS += --output-sync=target

@@ -6,6 +6,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -15,6 +16,8 @@ import (
 	"time"
 
 	"cable-map.eda.labs/cable-map/operators/cable-map/internal/eda"
+
+	"sigs.k8s.io/yaml"
 )
 
 type Server struct {
@@ -32,6 +35,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/healthz", s.healthz)
 	mux.HandleFunc("/api/namespaces", s.namespaces)
 	mux.HandleFunc("/api/namespaces/stream", s.namespacesStream)
+	mux.HandleFunc("/api/toponode", s.topoNode)
 	mux.HandleFunc("/api/topology", s.topology)
 	mux.HandleFunc("/api/topology/stream", s.topologyStream)
 	mux.HandleFunc("/pdf", s.pdf)
@@ -72,6 +76,34 @@ func (s *Server) topology(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, topo)
+}
+
+func (s *Server) topoNode(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimSpace(r.URL.Query().Get("name"))
+	if name == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing toponode name"})
+		return
+	}
+	u, err := s.store.TopoNode(name, strings.TrimSpace(r.URL.Query().Get("ns")))
+	if err != nil {
+		switch {
+		case errors.Is(err, eda.ErrTopoNodeNotFound):
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "toponode not found"})
+		case errors.Is(err, eda.ErrTopoNodeAmbiguous):
+			writeJSON(w, http.StatusConflict, map[string]string{"error": "namespace required because toponode name exists in multiple namespaces"})
+		default:
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
+	}
+	raw, err := yaml.Marshal(u.Object)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/yaml; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(raw)
 }
 
 func (s *Server) topologyStream(w http.ResponseWriter, r *http.Request) {

@@ -55,5 +55,5 @@ The proxy should point at:
 ```yaml
 spec:
   authType: atDestination
-  rootUrl: http://cable-map.eda-system.svc:8080/
+  rootUrl: http://cable-map.${EDA_BASE_NAMESPACE}.svc:8080/
 ```

@@ -6,21 +6,27 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:cluster": "devspace dev",
     "build": "tsc -b && vite build",
     "lint": "oxlint .",
     "preview": "vite preview",
-    "deploy:eda:local": "bash scripts/deploy-local.sh"
+    "deploy:eda:local": "bash scripts/deploy-local.sh",
+    "gen:frontpanel-meta": "node scripts/gen-frontpanel-meta.mjs"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^9.1.1",
     "@mui/material": "^9.1.1",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "@xyflow/react": "^12.11.0",
+    "js-yaml": "^5.1.0",
+    "monaco-editor": "^0.55.1",
     "oxlint": "^1.70.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

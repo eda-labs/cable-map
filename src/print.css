@@ -1,16 +1,65 @@
 /* Print page only. Scoped under .print-root so these styles never leak into the
    app (this module is imported globally via main.tsx). */
 /* print has no MUI ThemeProvider, so set the Nokia font here explicitly */
-.print-root { background: #fff; color: #111; font-family: 'NokiaPureText', 'Roboto', sans-serif; }
-/* page size + margins are set by Puppeteer's page.pdf() options, not here */
-.print-root .page { break-after: page; position: relative; }
-.print-root .page:last-child { break-after: auto; }
-.print-root .muted { color: #777; }
+.print-root {
+   background: #fff;
+   color: #111;
+   font-family: 'NokiaPureText', 'Roboto', sans-serif;
+}
+
+/* page size named here (Chrome honours it via printToPDF preferCSSPageSize); the server's
+   printToPDF options set the margins */
+@page {
+   size: A4 landscape;
+}
+
+.print-root .page {
+   break-after: page;
+   position: relative;
+}
+
+.print-root .page:last-child {
+   break-after: auto;
+}
+
+.print-root .muted {
+   color: #777;
+}
 
 /* header row: node title and EDA echidna + caption on one aligned line */
-.print-root .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.print-root .page-head .title { font-size: 20px; font-weight: 700; }
-.print-root .page-head .title span { font-size: 13px; font-weight: 400; color: #666; margin-left: 6px; }
-.print-root .page-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.print-root .page-brand img { height: 28px; display: block; }
-.print-root .page-brand .cap { font-size: 13px; color: #333; letter-spacing: 0.3px; }
+.print-root .page-head {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 8px;
+}
+
+.print-root .page-head .title {
+   font-size: 20px;
+   font-weight: 700;
+}
+
+.print-root .page-head .title span {
+   font-size: 13px;
+   font-weight: 400;
+   color: #666;
+   margin-left: 6px;
+}
+
+.print-root .page-brand {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   flex-shrink: 0;
+}
+
+.print-root .page-brand img {
+   height: 28px;
+   display: block;
+}
+
+.print-root .page-brand .cap {
+   font-size: 13px;
+   color: #333;
+   letter-spacing: 0.3px;
+}

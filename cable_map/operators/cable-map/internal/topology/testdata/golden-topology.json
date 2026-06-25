@@ -1,25 +1,468 @@
 {
   "nodes": [
     {
-      "id": "leaf1",
       "name": "leaf1",
       "platform": "7220 IXR-D3L",
       "os": "srl",
-      "role": "leaf"
+      "role": "leaf",
+      "table": [
+        {
+          "label": "ethernet-1-10",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "peer": "server-a",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-1-32",
+          "desc": "",
+          "remoteNode": "leaf2",
+          "remotePort": "ethernet-1-32",
+          "type": "interSwitch",
+          "lag": "lag-leaf1-leaf2-isl-lag-1-local",
+          "lldpPeer": "leaf2 ethernet-1-32",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-33",
+          "desc": "",
+          "remoteNode": "leaf2",
+          "remotePort": "ethernet-1-33",
+          "type": "interSwitch",
+          "lag": "lag-leaf1-leaf2-isl-lag-1-local",
+          "lldpPeer": "leaf2 ethernet-1-33",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-30",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "lag": "lag-leaf1-leaf2-mh-lag-server-d-local",
+          "peer": "server-d",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-1-20",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "lag": "lag-leaf1-local-lag-server-c-local",
+          "peer": "server-c",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-1-21",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "lag": "lag-leaf1-local-lag-server-c-local",
+          "peer": "server-c",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-1-1",
+          "desc": "",
+          "remoteNode": "spine1",
+          "remotePort": "ethernet-1-1",
+          "type": "interSwitch",
+          "lldpPeer": "spine1 ethernet-1-1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-2",
+          "desc": "",
+          "remoteNode": "spine1",
+          "remotePort": "ethernet-1-2",
+          "type": "interSwitch",
+          "lldpPeer": "spine1 ethernet-1-2",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-31",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "lag": "lag-testman1-esi-lag-1-local",
+          "peer": "testman1-esi-lag-1",
+          "lldpStatus": "none"
+        }
+      ],
+      "breakouts": {
+        "49": {
+          "channels": 4,
+          "speed": "100G"
+        }
+      },
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "leaf1",
+          "namespace": ""
+        },
+        "spec": {
+          "platform": "7220 IXR-D3L",
+          "operatingSystem": "srl"
+        }
+      }
     },
     {
-      "id": "leaf2",
       "name": "leaf2",
       "platform": "7220 IXR-D3L",
       "os": "srl",
-      "role": "leaf"
+      "role": "leaf",
+      "table": [
+        {
+          "label": "ethernet-1-32",
+          "desc": "",
+          "remoteNode": "leaf1",
+          "remotePort": "ethernet-1-32",
+          "type": "interSwitch",
+          "lag": "lag-leaf1-leaf2-isl-lag-1-remote",
+          "lldpPeer": "leaf1 ethernet-1-32",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-33",
+          "desc": "",
+          "remoteNode": "leaf1",
+          "remotePort": "ethernet-1-33",
+          "type": "interSwitch",
+          "lag": "lag-leaf1-leaf2-isl-lag-1-remote",
+          "lldpPeer": "leaf1 ethernet-1-33",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-30",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "lag": "lag-leaf1-leaf2-mh-lag-server-d-local",
+          "peer": "server-d",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-1-10",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "peer": "server-b",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-1-1",
+          "desc": "",
+          "remoteNode": "spine1",
+          "remotePort": "ethernet-1-3",
+          "type": "interSwitch",
+          "lldpPeer": "spine1 ethernet-1-3",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-2",
+          "desc": "",
+          "remoteNode": "spine1",
+          "remotePort": "ethernet-1-4",
+          "type": "interSwitch",
+          "lldpPeer": "spine1 ethernet-1-4",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-31",
+          "desc": "",
+          "remoteNode": "",
+          "remotePort": "",
+          "type": "edge",
+          "lag": "lag-testman1-esi-lag-1-local",
+          "peer": "testman1-esi-lag-1",
+          "lldpStatus": "none"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "leaf2",
+          "namespace": ""
+        },
+        "spec": {
+          "platform": "7220 IXR-D3L",
+          "operatingSystem": "srl"
+        }
+      }
     },
     {
-      "id": "spine1",
       "name": "spine1",
       "platform": "7220 IXR-D5",
       "os": "srl",
-      "role": "spine"
+      "role": "spine",
+      "table": [
+        {
+          "label": "ethernet-1-1",
+          "desc": "",
+          "remoteNode": "leaf1",
+          "remotePort": "ethernet-1-1",
+          "type": "interSwitch",
+          "lldpPeer": "leaf1 ethernet-1-1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-2",
+          "desc": "",
+          "remoteNode": "leaf1",
+          "remotePort": "ethernet-1-2",
+          "type": "interSwitch",
+          "lldpPeer": "leaf1 ethernet-1-2",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-3",
+          "desc": "",
+          "remoteNode": "leaf2",
+          "remotePort": "ethernet-1-1",
+          "type": "interSwitch",
+          "lldpPeer": "leaf2 ethernet-1-1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-4",
+          "desc": "",
+          "remoteNode": "leaf2",
+          "remotePort": "ethernet-1-2",
+          "type": "interSwitch",
+          "lldpPeer": "leaf2 ethernet-1-2",
+          "lldpStatus": "ok"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "spine1",
+          "namespace": ""
+        },
+        "spec": {
+          "platform": "7220 IXR-D5",
+          "operatingSystem": "srl"
+        }
+      }
+    },
+    {
+      "name": "sros-sr1",
+      "platform": "7750 SR-1-24D",
+      "os": "sros",
+      "role": "leaf",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "lab/chassis": "7750-sr-1-24d"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "native SROS fixed connector c1",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "sros-server-a",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "1/1/c6/1",
+          "desc": "native SROS fixed connector c6",
+          "remoteNode": "sros-sr2s",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2s 1/1/c1/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "1/1/c12/1",
+          "desc": "native SROS fixed connector c12",
+          "remoteNode": "",
+          "remotePort": "eth1",
+          "type": "edge",
+          "peer": "sros-server-b",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "1/1/c24/1",
+          "desc": "native SROS fixed connector c24",
+          "remoteNode": "sros-sr2se",
+          "remotePort": "2/1/c36/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2se 2/1/c36/1",
+          "lldpStatus": "ok"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "sros-sr1",
+          "namespace": "",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "lab/chassis": "7750-sr-1-24d"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1-24D",
+          "operatingSystem": "sros"
+        }
+      }
+    },
+    {
+      "name": "sros-sr2s",
+      "platform": "7750 SR-2s 6p_6p",
+      "os": "sros",
+      "role": "leaf",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "lab/chassis": "7750-sr-2s"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "native SROS slot 1 connector c1",
+          "remoteNode": "sros-sr1",
+          "remotePort": "1/1/c6/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr1 1/1/c6/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "1/1/c6/1",
+          "desc": "native SROS slot 1 connector c6",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "sros-host-1",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "2/1/c1/1",
+          "desc": "native SROS slot 2 connector c1",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "sros-host-2",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "2/1/c6/1",
+          "desc": "native SROS slot 2 connector c6",
+          "remoteNode": "sros-sr2se",
+          "remotePort": "1/1/c36/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2se 1/1/c36/1",
+          "lldpStatus": "ok"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "sros-sr2s",
+          "namespace": "",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "lab/chassis": "7750-sr-2s"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-2s 6p_6p",
+          "operatingSystem": "sros"
+        }
+      }
+    },
+    {
+      "name": "sros-sr2se",
+      "platform": "7750 SR-2se DC 400G_400G",
+      "os": "sros",
+      "role": "spine",
+      "labels": {
+        "eda.nokia.com/role": "spine",
+        "eda.nokia.com/os": "sros",
+        "lab/chassis": "7750-sr-2se"
+      },
+      "table": [
+        {
+          "label": "1/1/c36/1",
+          "desc": "native SROS slot 1 connector c36",
+          "remoteNode": "sros-sr2s",
+          "remotePort": "2/1/c6/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr2s 2/1/c6/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "2/1/c36/1",
+          "desc": "native SROS slot 2 connector c36",
+          "remoteNode": "sros-sr1",
+          "remotePort": "1/1/c24/1",
+          "type": "interSwitch",
+          "lldpPeer": "sros-sr1 1/1/c24/1",
+          "lldpStatus": "ok"
+        },
+        {
+          "label": "ethernet-1-a-12-1",
+          "desc": "EDA-normalized SROS slot 1 connector 12",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "eda-normalized-sros-a",
+          "lldpStatus": "none"
+        },
+        {
+          "label": "ethernet-2-a-32-1",
+          "desc": "EDA-normalized SROS slot 2 connector 32",
+          "remoteNode": "",
+          "remotePort": "eth0",
+          "type": "edge",
+          "peer": "eda-normalized-sros-b",
+          "lldpStatus": "none"
+        }
+      ],
+      "breakouts": {
+        "1-36": {
+          "channels": 4,
+          "speed": "400G"
+        },
+        "2-36": {
+          "channels": 4,
+          "speed": "400G"
+        }
+      },
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "sros-sr2se",
+          "namespace": "",
+          "labels": {
+            "eda.nokia.com/role": "spine",
+            "eda.nokia.com/os": "sros",
+            "lab/chassis": "7750-sr-2se"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-2se DC 400G_400G",
+          "operatingSystem": "sros"
+        }
+      }
     }
   ],
   "links": [
@@ -70,234 +513,32 @@
       "sourcePort": "ethernet-1-2",
       "targetPort": "ethernet-1-4",
       "type": "interSwitch"
+    },
+    {
+      "id": "sros-sr1-sros-sr2s-isl-1",
+      "source": "sros-sr1",
+      "target": "sros-sr2s",
+      "sourcePort": "1/1/c6/1",
+      "targetPort": "1/1/c1/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "sros-sr2s-sros-sr2se-isl-1",
+      "source": "sros-sr2s",
+      "target": "sros-sr2se",
+      "sourcePort": "2/1/c6/1",
+      "targetPort": "1/1/c36/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "sros-sr1-sros-sr2se-isl-1",
+      "source": "sros-sr1",
+      "target": "sros-sr2se",
+      "sourcePort": "1/1/c24/1",
+      "targetPort": "2/1/c36/1",
+      "type": "interSwitch"
     }
   ],
-  "tables": {
-    "leaf1": [
-      {
-        "label": "ethernet-1-10",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "peer": "server-a",
-        "lldpStatus": "none"
-      },
-      {
-        "label": "ethernet-1-32",
-        "desc": "",
-        "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-32",
-        "type": "interSwitch",
-        "lag": "lag-leaf1-leaf2-isl-lag-1-local",
-        "lldpPeer": "leaf2 ethernet-1-32",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-33",
-        "desc": "",
-        "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-33",
-        "type": "interSwitch",
-        "lag": "lag-leaf1-leaf2-isl-lag-1-local",
-        "lldpPeer": "leaf2 ethernet-1-33",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-30",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "lag": "lag-leaf1-leaf2-mh-lag-server-d-local",
-        "peer": "server-d",
-        "lldpStatus": "none"
-      },
-      {
-        "label": "ethernet-1-20",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "lag": "lag-leaf1-local-lag-server-c-local",
-        "peer": "server-c",
-        "lldpStatus": "none"
-      },
-      {
-        "label": "ethernet-1-21",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "lag": "lag-leaf1-local-lag-server-c-local",
-        "peer": "server-c",
-        "lldpStatus": "none"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch",
-        "lldpPeer": "spine1 ethernet-1-1",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch",
-        "lldpPeer": "spine1 ethernet-1-2",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-31",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "lag": "lag-testman1-esi-lag-1-local",
-        "peer": "testman1-esi-lag-1",
-        "lldpStatus": "none"
-      }
-    ],
-    "leaf2": [
-      {
-        "label": "ethernet-1-32",
-        "desc": "",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-32",
-        "type": "interSwitch",
-        "lag": "lag-leaf1-leaf2-isl-lag-1-remote",
-        "lldpPeer": "leaf1 ethernet-1-32",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-33",
-        "desc": "",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-33",
-        "type": "interSwitch",
-        "lag": "lag-leaf1-leaf2-isl-lag-1-remote",
-        "lldpPeer": "leaf1 ethernet-1-33",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-30",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "lag": "lag-leaf1-leaf2-mh-lag-server-d-local",
-        "peer": "server-d",
-        "lldpStatus": "none"
-      },
-      {
-        "label": "ethernet-1-10",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "peer": "server-b",
-        "lldpStatus": "none"
-      },
-      {
-        "label": "ethernet-1-1",
-        "desc": "",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-3",
-        "type": "interSwitch",
-        "lldpPeer": "spine1 ethernet-1-3",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "",
-        "remoteNode": "spine1",
-        "remotePort": "ethernet-1-4",
-        "type": "interSwitch",
-        "lldpPeer": "spine1 ethernet-1-4",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-31",
-        "desc": "",
-        "remoteNode": "",
-        "remotePort": "",
-        "type": "edge",
-        "lag": "lag-testman1-esi-lag-1-local",
-        "peer": "testman1-esi-lag-1",
-        "lldpStatus": "none"
-      }
-    ],
-    "spine1": [
-      {
-        "label": "ethernet-1-1",
-        "desc": "",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch",
-        "lldpPeer": "leaf1 ethernet-1-1",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-2",
-        "desc": "",
-        "remoteNode": "leaf1",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch",
-        "lldpPeer": "leaf1 ethernet-1-2",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-3",
-        "desc": "",
-        "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-1",
-        "type": "interSwitch",
-        "lldpPeer": "leaf2 ethernet-1-1",
-        "lldpStatus": "ok"
-      },
-      {
-        "label": "ethernet-1-4",
-        "desc": "",
-        "remoteNode": "leaf2",
-        "remotePort": "ethernet-1-2",
-        "type": "interSwitch",
-        "lldpPeer": "leaf2 ethernet-1-2",
-        "lldpStatus": "ok"
-      }
-    ]
-  },
-  "occupied": {
-    "leaf1": [
-      10,
-      32,
-      33,
-      30,
-      20,
-      21,
-      1,
-      2,
-      31
-    ],
-    "leaf2": [
-      32,
-      33,
-      30,
-      10,
-      1,
-      2,
-      31
-    ],
-    "spine1": [
-      1,
-      2,
-      3,
-      4
-    ]
-  },
   "lags": {
     "lag-leaf1-leaf2-isl-lag-1-local": {
       "name": "lag-leaf1-leaf2-isl-lag-1-local",
@@ -401,5 +642,22 @@
         "leaf2"
       ]
     }
+  },
+  "labels": {
+    "eda.nokia.com/role": [
+      "leaf",
+      "spine"
+    ],
+    "eda.nokia.com/os": [
+      "sros"
+    ],
+    "lab/chassis": [
+      "7750-sr-1-24d",
+      "7750-sr-2s",
+      "7750-sr-2se"
+    ],
+    "region": [
+      "akl"
+    ]
   }
 }

@@ -1,40 +1,15 @@
-export type Node = { id: string; name: string; platform: string; os: string; role: string };
-export type Edge = {
-  id: string; source: string; target: string;
-  sourcePort: string; targetPort: string; type: string;
-};
-export type LldpStatus = 'ok' | 'mismatch' | 'none';
-export type Row = {
-  label: string; desc: string;
-  remoteNode: string; remotePort: string; type: string;
-  lag?: string;   // LAG resource name when this port is bundled into a port-channel
-  peer?: string;  // endpoint/server label for edge links whose remote node is external
-  lldpStatus?: LldpStatus;
-  lldpPeer?: string;   // LLDP-observed neighbour(s), "node port"
-};
-// Mirror of eda.ts LagInfo — see there for the multihomed/ESI classification nuance.
-export type LagInfo = {
-  name: string;
-  lacp: boolean;
-  isl: boolean;
-  multihomed: boolean;
-  mode: string;
-  members: { node: string; port: string }[];
-  nodes: string[];
-};
-export type Topology = {
-  nodes: Node[]; links: Edge[];
-  tables: Record<string, Row[]>;
-  occupied: Record<string, number[]>;
-  lags: Record<string, LagInfo>;
-};
+// Contract types are generated from the Go structs (internal/topology/contract.go) into
+// `src/topology.gen.ts` by tygo (`make ts-contract`); re-exported here so the app imports them from `./api`.
+import type { Topology } from './topology.gen';
+export type { Node, Edge, Row, LagInfo, LagMember, Breakout, Topology, LldpStatus } from './topology.gen';
 
 // Vite base (trailing slash) — prefix all same-origin URLs so they resolve under
 // the EDA HttpProxy sub-path as well as at the root.
 export const BASE = import.meta.env.BASE_URL;
 
-export async function fetchTopology(): Promise<Topology> {
-  const res = await fetch(`${BASE}api/topology`);
+export async function fetchTopology(namespace = ''): Promise<Topology> {
+  const qs = namespace ? `?ns=${encodeURIComponent(namespace)}` : '';
+  const res = await fetch(`${BASE}api/topology${qs}`);
   if (!res.ok) throw new Error(`topology ${res.status}: ${(await res.json()).error || ''}`);
   return res.json();
 }
@@ -50,11 +25,12 @@ export async function fetchNamespaces(): Promise<string[]> {
 }
 
 // Live EDA namespace list — the picker updates as namespaces are created/deleted.
-export function streamNamespaces(onList: (names: string[]) => void): () => void {
+export function streamNamespaces(onList: (names: string[]) => void, onError?: (msg: string) => void): () => void {
   const es = new EventSource(`${BASE}api/namespaces/stream`);
   es.addEventListener('message', (ev) => {
     try { onList(JSON.parse(ev.data) as string[]); } catch { /* ignore malformed frame */ }
   });
+  es.addEventListener('error', () => onError?.('namespace stream disconnected — reconnecting…'));
   return () => es.close();
 }
 
@@ -67,9 +43,35 @@ export function streamTopology(namespace: string, onTopo: (t: Topology) => void,
   return () => es.close();
 }
 
-// interface name (e.g. ethernet-1-12 or ethernet-1/12) -> port index 12,
-// for matching table rows to front-panel cages.
+const srosConnector = (label: string) => label.match(/(?:^|[/_-])c(\d+)(?:[/_-]|$)/i)?.[1] ?? null;
+
+// EDA/SROS interface name -> front-panel cage index. For SRL names like ethernet-1-12,
+// the cage is the 2nd number. For native SROS connector names like 1/1/c12/1, the cage
+// is the c-number; the following number is a breakout channel and must not be captured.
 export function portIdx(label: string): number | null {
-  const m = label.match(/(\d+)\s*$/);
-  return m ? Number(m[1]) : null;
+  const connector = srosConnector(label);
+  if (connector != null) return Number(connector);
+  const ns = label.match(/\d+/g);
+  if (!ns) return null;
+  return Number(ns.length >= 2 ? ns[1] : ns[0]);
+}
+
+// Front-panel cage id matching the stencil's data-port. On modular (slotted) chassis a cage is
+// addressed per slot, so the key is "<slot>-<port>"; on fixed chassis it's just the port.
+// Native SROS 1/1/c6/1 maps to "1-6" when slotted and "6" otherwise.
+export function cageKey(label: string, slotted: boolean): string | null {
+  const ns = label.match(/\d+/g);
+  if (!ns) return null;
+  const connector = srosConnector(label);
+  const port = connector ?? (ns.length >= 2 ? ns[1] : ns[0]);
+  if (slotted) return ns.length >= 2 ? `${ns[0]}-${port}` : port;
+  return port;
+}
+
+// breakout channel (1-based) if this interface is a broken-out sub-port, else null.
+export function breakoutChannel(label: string): number | null {
+  const nativeSros = label.match(/(?:^|[/_-])c\d+[/_-](\d+)$/i);
+  if (nativeSros) return Number(nativeSros[1]);
+  const ns = label.match(/\d+/g);
+  return ns && ns.length >= 3 ? Number(ns[2]) : null;
 }

@@ -8,6 +8,7 @@ require (
 	github.com/chromedp/chromedp v0.15.1
 	k8s.io/apimachinery v0.34.3
 	sigs.k8s.io/controller-runtime v0.22.4
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -77,7 +78,6 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.1 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 // EDK is not reachable from its canonical Nokia GitLab here; use the local checkout.

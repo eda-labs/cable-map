@@ -17,6 +17,7 @@ echo "==> [1/4] vite build"
 pnpm build
 
 echo "==> [2/4] sync SPA into ${EMBED}"
+mkdir -p "$EMBED"
 find "$EMBED" -mindepth 1 ! -name '.keep' ! -name '.gitignore' -exec rm -rf {} +
 cp -r dist/. "$EMBED/"
 

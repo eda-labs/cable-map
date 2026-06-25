@@ -19,9 +19,19 @@ import (
 // Requires Chromium in the runtime image.
 func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 	nodes := strings.TrimSpace(r.URL.Query().Get("nodes"))
-	q := ""
+	params := url.Values{}
 	if nodes != "" {
-		q = "?nodes=" + url.QueryEscape(nodes)
+		params.Set("nodes", nodes)
+	}
+	if ns := strings.TrimSpace(r.URL.Query().Get("ns")); ns != "" {
+		params.Set("ns", ns)
+	}
+	if remote := r.URL.Query().Get("remote"); remote != "" {
+		params.Set("remote", remote)
+	}
+	q := ""
+	if len(params) > 0 {
+		q = "?" + params.Encode()
 	}
 	target := fmt.Sprintf("http://127.0.0.1:%s/print%s", s.port, q)
 
@@ -53,8 +63,7 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 			var err error
 			buf, _, err = page.PrintToPDF().
 				WithPrintBackground(true).
-				WithLandscape(true).
-				WithPaperWidth(11.69).WithPaperHeight(8.27). // A4 landscape (inches)
+				WithPreferCSSPageSize(true). // honour print.css `@page { size: A4 landscape }`
 				WithMarginTop(0.5).WithMarginBottom(0.5).
 				WithMarginLeft(0.5).WithMarginRight(0.5).
 				Do(ctx)
