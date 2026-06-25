@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
   CircularProgress, Chip, Divider, TextField, Tabs, Tab, Grow,
-  FormControl, InputAdornment, Select, MenuItem,
+  FormControl, InputAdornment, Select, MenuItem, Checkbox, ListItemText,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
@@ -48,7 +48,6 @@ const LLDP_LEGEND: Array<[string, string]> = [
 
 type Mode = 'light' | 'dark';
 type EdgeLinkMode = 'enabled' | 'stub' | 'hidden';
-const NODE_LABEL_FILTER_ALL = '__all__';
 const SEARCH_PORT_ZOOM = 3.2;
 const EDGE_LINK_MODE_ORDER: EdgeLinkMode[] = ['enabled', 'stub', 'hidden'];
 
@@ -275,7 +274,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [open, setOpen] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
-  const [selectedNodeLabelFilter, setSelectedNodeLabelFilter] = useState(NODE_LABEL_FILTER_ALL);
+  const [selectedNodeLabels, setSelectedNodeLabels] = useState<string[]>([]); // [] = no filter
   const [namespace, setNamespace] = useState('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [namespacesReady, setNamespacesReady] = useState(false);
@@ -348,35 +347,35 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       for (const nodeLabels of adjacency.nodeLabels.values()) {
         for (const label of nodeLabels) labels.add(label);
       }
-      return [
-        { value: NODE_LABEL_FILTER_ALL, label: 'Labels: All Nodes' },
-        ...[...labels]
-          .toSorted((left, right) => left.localeCompare(right))
-          .map((value) => ({ value, label: value })),
-      ];
+      return [...labels].toSorted((left, right) => left.localeCompare(right));
     },
     [adjacency],
   );
 
   useEffect(() => {
-    setSelectedNodeLabelFilter(NODE_LABEL_FILTER_ALL);
+    setSelectedNodeLabels([]);
   }, [namespace]);
 
+  // drop any selected labels that no longer exist (e.g. after a namespace/topology change)
   useEffect(() => {
-    if (selectedNodeLabelFilter === NODE_LABEL_FILTER_ALL) return;
-    const optionExists = nodeLabelFilterOptions.some((option) => option.value === selectedNodeLabelFilter);
-    if (!optionExists) setSelectedNodeLabelFilter(NODE_LABEL_FILTER_ALL);
-  }, [nodeLabelFilterOptions, selectedNodeLabelFilter]);
+    setSelectedNodeLabels((prev) => {
+      const next = prev.filter((v) => nodeLabelFilterOptions.includes(v));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [nodeLabelFilterOptions]);
 
-  // the label filter HIDES everything that doesn't match: a node must carry the selected label.
-  // A matched switch keeps its endpoint chips
-  // (servers) so its cabling stays intact. null = no filter (show everything).
-  const filterActive = selectedNodeLabelFilter !== NODE_LABEL_FILTER_ALL;
+  // the label filter HIDES everything that doesn't match: a node must carry ANY selected label.
+  // A matched switch keeps its endpoint chips (servers) so its cabling stays intact.
+  // null = no filter (show everything).
+  const filterActive = selectedNodeLabels.length > 0;
   const shown = useMemo<Set<string> | null>(() => {
     if (!filterActive) return null;
+    const sel = new Set(selectedNodeLabels);
     const out = new Set<string>();
     for (const [id, set] of adjacency.nodeLabels) {
-      if (!set.has(selectedNodeLabelFilter)) continue;
+      let match = false;
+      for (const s of sel) if (set.has(s)) { match = true; break; }
+      if (!match) continue;
       out.add(id);
     }
     // keep a matched node's directly-attached context: a switch pulls in its endpoint chips (servers),
@@ -392,7 +391,12 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       }
     }
     return out;
-  }, [filterActive, selectedNodeLabelFilter, adjacency, switchIds]);
+  }, [filterActive, selectedNodeLabels, adjacency, switchIds]);
+
+  // read the latest `shown` via a ref so the auto-fit effect (below) fires on the user's label
+  // selection, not on every data refresh that recomputes `shown`.
+  const shownRef = useRef(shown);
+  shownRef.current = shown;
 
   // Ctrl/Cmd+A selects all switches (ignored while typing in an input)
   useEffect(() => {
@@ -409,6 +413,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
 
   const hasEdgeLinks = useMemo(() => edges.some((e) => isStubEdge(e.id)), [edges]);
   const ready = !!topo && topo.nodes.length > 0;
+
+  // auto-fit the canvas to the matched nodes whenever the label selection changes
+  useEffect(() => {
+    if (!flow || !ready) return;
+    const target = shownRef.current;
+    const handle = window.setTimeout(() => {
+      if (!target || target.size === 0) { void flow.fitView({ padding: 0.12, duration: 400 }); return; }
+      void flow.fitView({ nodes: [...target].map((id) => ({ id })), padding: 0.2, duration: 400, maxZoom: 1.4 });
+    }, 60);
+    return () => window.clearTimeout(handle);
+  }, [selectedNodeLabels, flow, ready]);
   const activeStubEdgeIds = useTrace((s) => {
     if (!s.edges.size) return '';
     const out: string[] = [];
@@ -569,17 +584,24 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               />
             </Box>
           )}
-          {ready && (
+          {ready && nodeLabelFilterOptions.length > 0 && (
             <FormControl size="small" sx={{ width: 260 }}>
               <Select
-                value={selectedNodeLabelFilter}
-                onChange={(e) => setSelectedNodeLabelFilter(e.target.value)}
+                multiple
+                displayEmpty
+                value={selectedNodeLabels}
+                onChange={(e) => setSelectedNodeLabels(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(sel) => sel.length === 0
+                  ? <Box component="span" sx={{ color: 'text.secondary' }}>Label filter</Box>
+                  : sel.length === 1 ? sel[0] : `${sel.length} labels`}
                 inputProps={{ 'aria-label': 'Label filter' }}
+                MenuProps={{ slotProps: { paper: { sx: { maxHeight: 360 } } } }}
                 sx={{ height: 31 }}
               >
-                {nodeLabelFilterOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+                {nodeLabelFilterOptions.map((value) => (
+                  <MenuItem key={value} value={value} dense>
+                    <Checkbox size="small" checked={selectedNodeLabels.includes(value)} sx={{ py: 0, mr: 0.5 }} />
+                    <ListItemText primary={value} slotProps={{ primary: { noWrap: true } }} />
                   </MenuItem>
                 ))}
               </Select>
