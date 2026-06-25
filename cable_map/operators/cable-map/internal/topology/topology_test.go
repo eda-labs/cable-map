@@ -16,6 +16,15 @@ func findRow(rows []Row, label string) (Row, bool) {
 	return Row{}, false
 }
 
+func nodeByName(t Topology, name string) Node {
+	for _, n := range t.Nodes {
+		if n.Name == name {
+			return n
+		}
+	}
+	return Node{}
+}
+
 // Covers the load-bearing derivations: LLDP ok/mismatch/none, peer label, lag- gate,
 // LAG isl/multihomed/lacp classification, occupancy, and edge emission.
 func TestBuildTopology(t *testing.T) {
@@ -53,14 +62,28 @@ func TestBuildTopology(t *testing.T) {
 		}}},
 	}
 
-	topo := BuildTopology(nodes, links, ifaces)
+	breakouts := []RawBreakout{
+		{Name: "bo-1", Nodes: []string{"leaf1"}, Interfaces: []string{"ethernet-1-49"}, Channels: 4, Speed: "100G"},
+		{Name: "bo-sel", NodeSelectors: []string{"eda.nokia.com/role=spine"}, Interfaces: []string{"ethernet-1/2"}, Channels: 2, Speed: "200G"},
+	}
+	topo := BuildTopology(nodes, links, ifaces, breakouts)
 
 	// node projection + platform fallback
 	if topo.Nodes[2].Platform != "7220 IXR-D5" {
 		t.Errorf("spine1 platform fallback: got %q", topo.Nodes[2].Platform)
 	}
 
-	leaf1 := topo.Tables["leaf1"]
+	// breakout: direct node ref -> cage 49 (parent ethernet-1-49) split into 4x100G, folded onto the node
+	if b, ok := nodeByName(topo, "leaf1").Breakouts["49"]; !ok || b.Channels != 4 || b.Speed != "100G" {
+		t.Errorf("leaf1 breakout cage 49: got %+v ok=%v", b, ok)
+	}
+
+	// labels: collected across nodes, distinct values sorted
+	if got := topo.Labels["eda.nokia.com/role"]; len(got) != 2 || got[0] != "leaf" || got[1] != "spine" {
+		t.Errorf("collected role labels: got %v want [leaf spine]", got)
+	}
+
+	leaf1 := nodeByName(topo, "leaf1").Table
 	if r, ok := findRow(leaf1, "ethernet-1-49"); !ok {
 		t.Fatal("missing ethernet-1-49 row")
 	} else {
@@ -84,17 +107,6 @@ func TestBuildTopology(t *testing.T) {
 	}
 	if r, _ := findRow(leaf1, "ethernet-1-10"); r.Type != "edge" || r.Peer != "server-a" || r.LldpStatus != "none" {
 		t.Errorf("edge row: type=%q peer=%q lldp=%q", r.Type, r.Peer, r.LldpStatus)
-	}
-
-	// occupancy: encountered ports on leaf1
-	gotOcc := map[int]bool{}
-	for _, i := range topo.Occupied["leaf1"] {
-		gotOcc[i] = true
-	}
-	for _, want := range []int{49, 50, 10} {
-		if !gotOcc[want] {
-			t.Errorf("occupied[leaf1] missing %d (got %v)", want, topo.Occupied["leaf1"])
-		}
 	}
 
 	// LAG classification

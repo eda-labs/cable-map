@@ -1,0 +1,10 @@
+packages:
+  - path: cable-map.eda.labs/cable-map/operators/cable-map/internal/topology
+    output_path: ../src/topology.gen.ts
+    include_files:
+      - contract.go
+    frontmatter: |
+      // Code generated from operators/cable-map/internal/topology/contract.go by tygo. DO NOT EDIT.
+      // Regenerate with `make ts-contract`.
+      /* eslint-disable */
+      export type LldpStatus = 'ok' | 'mismatch' | 'none';

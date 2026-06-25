@@ -35,13 +35,14 @@ export async function exportXlsx(topo: Topology, nodeIds: string[]): Promise<voi
   const header: Cell[] = HEADERS.map((h) => ({ value: h, fontWeight: 'bold' }));
   const columns = WIDTHS.map((width) => ({ width }));
   const name = sheetNamer();
+  const byName = new Map(topo.nodes.map((n) => [n.name, n]));
 
   const sheets = nodeIds.map((id) => ({
     sheet: name(id),
     columns,
     data: [
       header,
-      ...(topo.tables[id] ?? [])
+      ...(byName.get(id)?.table ?? [])
         .toSorted((a, b) => (portIdx(a.label) ?? 0) - (portIdx(b.label) ?? 0))
         .map((r): Cell[] => [
           r.label,

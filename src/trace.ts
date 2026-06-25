@@ -11,6 +11,7 @@ export type Adjacency = {
   edgeEnds: Map<string, [string, string]>;     // edgeId   -> [source, target]
   edgePorts: Map<string, string[]>;            // edgeId   -> ["node:port", ...]
   search: Map<string, string>;                 // id       -> lower-cased haystack
+  nodeLabels: Map<string, Set<string>>;        // nodeId   -> set of "key=value" labels (exact match)
 };
 
 export type TraceState = {
@@ -24,8 +25,11 @@ export type TraceState = {
 
 const EMPTY: TraceState = { edges: new Set(), nodes: new Set(), ports: new Set(), any: false, pinned: false, key: null };
 
-let adj: Adjacency = { nodeEdges: new Map(), edgeEnds: new Map(), edgePorts: new Map(), search: new Map() };
+let adj: Adjacency = { nodeEdges: new Map(), edgeEnds: new Map(), edgePorts: new Map(), search: new Map(), nodeLabels: new Map() };
 let state: TraceState = EMPTY;
+// active free-text + label filter (kept off the key string so labels with ':' etc. don't collide)
+let fTerm = '';
+let fLabels: string[] = [];
 const listeners = new Set<() => void>();
 const emit = () => { for (const l of listeners) l(); };
 
@@ -52,13 +56,17 @@ function resolve(key: string): TraceState {
   if (key.startsWith('cable:')) {
     return collect([key.slice(6)]);
   }
-  if (key.startsWith('search:')) {
-    const term = key.slice(7).trim().toLowerCase();
-    if (!term) return EMPTY;
+  if (key === 'filter') {
+    const term = fTerm.trim().toLowerCase();
+    if (!term && fLabels.length === 0) return EMPTY;
     const hitNodes: string[] = [];
     const hitEdges = new Set<string>();
     for (const [id, hay] of adj.search) {
-      if (!hay.includes(term)) continue;
+      if (term && !hay.includes(term)) continue;
+      if (fLabels.length) {
+        const set = adj.nodeLabels.get(id);
+        if (!set || !fLabels.every((l) => set.has(l))) continue;   // AND across selected labels
+      }
       hitNodes.push(id);
       for (const ed of adj.nodeEdges.get(id) ?? []) hitEdges.add(ed);
     }
@@ -76,8 +84,14 @@ function apply(key: string | null, pinned: boolean) {
 export const trace = {
   hover(key: string | null) { if (!state.pinned) apply(key, false); },
   pin(key: string) { apply(state.pinned && state.key === key ? null : key, true); },
-  search(term: string) { apply(term ? `search:${term}` : null, !!term); },
-  clear() { apply(null, false); },
+  // combined search box + label-chip filter: a node must match the free-text term AND carry every label
+  filter(term: string, labels: string[]) {
+    fTerm = term; fLabels = labels;
+    const active = !!term || labels.length > 0;
+    apply(active ? 'filter' : null, active);
+  },
+  search(term: string) { this.filter(term, fLabels); },
+  clear() { fTerm = ''; fLabels = []; apply(null, false); },
   isPinned: () => state.pinned,
 };
 

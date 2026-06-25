@@ -82,4 +82,4 @@ require (
 
 // EDK is not reachable from its canonical Nokia GitLab here; use the local checkout.
 // Replace with a proper submodule/version when the source is available.
-replace eda.dev/edk => ../../edk
+replace eda.dev/edk => ../edk

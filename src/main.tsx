@@ -97,7 +97,7 @@ const printTheme = createTheme({
   typography: { fontFamily: '"NokiaPureText", "Roboto", "Helvetica", "Arial", sans-serif' },
 });
 
-// ponytail: no router lib — one branch on the path is all two routes need.
+// no router lib — a branch on the path is all these routes need.
 const isPrint = location.pathname.startsWith('/print');
 
 createRoot(document.getElementById('root')!).render(

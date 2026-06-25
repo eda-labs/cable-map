@@ -1,0 +1,65 @@
+# Dev pod for `devspace dev` — a plain Go container that DevSpace develops: it syncs the host-built
+# operator binary in and runs it. Its own ServiceAccount + cert-manager mTLS certs let it reach the
+# State Aggregator (cert-based auth). No app image to build/push; the binary comes from the host.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cable-map-dev
+  namespace: eda-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cable-map-dev
+  namespace: eda-system
+  labels:
+    eda.labs/app: cable-map-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      eda.labs/app: cable-map-dev
+  template:
+    metadata:
+      labels:
+        eda.labs/app: cable-map-dev
+    spec:
+      serviceAccountName: cable-map-dev
+      containers:
+        - name: cable-map
+          image: golang:1.24-alpine
+          command: ["sleep", "infinity"] # DevSpace overrides this to run the synced binary
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: PORT
+              value: "8080"
+            - name: HOME
+              value: /tmp
+            - name: CHROMEDP_NO_SANDBOX # chromium refuses to run as root without --no-sandbox
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: tls
+              mountPath: /var/run/eda/tls/internal/client
+            - name: trustbundle
+              mountPath: /var/run/eda/tls/internal/trust
+      volumes:
+        - name: tls
+          csi:
+            driver: csi.cert-manager.io
+            readOnly: true
+            volumeAttributes:
+              csi.cert-manager.io/dns-names: cable-map-dev.eda-system.svc,cable-map-dev,internal.eda.nokia.com
+              csi.cert-manager.io/issuer-name: eda-internal-issuer
+              csi.cert-manager.io/key-algorithm: ECDSA
+        - name: trustbundle
+          configMap:
+            defaultMode: 420
+            name: eda-internal-trust-bundle
+            optional: false

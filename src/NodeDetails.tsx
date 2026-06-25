@@ -1,8 +1,8 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { Box, Typography, Chip, CircularProgress } from '@mui/material';
-import { load } from 'js-yaml';
+import { dump } from 'js-yaml';
 import type { editor } from 'monaco-editor';
-import { fetchNodeRaw, type Node } from './api';
+import type { Node } from './api';
 
 const NodeRawEditor = lazy(() => import('./NodeRawEditor'));
 
@@ -50,23 +50,10 @@ function Field({ label, value, desc }: { label: string; value?: string; desc?: s
 }
 
 // Details tab: an EDA-style form (Metadata / Status / Specification) on the left, the raw TopoNode
-// resource (Monaco, read-only YAML) on the right.
+// resource (Monaco, read-only YAML) on the right — both render from the node's embedded CR (node.raw).
 export default function NodeDetails({ node, dark }: { node: Node; dark: boolean }) {
-  const [raw, setRaw] = useState<string | null>(null);
-  const [err, setErr] = useState('');
-  useEffect(() => {
-    let alive = true;
-    setRaw(null); setErr('');
-    fetchNodeRaw(node.id, node.namespace)
-      .then((y) => { if (alive) setRaw(y); })
-      .catch((e) => { if (alive) setErr(e instanceof Error ? e.message : String(e)); });
-    return () => { alive = false; };
-  }, [node.id, node.namespace]);
-
-  const cr = useMemo<Cr | null>(() => {
-    if (!raw) return null;
-    try { return load(raw) as Cr; } catch { return null; }
-  }, [raw]);
+  const cr = (node.raw ?? null) as Cr | null;
+  const yaml = useMemo(() => (node.raw ? dump(node.raw) : ''), [node.raw]);
 
   const spec = cr?.spec, status = cr?.status;
   const npp = spec?.npp as Obj | undefined;
@@ -146,16 +133,12 @@ export default function NodeDetails({ node, dark }: { node: Node; dark: boolean 
           TopoNode resource
         </Typography>
         <Box sx={{ flex: 1, minHeight: 0 }}>
-          {err ? (
-            <Typography variant="body2" color="error.main" sx={{ p: 2 }}>{err}</Typography>
-          ) : raw == null ? (
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
-              <CircularProgress size={16} /><Typography variant="body2">loading…</Typography>
-            </Box>
-          ) : (
+          {node.raw ? (
             <Suspense fallback={<Box sx={{ p: 2 }}><CircularProgress size={16} /></Box>}>
-              <NodeRawEditor value={raw} dark={dark} onEditorMount={handleEditor} />
+              <NodeRawEditor value={yaml} dark={dark} onEditorMount={handleEditor} />
             </Suspense>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>no resource data</Typography>
           )}
         </Box>
       </Box>

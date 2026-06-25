@@ -34,6 +34,7 @@ var kinds = []crKind{
 	{edav1.KTopoNodeGVK.Group, edav1.KTopoNodeGVK.Version, edav1.KTopoNodeGVK.Kind},
 	{edav1.KTopoLinkGVK.Group, edav1.KTopoLinkGVK.Version, edav1.KTopoLinkGVK.Kind},
 	{"interfaces.eda.nokia.com", "v1", "Interface"},
+	{"interfaces.eda.nokia.com", "v1alpha1", "Breakout"},
 }
 
 const debounce = 300 * time.Millisecond
@@ -250,11 +251,18 @@ func (s *Store) snapshotLocked(filter []string) topology.Topology {
 			ifaces = append(ifaces, projIface(u))
 		}
 	}
+	var breakouts []topology.RawBreakout
+	for key, u := range s.caches["Breakout"] {
+		if in(nsOf(key)) {
+			breakouts = append(breakouts, projBreakout(u))
+		}
+	}
 	// Stable input order -> stable output JSON, so dedup and the UI don't churn.
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Name < nodes[j].Name })
 	sort.Slice(links, func(i, j int) bool { return links[i].Name < links[j].Name })
 	sort.Slice(ifaces, func(i, j int) bool { return ifaces[i].Name < ifaces[j].Name })
-	return topology.BuildTopology(nodes, links, ifaces)
+	sort.Slice(breakouts, func(i, j int) bool { return breakouts[i].Name < breakouts[j].Name })
+	return topology.BuildTopology(nodes, links, ifaces, breakouts)
 }
 
 func (s *Store) namespacesLocked() []string {
@@ -349,43 +357,50 @@ func sendNS(sub *nsSub, list []string) {
 
 // ---- projections from unstructured CRs ------------------------------------------
 
+// projNode/projLink decode the EDK typed TopoNode/TopoLink via the EDK *FromUnstructured helpers.
 func projNode(u *unstructured.Unstructured) topology.RawNode {
+	tn := edav1.TopoNodeFromUnstructured(u)
+	version := tn.Status.Version
+	if version == "" {
+		version = tn.Spec.Version
+	}
 	return topology.RawNode{
 		Name:            u.GetName(),
+		Namespace:       u.GetNamespace(),
 		Labels:          u.GetLabels(),
-		Platform:        us(u.Object, "spec", "platform"),
-		OperatingSystem: us(u.Object, "spec", "operatingSystem"),
-		StatusPlatform:  us(u.Object, "status", "platform"),
+		Platform:        tn.Spec.Platform,
+		OperatingSystem: string(tn.Spec.OperatingSystem),
+		StatusPlatform:  tn.Status.Platform,
+		Version:         version,
+		Raw:             strippedCR(u),
 	}
+}
+
+// strippedCR deep-copies the CR and drops the noisy/volatile k8s bookkeeping (managedFields,
+// resourceVersion) before it is embedded on the node.
+func strippedCR(u *unstructured.Unstructured) map[string]interface{} {
+	obj := u.DeepCopy().Object
+	if md, ok := obj["metadata"].(map[string]interface{}); ok {
+		delete(md, "managedFields")
+		delete(md, "resourceVersion")
+	}
+	return obj
 }
 
 func projLink(u *unstructured.Unstructured) topology.RawLink {
 	out := topology.RawLink{Name: u.GetName()}
-	links, _, _ := unstructured.NestedSlice(u.Object, "spec", "links")
-	for _, li := range links {
-		m, ok := li.(map[string]interface{})
-		if !ok {
-			continue
-		}
+	for _, m := range edav1.TopoLinkSpecFromUnstructured(u).TopoLinks {
 		out.Links = append(out.Links, topology.LinkEntry{
-			Type:   mstr(m, "type"),
-			Local:  endpoint(m["local"]),
-			Remote: endpoint(m["remote"]),
+			Type:   string(m.Type),
+			Local:  endpoint(m.Local),
+			Remote: endpoint(m.Remote),
 		})
 	}
 	return out
 }
 
-func endpoint(v interface{}) topology.LinkEnd {
-	m, ok := v.(map[string]interface{})
-	if !ok {
-		return topology.LinkEnd{}
-	}
-	return topology.LinkEnd{
-		Node:              mstr(m, "node"),
-		Interface:         mstr(m, "interface"),
-		InterfaceResource: mstr(m, "interfaceResource"),
-	}
+func endpoint(e edav1.Endpoint) topology.LinkEnd {
+	return topology.LinkEnd{Node: e.Node, Interface: e.Interface, InterfaceResource: e.InterfaceResource}
 }
 
 func projIface(u *unstructured.Unstructured) topology.RawIface {
@@ -409,7 +424,7 @@ func projIface(u *unstructured.Unstructured) topology.RawIface {
 		if !ok {
 			continue
 		}
-		sm := topology.IfStatusMember{Node: mstr(m, "node"), Interface: mstr(m, "interface")}
+		sm := topology.IfStatusMember{Node: mstr(m, "node"), Interface: mstr(m, "interface"), NodeInterface: mstr(m, "nodeInterface")}
 		if nbrs, ok := m["neighbors"].([]interface{}); ok {
 			for _, ni := range nbrs {
 				if nm, ok := ni.(map[string]interface{}); ok {
@@ -420,6 +435,28 @@ func projIface(u *unstructured.Unstructured) topology.RawIface {
 		out.StatusMembers = append(out.StatusMembers, sm)
 	}
 	return out
+}
+
+func projBreakout(u *unstructured.Unstructured) topology.RawBreakout {
+	// the CRD uses plural arrays (nodes/nodeSelectors/interfaces); accept the singular forms too.
+	strs := func(plural, singular string) []string {
+		if v, _, _ := unstructured.NestedStringSlice(u.Object, "spec", plural); len(v) > 0 {
+			return v
+		}
+		if s := us(u.Object, "spec", singular); s != "" {
+			return []string{s}
+		}
+		return nil
+	}
+	ch, _, _ := unstructured.NestedInt64(u.Object, "spec", "channels")
+	return topology.RawBreakout{
+		Name:          u.GetName(),
+		Nodes:         strs("nodes", "node"),
+		NodeSelectors: strs("nodeSelectors", "nodeSelector"),
+		Interfaces:    strs("interfaces", "interface"),
+		Channels:      int(ch),
+		Speed:         us(u.Object, "spec", "speed"),
+	}
 }
 
 func us(obj map[string]interface{}, fields ...string) string {
