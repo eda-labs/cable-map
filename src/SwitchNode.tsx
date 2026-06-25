@@ -181,6 +181,8 @@ function SwitchNode({ id, data, selected }: NodeProps) {
         background: 'var(--panel)', borderRadius: 8, padding: 8,
         border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
         opacity: mode === 'dim' ? 0.32 : 1, transition: 'opacity 140ms, border-color 140ms',
+        contentVisibility: 'auto',
+        containIntrinsicSize: panel ? `${panel.W + 16}px ${panel.H + 44}px` : '220px 96px',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, height: 20 }}>

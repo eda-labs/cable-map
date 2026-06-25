@@ -22,6 +22,8 @@ import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
 import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, switchPortCenter, type SwitchData } from './graph';
 import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
+import { edgeRoute, useGroupedEdges } from './edgeRoute';
+import PolylineIcon from '@mui/icons-material/PolylineOutlined';
 import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
 import CableEdge from './CableEdge';
@@ -33,6 +35,8 @@ import { edgeRemote } from './edge-remote';
 import './app.css';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
+// stable empty edge list for the dev "hide links" perf toggle (avoids a new [] each render)
+const NO_EDGES: RFEdge[] = [];
 const edgeTypes: EdgeTypes = { cable: CableEdge };
 
 const LEGEND: Array<[string, string]> = [
@@ -277,6 +281,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [namespacesReady, setNamespacesReady] = useState(false);
   const [edgeLinkMode, setEdgeLinkMode] = useState<EdgeLinkMode>('enabled');
   const [legendOpen, setLegendOpen] = useState(true);
+  const [hideEdges, setHideEdges] = useState(false); // dev: drop all cables to isolate edge render cost
+  const grouped = useGroupedEdges();
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
   useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
@@ -623,7 +629,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
-            nodes={displayNodes} edges={displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={displayNodes} edges={hideEdges ? NO_EDGES : displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onInit={setFlow}
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
@@ -640,6 +646,22 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
             <Controls position="top-right" showInteractive={false}>
+              <ControlButton
+                onClick={() => edgeRoute.toggle()}
+                title={grouped ? 'Direct cabling' : 'Group cables through a shared bus'}
+                aria-label="Toggle cable routing"
+              >
+                <PolylineIcon style={{ color: grouped ? 'var(--eda-blue-400)' : undefined }} />
+              </ControlButton>
+              {import.meta.env.DEV && (
+                <ControlButton
+                  onClick={() => setHideEdges((v) => !v)}
+                  title={hideEdges ? 'Show links (dev)' : 'Hide links — perf test (dev)'}
+                  aria-label="Toggle links (dev)"
+                >
+                  <SettingsEthernetIcon style={{ opacity: hideEdges ? 0.4 : 1 }} />
+                </ControlButton>
+              )}
               {hasEdgeLinks && (
                 <ControlButton
                   onClick={() => setEdgeLinkMode((current) => nextEdgeLinkMode(current))}

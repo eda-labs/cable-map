@@ -1,8 +1,9 @@
 import { memo } from 'react';
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, Position, type EdgeProps } from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSmoothStepPath, Position, type EdgeProps } from '@xyflow/react';
 import { CABLE_COLOR, LLDP_COLOR, type CableKind } from './graph';
 import { useTrace, type Mode } from './trace';
 import { useLldp } from './lldp';
+import { useGroupedEdges } from './edgeRoute';
 import type { LldpStatus } from './api';
 
 type Data = { kind: CableKind; a: string; b: string; count?: number; lldp?: LldpStatus; forceOn?: boolean };
@@ -25,17 +26,16 @@ function CableEdge(props: EdgeProps) {
   const d = data as Data;
   const traced = useTrace((s) => s.edges.has(id));
   const traceAny = useTrace((s) => s.any);
-  const activeEdgeCount = useTrace((s) => s.edges.size);
+  const smallTrace = useTrace((s) => s.edges.size <= 4);
+  const remoteVisible = useTrace((s) => !id.startsWith('stub|') || s.key === `cable:${id}`);
   const mode: Mode = !traceAny ? 'idle' : traced || d.forceOn ? 'on' : 'dim';
   // only label when a SMALL trace is active (single cable / LAG) — tracing a whole
   // switch lights 8-20 cables and stacked end labels would just be noise.
-  const showLabel = (traced || !!d.forceOn) && activeEdgeCount <= 4;
-  const traceKey = useTrace((s) => s.key);
+  const showLabel = (traced || !!d.forceOn) && smallTrace;
   // LLDP overlay recolours every cable by neighbour-confirmation status instead of kind.
   const lldpOn = useLldp();
   const color = lldpOn ? LLDP_COLOR[d.lldp ?? 'none'] : CABLE_COLOR[d.kind];
-
-  const remoteVisible = !id.startsWith('stub|') || traceKey === `cable:${id}`;
+  const grouped = useGroupedEdges();
 
   // A same-tier peer link (leaf↔leaf ISL) has both ends on the top side at the same height,
   // where getBezierPath collapses to a flat line buried under the panels — arch it up over the
@@ -49,6 +49,13 @@ function CableEdge(props: EdgeProps) {
     path = `M${sourceX},${sourceY} C${c1x},${c1y} ${c2x},${c2y} ${targetX},${targetY}`;
     labelX = (sourceX + targetX) / 2;
     labelY = (sourceY + targetY) / 2 - lift * 0.75;
+  } else if (grouped) {
+    // Shared-bus routing: orthogonal stems straight out of each port into a common horizontal
+    // corridor at the vertical midpoint (rounded corners), collapsing dense diagonals into a tidy bus.
+    const midY = (sourceY + targetY) / 2;
+    c1x = sourceX; c1y = midY; c2x = targetX; c2y = midY;   // approx control points for the label sampler
+    const [sp, lx, ly] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 16 });
+    path = sp; labelX = lx; labelY = ly;
   } else {
     [c1x, c1y] = control(sourcePosition, sourceX, sourceY, targetX, targetY);
     [c2x, c2y] = control(targetPosition, targetX, targetY, sourceX, sourceY);
