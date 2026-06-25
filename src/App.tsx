@@ -23,6 +23,7 @@ import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, switchPortCenter, 
 import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
 import { edgeRoute, useGroupedEdges } from './edgeRoute';
+import GLEdges from './GLEdges';
 import PolylineIcon from '@mui/icons-material/PolylineOutlined';
 import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
@@ -35,8 +36,12 @@ import { edgeRemote } from './edge-remote';
 import './app.css';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
-// stable empty edge list for the dev "hide links" perf toggle (avoids a new [] each render)
+// cables render on the WebGL layer (GLEdges); React Flow gets an empty edge list. Stable ref so the
+// no-edges path doesn't allocate a new [] each render. Falls back to SVG edges if WebGL is unavailable.
 const NO_EDGES: RFEdge[] = [];
+const WEBGL_OK = (() => {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl') || c.getContext('experimental-webgl')); } catch { return false; }
+})();
 const edgeTypes: EdgeTypes = { cable: CableEdge };
 
 const LEGEND: Array<[string, string]> = [
@@ -280,7 +285,6 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [namespacesReady, setNamespacesReady] = useState(false);
   const [edgeLinkMode, setEdgeLinkMode] = useState<EdgeLinkMode>('enabled');
   const [legendOpen, setLegendOpen] = useState(true);
-  const [hideEdges, setHideEdges] = useState(false); // dev: drop all cables to isolate edge render cost
   const grouped = useGroupedEdges();
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
   useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
@@ -651,7 +655,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
-            nodes={displayNodes} edges={hideEdges ? NO_EDGES : displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={displayNodes} edges={WEBGL_OK ? NO_EDGES : displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onInit={setFlow}
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
@@ -667,6 +671,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             fitView fitViewOptions={{ padding: 0.12 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+            {WEBGL_OK && <GLEdges edges={displayEdges} dark={mode === 'dark'} />}
             <Controls position="top-right" showInteractive={false}>
               <ControlButton
                 onClick={() => edgeRoute.toggle()}
@@ -675,15 +680,6 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               >
                 <PolylineIcon style={{ color: grouped ? 'var(--eda-blue-400)' : undefined }} />
               </ControlButton>
-              {import.meta.env.DEV && (
-                <ControlButton
-                  onClick={() => setHideEdges((v) => !v)}
-                  title={hideEdges ? 'Show links (dev)' : 'Hide links — perf test (dev)'}
-                  aria-label="Toggle links (dev)"
-                >
-                  <SettingsEthernetIcon style={{ opacity: hideEdges ? 0.4 : 1 }} />
-                </ControlButton>
-              )}
               {hasEdgeLinks && (
                 <ControlButton
                   onClick={() => setEdgeLinkMode((current) => nextEdgeLinkMode(current))}

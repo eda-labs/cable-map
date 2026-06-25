@@ -63,7 +63,7 @@ function PortCell({ info, hot, lldp, showEdgeStub, box, label, title }:
             left: '50%',
             top: '100%',
             width: hot ? 2 : 1.25,
-            height: hot ? 34 : 28,
+            height: hot ? 52 : 44,   // past the node's bottom edge, but short enough to not stack with the row below
             transform: 'translateX(-50%)',
             background: fill,
             borderRadius: 999,
@@ -181,7 +181,7 @@ function SwitchNode({ id, data, selected }: NodeProps) {
         background: 'var(--panel)', borderRadius: 8, padding: 8,
         border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
         opacity: mode === 'dim' ? 0.32 : 1, transition: 'opacity 140ms, border-color 140ms',
-        contentVisibility: 'auto',
+        contentVisibility: d.showEdgeStubs ? 'visible' : 'auto',
         containIntrinsicSize: panel ? `${panel.W + 16}px ${panel.H + 44}px` : '220px 96px',
       }}
     >
