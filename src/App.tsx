@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
@@ -43,8 +43,10 @@ const LLDP_LEGEND: Array<[string, string]> = [
 ];
 
 type Mode = 'light' | 'dark';
+type EdgeLinkMode = 'enabled' | 'stub' | 'hidden';
 const NODE_LABEL_FILTER_ALL = '__all__';
 const SEARCH_PORT_ZOOM = 3.2;
+const EDGE_LINK_MODE_ORDER: EdgeLinkMode[] = ['enabled', 'stub', 'hidden'];
 
 type SearchMatcher = {
   raw: string;
@@ -189,6 +191,80 @@ function searchHighlight(
   return { nodes: [...nodes], edges: [...edges], ports: [] };
 }
 
+function isStubEdge(id: string): boolean {
+  return id.startsWith('stub|');
+}
+
+function edgeVisibleForShown(edgeId: string, shown: Set<string> | null, adjacency: Adjacency): boolean {
+  if (!shown) return true;
+  const ends = adjacency.edgeEnds.get(edgeId);
+  return !!ends && shown.has(ends[0]) && shown.has(ends[1]);
+}
+
+function isBundledStubEdge(edge: { id: string; data?: unknown }): boolean {
+  if (!isStubEdge(edge.id)) return false;
+  const kind = (edge.data as { kind?: string } | undefined)?.kind;
+  return kind === 'lag' || kind === 'mlag';
+}
+
+function expandActiveStubEdges(edges: RFEdge[], active: Set<string>): Set<string> {
+  if (!active.size) return active;
+  const byTarget = new Map<string, string[]>();
+  for (const edge of edges) {
+    if (!isStubEdge(edge.id)) continue;
+    const target = String(edge.target);
+    const ids = byTarget.get(target) ?? [];
+    ids.push(edge.id);
+    byTarget.set(target, ids);
+  }
+
+  const out = new Set(active);
+  for (const edge of edges) {
+    if (!active.has(edge.id) || !isBundledStubEdge(edge)) continue;
+    for (const sibling of byTarget.get(String(edge.target)) ?? []) out.add(sibling);
+  }
+  return out;
+}
+
+function activeStubPorts(edgeIds: Set<string>, adjacency: Adjacency, switchIds: Set<string>): string[] {
+  const out = new Set<string>();
+  for (const edgeId of edgeIds) {
+    for (const port of adjacency.edgePorts.get(edgeId) ?? []) {
+      const sep = port.indexOf(':');
+      if (sep <= 0) continue;
+      if (switchIds.has(port.slice(0, sep))) out.add(port);
+    }
+  }
+  return [...out];
+}
+
+function nextEdgeLinkMode(mode: EdgeLinkMode): EdgeLinkMode {
+  const index = EDGE_LINK_MODE_ORDER.indexOf(mode);
+  return EDGE_LINK_MODE_ORDER[(index + 1) % EDGE_LINK_MODE_ORDER.length];
+}
+
+function edgeLinkModeTitle(mode: EdgeLinkMode): string {
+  switch (mode) {
+    case 'enabled':
+      return 'Edge links enabled — click for stubs';
+    case 'stub':
+      return 'Edge link stubs — click to hide';
+    case 'hidden':
+      return 'Edge links hidden — click to show';
+  }
+}
+
+function edgeLinkModeIcon(mode: EdgeLinkMode) {
+  switch (mode) {
+    case 'enabled':
+      return <VisibilityIcon />;
+    case 'stub':
+      return <SettingsEthernetIcon />;
+    case 'hidden':
+      return <VisibilityOffIcon />;
+  }
+}
+
 export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: () => void }) {
   const [topo, setTopo] = useState<Topology | null>(null);
   const [err, setErr] = useState('');
@@ -199,7 +275,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [namespace, setNamespace] = useState('');
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [namespacesReady, setNamespacesReady] = useState(false);
-  const [hideEdges, setHideEdges] = useState(false);
+  const [edgeLinkMode, setEdgeLinkMode] = useState<EdgeLinkMode>('enabled');
   const [legendOpen, setLegendOpen] = useState(true);
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
   useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
@@ -325,13 +401,50 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     return () => window.removeEventListener('keydown', onKey);
   }, [setNodes]);
 
-  const hasEdgeLinks = useMemo(() => edges.some((e) => e.id.startsWith('stub|')), [edges]);
+  const hasEdgeLinks = useMemo(() => edges.some((e) => isStubEdge(e.id)), [edges]);
   const ready = !!topo && topo.nodes.length > 0;
+  const activeStubEdgeIds = useTrace((s) => {
+    if (!s.edges.size) return '';
+    const out: string[] = [];
+    for (const edgeId of s.edges) if (isStubEdge(edgeId)) out.push(edgeId);
+    return out.toSorted().join('\n');
+  });
+  const directlyActiveStubEdges = useMemo(() => new Set(activeStubEdgeIds ? activeStubEdgeIds.split('\n') : []), [activeStubEdgeIds]);
+  const activeStubEdges = useMemo(
+    () => edgeLinkMode === 'stub' ? expandActiveStubEdges(edges, directlyActiveStubEdges) : directlyActiveStubEdges,
+    [edgeLinkMode, edges, directlyActiveStubEdges],
+  );
+  const activeStubPortIds = useMemo(
+    () => edgeLinkMode === 'stub' ? activeStubPorts(activeStubEdges, adjacency, switchIds) : [],
+    [edgeLinkMode, activeStubEdges, adjacency, switchIds],
+  );
+  const activeStubEndpointIds = useMemo(() => {
+    const out = new Set<string>();
+    if (edgeLinkMode !== 'stub') return out;
+    for (const edgeId of activeStubEdges) {
+      if (!edgeVisibleForShown(edgeId, shown, adjacency)) continue;
+      const ends = adjacency.edgeEnds.get(edgeId);
+      if (!ends) continue;
+      for (const id of ends) {
+        if (!switchIds.has(id)) out.add(id);
+      }
+    }
+    return out;
+  }, [edgeLinkMode, activeStubEdges, shown, adjacency, switchIds]);
   const displayNodes = useMemo(() => {
-    let ns = hideEdges ? nodes.filter((n) => n.type !== 'endpoint') : nodes;
+    let ns = edgeLinkMode === 'enabled'
+      ? nodes
+      : nodes.filter((n) => n.type !== 'endpoint' || activeStubEndpointIds.has(n.id));
     if (shown) ns = ns.filter((n) => shown.has(n.id));
-    return ns;
-  }, [hideEdges, nodes, shown]);
+    if (edgeLinkMode !== 'stub') return ns;
+    const out: RFNode[] = [];
+    for (const node of ns) {
+      out.push(node.type === 'switch'
+        ? Object.assign({}, node, { data: Object.assign({}, node.data, { showEdgeStubs: true, activeEdgeStubPorts: activeStubPortIds }) })
+        : node);
+    }
+    return out;
+  }, [edgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds]);
   const searchMatcher = useMemo(() => buildSearchMatcher(query), [query]);
   const displayNodeIds = useMemo(() => new Set(displayNodes.map((n) => n.id)), [displayNodes]);
   const searchTargetIds = useMemo(() => {
@@ -394,10 +507,19 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const traceKey = useTrace((s) => s.key);
   const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
   const displayEdges = useMemo(() => {
-    let base = hideEdges ? edges.filter((e) => !e.id.startsWith('stub|')) : edges;
-    if (shown) base = base.filter((e) => { const ends = adjacency.edgeEnds.get(e.id); return !!ends && shown.has(ends[0]) && shown.has(ends[1]); });
+    let base = edges;
+    if (edgeLinkMode === 'stub') {
+      base = edges
+        .filter((e) => !isStubEdge(e.id) || activeStubEdges.has(e.id))
+        .map((e) => activeStubEdges.has(e.id)
+          ? Object.assign({}, e, { data: Object.assign({}, e.data, { forceOn: true }) })
+          : e);
+    } else if (edgeLinkMode === 'hidden') {
+      base = edges.filter((e) => !isStubEdge(e.id));
+    }
+    if (shown) base = base.filter((e) => edgeVisibleForShown(e.id, shown, adjacency));
     return elevatedEdge ? base.map((e) => (e.id === elevatedEdge ? { ...e, zIndex: 1 } : e)) : base;
-  }, [hideEdges, edges, elevatedEdge, shown, adjacency]);
+  }, [edgeLinkMode, edges, activeStubEdges, elevatedEdge, shown, adjacency]);
 
   const openNode = topo?.nodes.find((n) => n.name === open);
   const lldpOn = useLldp();
@@ -522,10 +644,11 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             <Controls position="top-right" showInteractive={false}>
               {hasEdgeLinks && (
                 <ControlButton
-                  onClick={() => setHideEdges((v) => !v)}
-                  title={hideEdges ? 'Show edge links' : 'Hide edge links'}
+                  onClick={() => setEdgeLinkMode((current) => nextEdgeLinkMode(current))}
+                  title={edgeLinkModeTitle(edgeLinkMode)}
+                  aria-label={edgeLinkModeTitle(edgeLinkMode)}
                 >
-                  {hideEdges ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  {edgeLinkModeIcon(edgeLinkMode)}
                 </ControlButton>
               )}
             </Controls>

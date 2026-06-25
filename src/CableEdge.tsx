@@ -1,11 +1,11 @@
 import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, Position, type EdgeProps } from '@xyflow/react';
 import { CABLE_COLOR, LLDP_COLOR, type CableKind } from './graph';
-import { useTrace, modeFor, type Mode } from './trace';
+import { useTrace, type Mode } from './trace';
 import { useLldp } from './lldp';
 import type { LldpStatus } from './api';
 
-type Data = { kind: CableKind; a: string; b: string; count?: number; lldp?: LldpStatus };
+type Data = { kind: CableKind; a: string; b: string; count?: number; lldp?: LldpStatus; forceOn?: boolean };
 
 const ctrlOffset = (dist: number, c = 0.25) => (dist >= 0 ? 0.5 * dist : c * 25 * Math.sqrt(-dist));
 function control(pos: Position, x1: number, y1: number, x2: number, y2: number): [number, number] {
@@ -23,10 +23,13 @@ function control(pos: Position, x1: number, y1: number, x2: number, y2: number):
 function CableEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props;
   const d = data as Data;
-  const mode: Mode = useTrace(modeFor((s) => s.edges.has(id)));
+  const traced = useTrace((s) => s.edges.has(id));
+  const traceAny = useTrace((s) => s.any);
+  const activeEdgeCount = useTrace((s) => s.edges.size);
+  const mode: Mode = !traceAny ? 'idle' : traced || d.forceOn ? 'on' : 'dim';
   // only label when a SMALL trace is active (single cable / LAG) — tracing a whole
   // switch lights 8-20 cables and stacked end labels would just be noise.
-  const showLabel = useTrace((s) => s.edges.has(id) && s.edges.size <= 4);
+  const showLabel = (traced || !!d.forceOn) && activeEdgeCount <= 4;
   const traceKey = useTrace((s) => s.key);
   // LLDP overlay recolours every cable by neighbour-confirmation status instead of kind.
   const lldpOn = useLldp();

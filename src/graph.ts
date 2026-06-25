@@ -58,6 +58,8 @@ export type SwitchData = {
   layout?: PortPos[];                // real on-panel port positions (from the stencil); else grid
   aspect?: number;                   // cage-box w/h, to size the layout panel
   breakouts?: Record<string, Breakout>;  // cage id -> breakout split (channels + speed)
+  showEdgeStubs?: boolean;           // draw short local downlink stubs instead of remote endpoint chips
+  activeEdgeStubPorts?: string[];     // "node:port" ids whose stubs are expanded to full cables
 };
 
 export type EndpointData = {
