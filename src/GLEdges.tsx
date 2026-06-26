@@ -88,7 +88,7 @@ function resolveColor(css: string, themeKey: string): [number, number, number] {
   let s = css;
   const m = /var\((--[^)]+)\)/.exec(css);
   if (m) s = getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() || '#888888';
-  probe ??= document.createElement('canvas').getContext('2d');
+  probe ??= document.createElement('canvas').getContext('2d', { willReadFrequently: true });
   let rgb: [number, number, number] = [0.5, 0.5, 0.5];
   if (probe) {
     probe.fillStyle = '#000000';
@@ -99,6 +99,15 @@ function resolveColor(css: string, themeKey: string): [number, number, number] {
   }
   colorCache.set(key, rgb);
   return rgb;
+}
+
+function sameLabels(left: Label[], right: Label[]): boolean {
+  if (left.length !== right.length) return false;
+  for (let i = 0; i < left.length; i++) {
+    const a = left[i], b = right[i];
+    if (a.key !== b.key || a.x !== b.x || a.y !== b.y || a.text !== b.text || a.color !== b.color || a.badge !== b.badge) return false;
+  }
+  return true;
 }
 
 function compile(gl: WebGLRenderingContext, type: number, src: string) {
@@ -216,7 +225,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
       }
     }
     hitRef.current = items.map((it) => ({ id: it.id, pts: it.pts }));
-    setLabels(labelOut);
+    setLabels((prev) => sameLabels(prev, labelOut) ? prev : labelOut);
     const data = new Float32Array(totalVerts * FLOATS);
     let o = 0;
     const push = (x: number, y: number, nx: number, ny: number, col: [number, number, number], a: number, half: number) => {
@@ -298,8 +307,15 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     const pick = (clientX: number, clientY: number): string | null => {
       const p = rf.screenToFlowPosition({ x: clientX, y: clientY }, { snapToGrid: false });
       const zoom = store.getState().transform[2];
-      let best: string | null = null, bestD = 8 / zoom; // ~8px tolerance (matches the SVG interactionWidth)
-      for (const h of hitRef.current) { const d = distToPolyline(h.pts, p.x, p.y); if (d < bestD) { bestD = d; best = h.id; } }
+      const tolerance = 8 / zoom; // ~8px tolerance (matches the SVG interactionWidth)
+      const current = pointerRef.current.lastHover;
+      let best: string | null = null, bestD = tolerance, currentD = Number.POSITIVE_INFINITY;
+      for (const h of hitRef.current) {
+        const d = distToPolyline(h.pts, p.x, p.y);
+        if (h.id === current) currentD = d;
+        if (d < bestD) { bestD = d; best = h.id; }
+      }
+      if (current && currentD <= tolerance && currentD <= bestD + (0.5 / zoom)) return current;
       return best;
     };
     const setHover = (id: string | null) => {
