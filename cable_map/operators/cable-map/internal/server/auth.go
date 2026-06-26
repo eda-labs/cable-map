@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/rand"
@@ -29,17 +30,20 @@ import (
 const (
 	keycloakRealm     = "eda"
 	keycloakClientID  = "eda"
-	keycloakProxyPath = "/core/httpproxy/v1/keycloak"
+	keycloakProxyPath = "/core/proxy/v1/identity"
 	appProxyPrefix    = "/core/httpproxy/v1/cable-map"
 	oauthCallbackPath = "/oauth/callback"
 
 	sessionCookieName = "cm_session"
 	stateCookieName   = "cm_oauth_state"
 	sessionTTL        = 8 * time.Hour
+	sessionCheckTTL   = 5 * time.Second
 	httpTimeout       = 20 * time.Second
 
 	allowedRolesEnv     = "ALLOWED_ROLES"
 	defaultAllowedRoles = "cable-map-viewer,system-administrator"
+	viewerRoleName      = "cable-map-viewer"
+	viewerRealmRole     = "edarole_cable-map-viewer"
 )
 
 type authManager struct {
@@ -55,9 +59,23 @@ type authManager struct {
 	clientSecret string
 	adminToken   string
 	adminExpiry  time.Time
+	sessions     map[string]*authSession
 
 	exchangeCodeFunc    func(context.Context, string, *http.Request) (map[string]any, error)
 	introspectTokenFunc func(context.Context, string) (map[string]any, error)
+}
+
+type authSession struct {
+	user         string
+	token        string
+	externalBase string
+	checkedAt    time.Time
+}
+
+type sessionPayload struct {
+	User string `json:"u"`
+	ID   string `json:"sid"`
+	Exp  int64  `json:"exp"`
 }
 
 type statusError struct {
@@ -69,6 +87,10 @@ func (e *statusError) Error() string {
 	return fmt.Sprintf("keycloak returned HTTP %d: %s", e.code, e.body)
 }
 
+func (e *statusError) statusCode() int {
+	return e.code
+}
+
 func newAuthManager() *authManager {
 	key := make([]byte, 32)
 	if _, err := rand.Read(key); err != nil {
@@ -78,7 +100,7 @@ func newAuthManager() *authManager {
 	if namespace == "" {
 		namespace = "eda-system"
 	}
-	return &authManager{namespace: namespace, signingKey: key}
+	return &authManager{namespace: namespace, signingKey: key, sessions: map[string]*authSession{}}
 }
 
 func (a *authManager) enabled() bool {
@@ -96,6 +118,8 @@ func (a *authManager) wrap(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+		a.clearSession(r)
+		w.Header().Add("Set-Cookie", a.cookie(sessionCookieName, "", -1).String())
 		if apiPath(r.URL.Path) {
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"ok": false, "error": "not authenticated"})
 			return
@@ -154,7 +178,8 @@ func (a *authManager) handleCallback(w http.ResponseWriter, r *http.Request) {
 		a.denyPage(w, user)
 		return
 	}
-	session, err := a.makeSession(user)
+	accessToken, _ := token["access_token"].(string)
+	session, err := a.issueSession(user, accessToken, r)
 	if err != nil {
 		log.Printf("[auth] session creation failed: %v", err)
 		http.Error(w, "sign-in failed: could not create session", http.StatusInternalServerError)
@@ -170,6 +195,7 @@ func (a *authManager) handleLogout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	a.clearSession(r)
 	w.Header().Add("Set-Cookie", a.cookie(sessionCookieName, "", -1).String())
 	w.Header().Add("Set-Cookie", a.cookie(stateCookieName, "", -1).String())
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -183,18 +209,20 @@ func (a *authManager) handleSession(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 			return
 		}
+		a.clearSession(r)
+		w.Header().Add("Set-Cookie", a.cookie(sessionCookieName, "", -1).String())
 		writeJSON(w, http.StatusUnauthorized, map[string]any{"ok": false, "error": "not authenticated"})
 	case http.MethodPost:
 		if !a.enabled() {
 			writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 			return
 		}
-		token := bearerToken(r.Header.Get("Authorization"))
+		token := sessionExchangeToken(r)
 		if token == "" {
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"ok": false, "error": "missing bearer token"})
 			return
 		}
-		user, roles, err := a.identityFromBearer(r.Context(), token)
+		user, roles, err := a.identityFromBearer(r.Context(), token, externalBase(r))
 		if err != nil {
 			log.Printf("[auth] bearer token validation failed: %v", err)
 			writeJSON(w, http.StatusUnauthorized, map[string]any{"ok": false, "error": "invalid token"})
@@ -205,7 +233,7 @@ func (a *authManager) handleSession(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusForbidden, map[string]any{"ok": false, "error": "access denied"})
 			return
 		}
-		session, err := a.makeSession(user)
+		session, err := a.issueSession(user, token, r)
 		if err != nil {
 			log.Printf("[auth] session creation failed: %v", err)
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": "could not create session"})
@@ -213,6 +241,10 @@ func (a *authManager) handleSession(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Add("Set-Cookie", a.cookie(sessionCookieName, session, int(sessionTTL.Seconds())).String())
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "user": user})
+	case http.MethodDelete:
+		a.clearSession(r)
+		w.Header().Add("Set-Cookie", a.cookie(sessionCookieName, "", -1).String())
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -240,6 +272,27 @@ func bearerToken(header string) string {
 		return ""
 	}
 	return strings.TrimSpace(token)
+}
+
+func sessionExchangeToken(r *http.Request) string {
+	if token := bearerToken(r.Header.Get("Authorization")); token != "" {
+		return token
+	}
+	ct := strings.ToLower(strings.TrimSpace(strings.Split(r.Header.Get("Content-Type"), ";")[0]))
+	switch ct {
+	case "application/json":
+		var payload struct {
+			Token string `json:"token"`
+		}
+		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&payload); err == nil {
+			return strings.TrimSpace(payload.Token)
+		}
+	case "application/x-www-form-urlencoded", "multipart/form-data":
+		if err := r.ParseForm(); err == nil {
+			return strings.TrimSpace(r.Form.Get("token"))
+		}
+	}
+	return ""
 }
 
 func (a *authManager) denyPage(w http.ResponseWriter, user string) {
@@ -273,7 +326,11 @@ func (a *authManager) cookieValue(r *http.Request, name string) string {
 }
 
 func (a *authManager) userFromRequest(r *http.Request) string {
-	return a.verifySession(a.cookieValue(r, sessionCookieName))
+	payload, ok := a.verifySessionPayload(a.cookieValue(r, sessionCookieName))
+	if !ok {
+		return ""
+	}
+	return a.activeSessionUser(r.Context(), payload)
 }
 
 func (a *authManager) allowedRoles() []string {
@@ -356,6 +413,22 @@ func externalBase(r *http.Request) string {
 	return proto + "://" + host
 }
 
+func forwardedHeadersForBase(base string) map[string]string {
+	u, err := url.Parse(strings.TrimSpace(base))
+	if err != nil || u.Host == "" {
+		return nil
+	}
+	proto := u.Scheme
+	if proto == "" {
+		proto = "https"
+	}
+	return map[string]string{
+		"Host":              u.Host,
+		"X-Forwarded-Host":  u.Host,
+		"X-Forwarded-Proto": proto,
+	}
+}
+
 func firstCSV(v string) string {
 	if i := strings.IndexByte(v, ','); i >= 0 {
 		v = v[:i]
@@ -378,20 +451,20 @@ func (a *authManager) exchangeCode(ctx context.Context, code string, r *http.Req
 	}
 	fields.Set("client_secret", secret)
 	endpoint := a.keycloakInternalBase() + "/realms/" + keycloakRealm + "/protocol/openid-connect/token"
-	resp, err := a.postForm(ctx, endpoint, fields, nil)
+	resp, err := a.postForm(ctx, endpoint, fields, forwardedHeadersForBase(externalBase(r)))
 	if se := (*statusError)(nil); err != nil && errors.As(err, &se) && (se.code == http.StatusBadRequest || se.code == http.StatusUnauthorized) {
 		secret, err = a.getClientSecret(ctx, true)
 		if err != nil {
 			return nil, err
 		}
 		fields.Set("client_secret", secret)
-		return a.postForm(ctx, endpoint, fields, nil)
+		return a.postForm(ctx, endpoint, fields, forwardedHeadersForBase(externalBase(r)))
 	}
 	return resp, err
 }
 
-func (a *authManager) identityFromBearer(ctx context.Context, token string) (string, []string, error) {
-	introspection, err := a.introspectToken(ctx, token)
+func (a *authManager) identityFromBearer(ctx context.Context, token, externalBase string) (string, []string, error) {
+	introspection, err := a.introspectToken(ctx, token, externalBase)
 	if err != nil {
 		return "", nil, err
 	}
@@ -418,7 +491,7 @@ func (a *authManager) identityFromBearer(ctx context.Context, token string) (str
 	return user, roles, nil
 }
 
-func (a *authManager) introspectToken(ctx context.Context, token string) (map[string]any, error) {
+func (a *authManager) introspectToken(ctx context.Context, token, externalBase string) (map[string]any, error) {
 	if a.introspectTokenFunc != nil {
 		return a.introspectTokenFunc(ctx, token)
 	}
@@ -430,7 +503,142 @@ func (a *authManager) introspectToken(ctx context.Context, token string) (map[st
 	fields.Set("client_id", keycloakClientID)
 	fields.Set("client_secret", secret)
 	fields.Set("token", token)
-	return a.postForm(ctx, a.keycloakInternalBase()+"/realms/"+keycloakRealm+"/protocol/openid-connect/token/introspect", fields, nil)
+	return a.postForm(ctx, a.keycloakInternalBase()+"/realms/"+keycloakRealm+"/protocol/openid-connect/token/introspect", fields, forwardedHeadersForBase(externalBase))
+}
+
+func (a *authManager) ensureAssignableRoles(ctx context.Context) error {
+	role, err := a.ensureRealmRole(ctx, viewerRealmRole, "Read-only access to the Cable Map topology viewer.")
+	if err != nil {
+		return err
+	}
+	group, err := a.ensureGroup(ctx, viewerRoleName, "Cable Map viewer group. Members receive the cable-map-viewer role.")
+	if err != nil {
+		return err
+	}
+	return a.ensureGroupRealmRole(ctx, group, role)
+}
+
+func (a *authManager) ensureRealmRole(ctx context.Context, name, description string) (map[string]any, error) {
+	headers, err := a.adminHeaders(ctx)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := a.keycloakInternalBase() + "/admin/realms/" + keycloakRealm + "/roles/" + url.PathEscape(name)
+	role, err := a.getJSON(ctx, endpoint, headers)
+	if err == nil {
+		if out, ok := role.(map[string]any); ok {
+			return out, nil
+		}
+		return nil, fmt.Errorf("unexpected Keycloak role response")
+	}
+	var se *statusError
+	if !errors.As(err, &se) || se.statusCode() != http.StatusNotFound {
+		return nil, err
+	}
+	payload := map[string]any{"name": name, "description": description}
+	if err := a.postJSON(ctx, a.keycloakInternalBase()+"/admin/realms/"+keycloakRealm+"/roles", payload, headers); err != nil {
+		return nil, err
+	}
+	role, err = a.getJSON(ctx, endpoint, headers)
+	if err != nil {
+		return nil, err
+	}
+	out, ok := role.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("unexpected Keycloak role response")
+	}
+	return out, nil
+}
+
+func (a *authManager) ensureGroup(ctx context.Context, name, description string) (map[string]any, error) {
+	headers, err := a.adminHeaders(ctx)
+	if err != nil {
+		return nil, err
+	}
+	group, err := a.findGroup(ctx, name, headers)
+	if err != nil {
+		return nil, err
+	}
+	if group != nil {
+		return group, nil
+	}
+	payload := map[string]any{
+		"name": name,
+		"attributes": map[string][]string{
+			"description": []string{description},
+		},
+	}
+	if err := a.postJSON(ctx, a.keycloakInternalBase()+"/admin/realms/"+keycloakRealm+"/groups", payload, headers); err != nil {
+		return nil, err
+	}
+	group, err = a.findGroup(ctx, name, headers)
+	if err != nil {
+		return nil, err
+	}
+	if group == nil {
+		return nil, fmt.Errorf("Keycloak group %q was not found after creation", name)
+	}
+	return group, nil
+}
+
+func (a *authManager) findGroup(ctx context.Context, name string, headers map[string]string) (map[string]any, error) {
+	raw, err := a.getJSON(ctx, a.keycloakInternalBase()+"/admin/realms/"+keycloakRealm+"/groups?briefRepresentation=false&search="+url.QueryEscape(name), headers)
+	if err != nil {
+		return nil, err
+	}
+	groups, ok := raw.([]any)
+	if !ok {
+		return nil, fmt.Errorf("unexpected Keycloak groups response")
+	}
+	for _, item := range groups {
+		group, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		if groupName, _ := group["name"].(string); groupName == name {
+			return group, nil
+		}
+	}
+	return nil, nil
+}
+
+func (a *authManager) ensureGroupRealmRole(ctx context.Context, group, role map[string]any) error {
+	groupID, _ := group["id"].(string)
+	roleID, _ := role["id"].(string)
+	roleName, _ := role["name"].(string)
+	if groupID == "" || roleID == "" || roleName == "" {
+		return fmt.Errorf("Keycloak group/role response missing id or name")
+	}
+	headers, err := a.adminHeaders(ctx)
+	if err != nil {
+		return err
+	}
+	mapped, err := a.getJSON(ctx, a.keycloakInternalBase()+"/admin/realms/"+keycloakRealm+"/groups/"+url.PathEscape(groupID)+"/role-mappings/realm", headers)
+	if err != nil {
+		return err
+	}
+	if roles, ok := mapped.([]any); ok {
+		for _, item := range roles {
+			if existing, ok := item.(map[string]any); ok {
+				if name, _ := existing["name"].(string); name == roleName {
+					return nil
+				}
+			}
+		}
+	}
+	return a.postJSON(ctx,
+		a.keycloakInternalBase()+"/admin/realms/"+keycloakRealm+"/groups/"+url.PathEscape(groupID)+"/role-mappings/realm",
+		[]map[string]any{{"id": roleID, "name": roleName}},
+		headers,
+	)
+}
+
+func (a *authManager) adminHeaders(ctx context.Context) (map[string]string, error) {
+	adminToken, err := a.getAdminToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]string{"Authorization": "Bearer " + adminToken}, nil
 }
 
 func (a *authManager) getClientSecret(ctx context.Context, force bool) (string, error) {
@@ -442,11 +650,10 @@ func (a *authManager) getClientSecret(ctx context.Context, force bool) (string, 
 	}
 	a.mu.Unlock()
 
-	adminToken, err := a.getAdminToken(ctx)
+	headers, err := a.adminHeaders(ctx)
 	if err != nil {
 		return "", err
 	}
-	headers := map[string]string{"Authorization": "Bearer " + adminToken}
 	clients, err := a.getJSON(ctx, a.keycloakInternalBase()+"/admin/realms/"+keycloakRealm+"/clients?clientId="+url.QueryEscape(keycloakClientID), headers)
 	if err != nil {
 		return "", err
@@ -530,6 +737,14 @@ func (a *authManager) postForm(ctx context.Context, endpoint string, fields url.
 	return out, err
 }
 
+func (a *authManager) postJSON(ctx context.Context, endpoint string, payload any, headers map[string]string) error {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	return a.doJSON(ctx, http.MethodPost, endpoint, bytes.NewReader(body), headers, nil, "application/json")
+}
+
 func (a *authManager) getJSON(ctx context.Context, endpoint string, headers map[string]string) (any, error) {
 	var out any
 	err := a.doJSON(ctx, http.MethodGet, endpoint, nil, headers, &out, "")
@@ -550,6 +765,10 @@ func (a *authManager) doJSON(ctx context.Context, method, endpoint string, body 
 		req.Header.Set("Content-Type", contentType)
 	}
 	for k, v := range headers {
+		if strings.EqualFold(k, "Host") {
+			req.Host = v
+			continue
+		}
 		req.Header.Set(k, v)
 	}
 	client := &http.Client{
@@ -566,6 +785,10 @@ func (a *authManager) doJSON(ctx context.Context, method, endpoint string, body 
 	if resp.StatusCode >= 300 {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return &statusError{code: resp.StatusCode, body: strings.TrimSpace(string(msg))}
+	}
+	if out == nil {
+		_, _ = io.Copy(io.Discard, resp.Body)
+		return nil
 	}
 	return json.NewDecoder(resp.Body).Decode(out)
 }
@@ -625,12 +848,93 @@ func (a *authManager) kubernetesClient() (kubernetes.Interface, error) {
 	return a.kube, a.kubeErr
 }
 
+func (a *authManager) issueSession(username, token string, r *http.Request) (string, error) {
+	if username == "" || token == "" {
+		return "", fmt.Errorf("session requires user and token")
+	}
+	sid := ""
+	if payload, ok := a.verifySessionPayload(a.cookieValue(r, sessionCookieName)); ok && payload.User == username {
+		sid = payload.ID
+	}
+	if sid == "" {
+		sid = newState()
+	}
+	session, err := a.makeSessionWithID(username, sid, time.Now().Add(sessionTTL))
+	if err != nil {
+		return "", err
+	}
+	a.mu.Lock()
+	if a.sessions == nil {
+		a.sessions = map[string]*authSession{}
+	}
+	a.sessions[sid] = &authSession{
+		user:         username,
+		token:        token,
+		externalBase: externalBase(r),
+		checkedAt:    time.Now(),
+	}
+	a.mu.Unlock()
+	return session, nil
+}
+
+func (a *authManager) activeSessionUser(ctx context.Context, payload *sessionPayload) string {
+	if payload == nil || payload.User == "" || payload.ID == "" {
+		return ""
+	}
+	now := time.Now()
+	a.mu.Lock()
+	session := a.sessions[payload.ID]
+	if session == nil || session.user != payload.User || session.token == "" {
+		a.mu.Unlock()
+		return ""
+	}
+	if now.Sub(session.checkedAt) < sessionCheckTTL {
+		user := session.user
+		a.mu.Unlock()
+		return user
+	}
+	token := session.token
+	base := session.externalBase
+	a.mu.Unlock()
+
+	user, roles, err := a.identityFromBearer(ctx, token, base)
+	if err != nil || user != payload.User || !a.isAllowed(roles) {
+		if err != nil {
+			log.Printf("[auth] session token validation failed: %v", err)
+		}
+		a.mu.Lock()
+		delete(a.sessions, payload.ID)
+		a.mu.Unlock()
+		return ""
+	}
+	a.mu.Lock()
+	if session := a.sessions[payload.ID]; session != nil {
+		session.checkedAt = now
+	}
+	a.mu.Unlock()
+	return user
+}
+
+func (a *authManager) clearSession(r *http.Request) {
+	payload, ok := a.verifySessionPayload(a.cookieValue(r, sessionCookieName))
+	if !ok || payload.ID == "" {
+		return
+	}
+	a.mu.Lock()
+	delete(a.sessions, payload.ID)
+	a.mu.Unlock()
+}
+
 func (a *authManager) makeSession(username string) (string, error) {
 	return a.makeSessionWithExpiry(username, time.Now().Add(sessionTTL))
 }
 
 func (a *authManager) makeSessionWithExpiry(username string, expiry time.Time) (string, error) {
-	payload := map[string]any{"u": username, "exp": expiry.Unix()}
+	return a.makeSessionWithID(username, newState(), expiry)
+}
+
+func (a *authManager) makeSessionWithID(username, id string, expiry time.Time) (string, error) {
+	payload := sessionPayload{User: username, ID: id, Exp: expiry.Unix()}
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
 		return "", err
@@ -640,28 +944,33 @@ func (a *authManager) makeSessionWithExpiry(username string, expiry time.Time) (
 }
 
 func (a *authManager) verifySession(cookie string) string {
-	if cookie == "" || !strings.Contains(cookie, ".") {
-		return ""
-	}
-	body, sig, ok := strings.Cut(cookie, ".")
-	if !ok || !hmac.Equal([]byte(sig), []byte(a.sign(body))) {
-		return ""
-	}
-	payloadBytes, err := base64.RawURLEncoding.DecodeString(body)
-	if err != nil {
-		return ""
-	}
-	var payload struct {
-		User string `json:"u"`
-		Exp  int64  `json:"exp"`
-	}
-	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
-		return ""
-	}
-	if payload.User == "" || payload.Exp < time.Now().Unix() {
+	payload, ok := a.verifySessionPayload(cookie)
+	if !ok {
 		return ""
 	}
 	return payload.User
+}
+
+func (a *authManager) verifySessionPayload(cookie string) (*sessionPayload, bool) {
+	if cookie == "" || !strings.Contains(cookie, ".") {
+		return nil, false
+	}
+	body, sig, ok := strings.Cut(cookie, ".")
+	if !ok || !hmac.Equal([]byte(sig), []byte(a.sign(body))) {
+		return nil, false
+	}
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(body)
+	if err != nil {
+		return nil, false
+	}
+	var payload sessionPayload
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		return nil, false
+	}
+	if payload.User == "" || payload.ID == "" || payload.Exp < time.Now().Unix() {
+		return nil, false
+	}
+	return &payload, true
 }
 
 func (a *authManager) sign(body string) string {

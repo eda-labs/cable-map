@@ -10,8 +10,14 @@ spec:
   description: Read-only access to the Cable Map topology viewer.
   resourceRules:
     - apiGroups:
+        - cable-map.eda.labs/v1alpha1
+      resources:
+        - "*"
+      permissions: read
+    - apiGroups:
         - core.eda.nokia.com/v1
       resources:
+        - httpproxies
         - toponodes
         - topolinks
       permissions: read
@@ -26,8 +32,10 @@ spec:
         - breakouts
       permissions: read
   tableRules:
-    - path: .cluster.apps.cable-map.status
+    - path: .cluster.apps.cable-map.**
       permissions: read
   urlRules:
+    - path: /core/httpproxy/v1/cable-map
+      permissions: read
     - path: /core/httpproxy/v1/cable-map/**
       permissions: read

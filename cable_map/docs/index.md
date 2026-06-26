@@ -37,9 +37,10 @@ The application installs:
   `authType: atDestination`
 - a launcher view under `Topology > Cable Map`
 
-The SPA uses `keycloak-js` to silently obtain a per-tab access token from the
-existing EDA SSO browser session, then exchanges it for an HTTP-only Cable Map
-session cookie. The default allowed roles are
+The SPA uses `keycloak-js` with EDA's public browser client (`auth`) to silently
+obtain a per-tab access token from the existing EDA SSO browser session, then
+exchanges it for an HTTP-only Cable Map session cookie. The backend validates
+tokens with the confidential `eda` client secret. The default allowed roles are
 `cable-map-viewer,system-administrator`, so EDA system administrators can use
 Cable Map immediately. Assign non-admin users to `cable-map-viewer` when they
 should have read-only access.

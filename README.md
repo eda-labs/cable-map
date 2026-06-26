@@ -83,11 +83,13 @@ browser entrypoint, relative to the EDA host, is:
 ```
 
 Cable Map uses EDA Keycloak SSO at the destination. The SPA uses `keycloak-js`
-to silently obtain a per-tab access token from the existing EDA SSO browser
-session, then exchanges it with the backend for an HTTP-only Cable Map session
-cookie. The default allowed roles are `cable-map-viewer,system-administrator`,
-so the built-in EDA administrator role can open it immediately and non-admin
-users can be granted the dedicated viewer role.
+with EDA's public browser client (`auth`) to silently obtain a per-tab access
+token from the existing EDA SSO browser session, then exchanges it with the
+backend for an HTTP-only Cable Map session cookie. The backend validates tokens
+with the confidential `eda` client secret. The default allowed roles are
+`cable-map-viewer,system-administrator`, so the built-in EDA administrator role
+can open it immediately and non-admin users can be granted the dedicated viewer
+role.
 
 ## Tests
 

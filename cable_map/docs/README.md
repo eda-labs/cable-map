@@ -25,11 +25,12 @@ Installed resources:
 - EDA `HttpProxy` named `cable-map` with `authType: atDestination`.
 - EDA launcher view under `Topology > Cable Map`.
 
-The SPA uses `keycloak-js` to silently obtain a per-tab access token from the
-existing EDA SSO browser session, then exchanges it for an HTTP-only Cable Map
-session cookie. API, stream, and PDF data access require that session. By
-default, users with either `cable-map-viewer` or `system-administrator` can
-open Cable Map.
+The SPA uses `keycloak-js` with EDA's public browser client (`auth`) to silently
+obtain a per-tab access token from the existing EDA SSO browser session, then
+exchanges it for an HTTP-only Cable Map session cookie. The backend validates
+tokens with the confidential `eda` client secret. API, stream, and PDF data
+access require that session. By default, users with either `cable-map-viewer` or
+`system-administrator` can open Cable Map.
 
 The app does not install a public `NodePort`, `LoadBalancer`, or patched EDA UI
 proxy.

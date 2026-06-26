@@ -15,6 +15,7 @@ func newTestAuth() *authManager {
 	return &authManager{
 		namespace:  "eda-system",
 		signingKey: []byte("01234567890123456789012345678901"),
+		sessions:   map[string]*authSession{},
 	}
 }
 
@@ -79,27 +80,40 @@ func TestAuthMiddlewareUnauthenticatedPDFRedirectsToKeycloak(t *testing.T) {
 		t.Fatalf("status=%d want %d", rr.Code, http.StatusFound)
 	}
 	location := rr.Header().Get("Location")
-	if !strings.HasPrefix(location, "https://eda.example/core/httpproxy/v1/keycloak/realms/eda/protocol/openid-connect/auth?") {
+	if !strings.HasPrefix(location, "https://eda.example/core/proxy/v1/identity/realms/eda/protocol/openid-connect/auth?") {
 		t.Fatalf("redirect location=%q", location)
 	}
 	if !strings.Contains(location, "redirect_uri=https%3A%2F%2Feda.example%2Fcore%2Fhttpproxy%2Fv1%2Fcable-map%2Foauth%2Fcallback") {
 		t.Fatalf("redirect location missing callback: %q", location)
 	}
-	if got := rr.Result().Cookies(); len(got) != 1 || got[0].Name != stateCookieName {
-		t.Fatalf("cookies=%v, want state cookie", got)
+	var sawState bool
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == stateCookieName {
+			sawState = true
+		}
+	}
+	if !sawState {
+		t.Fatalf("cookies=%v, want state cookie", rr.Result().Cookies())
 	}
 }
 
 func TestAuthMiddlewareValidSessionPasses(t *testing.T) {
 	auth := newTestAuth()
-	session, err := auth.makeSession("admin")
+	authToken := testJWT("admin", []string{"edarole_system-administrator"}, time.Now().Add(time.Hour))
+	auth.introspectTokenFunc = func(_ context.Context, token string) (map[string]any, error) {
+		if token != authToken {
+			t.Fatalf("token mismatch")
+		}
+		return map[string]any{"active": true}, nil
+	}
+	req := httptest.NewRequest(http.MethodGet, "https://eda.example/api/topology", nil)
+	session, err := auth.issueSession("admin", authToken, req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wrapped := auth.wrap(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 	}))
-	req := httptest.NewRequest(http.MethodGet, "https://eda.example/api/topology", nil)
 	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: session})
 
 	rr := httptest.NewRecorder()
@@ -245,11 +259,15 @@ func TestSessionStatus(t *testing.T) {
 		t.Fatalf("status=%d want %d", rr.Code, http.StatusUnauthorized)
 	}
 
-	session, err := auth.makeSession("admin")
+	authToken := testJWT("admin", []string{"edarole_system-administrator"}, time.Now().Add(time.Hour))
+	auth.introspectTokenFunc = func(context.Context, string) (map[string]any, error) {
+		return map[string]any{"active": true}, nil
+	}
+	req := httptest.NewRequest(http.MethodGet, "https://eda.example/oauth/session", nil)
+	session, err := auth.issueSession("admin", authToken, req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodGet, "https://eda.example/oauth/session", nil)
 	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: session})
 	rr = httptest.NewRecorder()
 	auth.handleSession(rr, req)
@@ -261,9 +279,9 @@ func TestSessionStatus(t *testing.T) {
 func TestSessionExchangeAllowsAdmin(t *testing.T) {
 	t.Setenv("ALLOWED_ROLES", "cable-map-viewer,system-administrator")
 	auth := newTestAuth()
-	req := httptest.NewRequest(http.MethodPost, "https://eda.example/oauth/session", nil)
 	authToken := testJWT("admin", []string{"edarole_system-administrator"}, time.Now().Add(time.Hour))
-	req.Header.Set("Authorization", "Bearer "+authToken)
+	req := httptest.NewRequest(http.MethodPost, "https://eda.example/oauth/session", strings.NewReader(`{"token":"`+authToken+`"}`))
+	req.Header.Set("Content-Type", "application/json")
 	auth.introspectTokenFunc = func(_ context.Context, token string) (map[string]any, error) {
 		if token != authToken {
 			t.Fatalf("token mismatch")
@@ -287,6 +305,59 @@ func TestSessionExchangeAllowsAdmin(t *testing.T) {
 	}
 	if !sawSession {
 		t.Fatal("session exchange did not set session cookie")
+	}
+}
+
+func TestSessionCookieAloneDoesNotAuthenticate(t *testing.T) {
+	auth := newTestAuth()
+	session, err := auth.makeSession("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrapped := auth.wrap(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Fatal("handler should not run")
+	}))
+	req := httptest.NewRequest(http.MethodGet, "https://eda.example/api/topology", nil)
+	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: session})
+
+	rr := httptest.NewRecorder()
+	wrapped.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("status=%d want %d", rr.Code, http.StatusUnauthorized)
+	}
+	if got := rr.Result().Cookies(); len(got) == 0 || got[0].Name != sessionCookieName || got[0].MaxAge != -1 {
+		t.Fatalf("cookies=%v, want expired session cookie", got)
+	}
+}
+
+func TestSessionRevokedWhenTokenInactive(t *testing.T) {
+	auth := newTestAuth()
+	authToken := testJWT("admin", []string{"edarole_system-administrator"}, time.Now().Add(time.Hour))
+	req := httptest.NewRequest(http.MethodGet, "https://eda.example/api/topology", nil)
+	session, err := auth.issueSession("admin", authToken, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload, ok := auth.verifySessionPayload(session)
+	if !ok {
+		t.Fatal("session payload did not verify")
+	}
+	auth.sessions[payload.ID].checkedAt = time.Now().Add(-sessionCheckTTL - time.Second)
+	auth.introspectTokenFunc = func(context.Context, string) (map[string]any, error) {
+		return map[string]any{"active": false}, nil
+	}
+	wrapped := auth.wrap(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Fatal("handler should not run")
+	}))
+	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: session})
+
+	rr := httptest.NewRecorder()
+	wrapped.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("status=%d want %d", rr.Code, http.StatusUnauthorized)
+	}
+	if _, ok := auth.sessions[payload.ID]; ok {
+		t.Fatal("inactive token should remove server-side session")
 	}
 }
 
