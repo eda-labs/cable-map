@@ -2,10 +2,14 @@ import fs from 'node:fs';
 
 const OUT = new URL('../cable_map/operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url);
 
-const LEAF_COUNT = 1024;
-const SPINE_COUNT = 128;
-const SUPERSPINE_COUNT = 16;
-const POD_SIZE = 32;
+const LEAF_COUNT = 80;
+const SPINE_COUNT = 16;
+const SUPERSPINE_COUNT = 4;
+const POD_SIZE = 20;
+const FOUR_CHANNEL_BREAKOUT_PAIR_COUNT = 6;
+const EIGHT_CHANNEL_BREAKOUT_PAIR_COUNT = 1;
+const BREAKOUT_PAIR_COUNT = FOUR_CHANNEL_BREAKOUT_PAIR_COUNT + EIGHT_CHANNEL_BREAKOUT_PAIR_COUNT;
+const BREAKOUT_PARENT_PORT = 8;
 
 const LEAF_PLATFORM = '7220 IXR-D3L';
 const SPINE_PLATFORM = '7220 IXR-H4';
@@ -13,6 +17,7 @@ const SUPERSPINE_PLATFORM = '7220 IXR-H5-64D';
 
 const pad = (value, width) => String(value).padStart(width, '0');
 const iface = (port) => `ethernet-1-${port}`;
+const breakoutIface = (port, channel) => `ethernet-1-${port}-${channel}`;
 
 const nodes = [];
 const byName = new Map();
@@ -35,7 +40,7 @@ function addNode(name, role, platform, labels) {
     os: 'srl',
     role,
     namespace: 'demo',
-    version: 'large-golden',
+    version: 'dev-golden',
     labels,
     table: [],
     raw: makeRaw(name, role, platform, labels),
@@ -90,11 +95,34 @@ function addEndpointLag(name, members, multihomed) {
   };
 }
 
+function leafUsesBreakout(leafIndex) {
+  return leafIndex < BREAKOUT_PAIR_COUNT * 2;
+}
+
+function breakoutChannelsForPair(pair) {
+  if (pair < FOUR_CHANNEL_BREAKOUT_PAIR_COUNT) return 4;
+  if (pair < BREAKOUT_PAIR_COUNT) return 8;
+  return 0;
+}
+
+function breakoutChannelsForLeaf(leafIndex) {
+  return breakoutChannelsForPair(Math.floor(leafIndex / 2));
+}
+
+function breakoutLagChannels(pair) {
+  return breakoutChannelsForPair(pair) > 4 ? [2, 7] : [2, 3];
+}
+
+function leafFabricPort(leafIndex, bundle, member) {
+  const port = bundle * 4 + member + 1;
+  return leafUsesBreakout(leafIndex) && port === BREAKOUT_PARENT_PORT ? 9 : port;
+}
+
 for (let i = 0; i < SUPERSPINE_COUNT; i += 1) {
   addNode(`super-${pad(i, 2)}`, 'superspine', SUPERSPINE_PLATFORM, {
     'eda.nokia.com/role': 'superspine',
     'eda.nokia.com/plane': `plane-${pad(i % 4, 2)}`,
-    'eda.nokia.com/golden': 'large-scale',
+    'eda.nokia.com/golden': 'dev-fixture',
   });
 }
 
@@ -104,18 +132,26 @@ for (let i = 0; i < SPINE_COUNT; i += 1) {
     'eda.nokia.com/role': 'spine',
     'eda.nokia.com/pod': `pod-${pad(pod, 2)}`,
     'eda.nokia.com/plane': `plane-${pad(i % 4, 2)}`,
-    'eda.nokia.com/golden': 'large-scale',
+    'eda.nokia.com/golden': 'dev-fixture',
   });
 }
 
 for (let i = 0; i < LEAF_COUNT; i += 1) {
   const pod = Math.floor(i / POD_SIZE);
-  addNode(`leaf-${pad(i, 4)}`, 'leaf', LEAF_PLATFORM, {
+  const leaf = addNode(`leaf-${pad(i, 4)}`, 'leaf', LEAF_PLATFORM, {
     'eda.nokia.com/role': 'leaf',
     'eda.nokia.com/pod': `pod-${pad(pod, 2)}`,
     'eda.nokia.com/rack': `rack-${pad(i % POD_SIZE, 2)}`,
-    'eda.nokia.com/golden': 'large-scale',
+    'eda.nokia.com/golden': 'dev-fixture',
   });
+  if (leafUsesBreakout(i)) {
+    leaf.breakouts = {
+      [String(BREAKOUT_PARENT_PORT)]: {
+        channels: breakoutChannelsForLeaf(i),
+        speed: breakoutChannelsForLeaf(i) > 4 ? '50G' : '100G',
+      },
+    };
+  }
 }
 
 const spineNextPort = Array.from({ length: SPINE_COUNT }, () => 1);
@@ -137,7 +173,7 @@ for (let leafIndex = 0; leafIndex < LEAF_COUNT; leafIndex += 1) {
 
     for (let member = 0; member < 4; member += 1) {
       physicalLinkIndex += 1;
-      const leafPort = iface(bundle * 4 + member + 1);
+      const leafPort = iface(leafFabricPort(leafIndex, bundle, member));
       const spinePort = iface(spineNextPort[spineIndex]);
       spineNextPort[spineIndex] += 1;
       const status = lldpFor(physicalLinkIndex);
@@ -273,11 +309,37 @@ for (let pair = 0; pair < LEAF_COUNT / 2; pair += 1) {
       lldpStatus: 'none',
     }));
   }
+
+  if (pair < BREAKOUT_PAIR_COUNT) {
+    for (const channel of breakoutLagChannels(pair)) {
+      const breakoutLag = `lag-pod-${pad(pod, 2)}-esi-${pad(pairInPod, 2)}-${pad(pair, 3)}-bo${channel}-local`;
+      const breakoutPeer = `pod-${pad(pod, 2)}-esi-${pad(pairInPod, 2)}-bo${channel}`;
+      const breakoutMembers = [a, b].map((node) => ({
+        node: node.name,
+        port: breakoutIface(BREAKOUT_PARENT_PORT, channel),
+      }));
+      addEndpointLag(breakoutLag, breakoutMembers, true);
+
+      for (const node of [a, b]) {
+        node.table.push(row({
+          label: breakoutIface(BREAKOUT_PARENT_PORT, channel),
+          desc: `breakout multihomed ESI server bond channel ${channel}`,
+          remotePort: node === a ? `eth${channel - 2}` : `eth${channel}`,
+          type: 'edge',
+          lag: breakoutLag,
+          peer: breakoutPeer,
+          lldpStatus: 'none',
+        }));
+      }
+    }
+  }
 }
 
 function portNumber(label) {
   const matches = label.match(/\d+/g);
-  return matches ? Number(matches.at(-1)) : 0;
+  if (!matches) return 0;
+  if (matches.length >= 2) return Number(matches[1]) * 100 + Number(matches[2] ?? 0);
+  return Number(matches[0]) * 100;
 }
 
 for (const node of nodes) {

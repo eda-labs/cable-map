@@ -123,6 +123,27 @@ function naturalName(left: string, right: string): number {
   return left.localeCompare(right, undefined, { numeric: true });
 }
 
+export function breakoutGrid(channels: number): { cols: number; rows: number } {
+  const n = Math.max(1, channels);
+  const rows = n > 4 ? 2 : 1;
+  return { cols: Math.ceil(n / rows), rows };
+}
+
+function breakoutsWithInferredChannels(explicit: Record<string, Breakout> | undefined, ports: PortInfo[]): Record<string, Breakout> | undefined {
+  const inferred = new Map<string, number>();
+  for (const port of ports) {
+    if (!port.channel || explicit?.[port.port]) continue;
+    inferred.set(port.port, Math.max(inferred.get(port.port) ?? 0, port.channel));
+  }
+
+  if (!inferred.size) return explicit;
+  const out = { ...explicit };
+  for (const [port, channels] of inferred) {
+    if (channels > 1) out[port] = { channels, speed: '' };
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 export function switchCages(d: SwitchData): string[] {
   return d.layout ? d.layout.map((p) => p.p) : Array.from({ length: d.portCount }, (_, i) => String(i + 1));
 }
@@ -162,14 +183,22 @@ export function findSwitchPort(d: SwitchData, text: string): string | null {
 }
 
 export function switchPortCenter(d: SwitchData, port: string, channel?: number): { x: number; y: number } | null {
-  const channelOffset = (width: number) => {
+  const channelOffset = (width: number, height: number) => {
     const bo = d.breakouts?.[port];
-    if (!bo || !channel) return 0;
+    if (!bo || !channel) return { x: 0, y: 0 };
     const n = Math.max(1, bo.channels);
     const ch = Math.max(1, Math.min(n, channel));
-    const gap = n > 2 ? 0.5 : 1;
-    const sw = (width - gap * (n - 1)) / n;
-    return -width / 2 + (ch - 1) * (sw + gap) + sw / 2;
+    const { cols, rows } = breakoutGrid(n);
+    const col = (ch - 1) % cols;
+    const row = Math.floor((ch - 1) / cols);
+    const colGap = cols > 2 ? 0.5 : 1;
+    const rowGap = rows > 1 ? 0.5 : 0;
+    const sw = (width - colGap * (cols - 1)) / cols;
+    const sh = (height - rowGap * (rows - 1)) / rows;
+    return {
+      x: -width / 2 + col * (sw + colGap) + sw / 2,
+      y: -height / 2 + row * (sh + rowGap) + sh / 2,
+    };
   };
 
   if (d.compact) {
@@ -187,16 +216,18 @@ export function switchPortCenter(d: SwitchData, port: string, channel?: number):
     const p = d.layout.find((pos) => pos.p === port);
     if (!p) return null;
     const { w: W, h: H } = panelDims(rows, d.aspect ?? 4);
-    return { x: SWITCH_PANEL_X + p.x * W + channelOffset(Math.max(3, p.w * W)), y: SWITCH_PANEL_Y + p.y * H };
+    const offset = channelOffset(Math.max(3, p.w * W), Math.max(3, p.h * H));
+    return { x: SWITCH_PANEL_X + p.x * W + offset.x, y: SWITCH_PANEL_Y + p.y * H + offset.y };
   }
 
   const index = Number(port) - 1;
   if (!Number.isInteger(index) || index < 0 || index >= d.portCount) return null;
   const row = index % rows;
   const col = Math.floor(index / rows);
+  const offset = channelOffset(CELL, CELL);
   return {
-    x: SWITCH_PANEL_X + col * (CELL + CELL_GAP) + CELL / 2 + channelOffset(CELL),
-    y: SWITCH_PANEL_Y + row * (CELL + CELL_GAP) + CELL / 2,
+    x: SWITCH_PANEL_X + col * (CELL + CELL_GAP) + CELL / 2 + offset.x,
+    y: SWITCH_PANEL_Y + row * (CELL + CELL_GAP) + CELL / 2 + offset.y,
   };
 }
 
@@ -503,19 +534,22 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
     }
   }
 
-  const rfNodes: RFNode[] = topo.nodes.map((n) => ({
-    id: n.name, type: 'switch', position: pos.get(n.name) ?? { x: 0, y: 0 },
-    width: swW(n.platform),
-    height: swH(n.platform),
-    initialWidth: swW(n.platform),
-    initialHeight: swH(n.platform),
-    data: {
-      name: n.name, role: n.role, platform: n.platform, portCount: portCountOf(n.platform), rows: rowsOf(n.platform),
-      ports: switchPorts.get(n.name) ?? [], layout: compact ? undefined : layoutOf(n.platform),
-      aspect: aspectOf(n.platform), breakouts: compact ? undefined : n.breakouts, compact,
-    } satisfies SwitchData,
-    draggable: !compact,
-  }));
+  const rfNodes: RFNode[] = topo.nodes.map((n) => {
+    const nodePorts = switchPorts.get(n.name) ?? [];
+    return {
+      id: n.name, type: 'switch', position: pos.get(n.name) ?? { x: 0, y: 0 },
+      width: swW(n.platform),
+      height: swH(n.platform),
+      initialWidth: swW(n.platform),
+      initialHeight: swH(n.platform),
+      data: {
+        name: n.name, role: n.role, platform: n.platform, portCount: portCountOf(n.platform), rows: rowsOf(n.platform),
+        ports: nodePorts, layout: compact ? undefined : layoutOf(n.platform),
+        aspect: aspectOf(n.platform), breakouts: compact ? undefined : breakoutsWithInferredChannels(n.breakouts, nodePorts), compact,
+      } satisfies SwitchData,
+      draggable: !compact,
+    };
+  });
 
   // single-homed chips fan out below their one leaf in an EP_COLS-wide grid; multihomed
   // (ESI) chips are clustered per leaf set and wrap inside that leaf span.

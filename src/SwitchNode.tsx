@@ -1,8 +1,8 @@
-import { memo, useMemo, type ReactNode } from 'react';
+import { memo, useMemo, useState, type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
   CABLE_COLOR, LLDP_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W,
-  compactSwitchHandle, panelDims, portHandle, type PortInfo, type SwitchData,
+  breakoutGrid, compactSwitchHandle, panelDims, portHandle, type PortInfo, type SwitchData,
 } from './graph';
 import type { Breakout } from './api';
 import { trace, useTrace, modeFor } from './trace';
@@ -25,8 +25,8 @@ type Box = { left: number; top: number; width: number; height: number };
 // A single front-panel cage (or one breakout channel sliver). Occupied ports carry the handles
 // cables attach to, and gain a highlight ring when their cable is being traced. `box`
 // absolutely-positions it (real-layout mode); `label`/`title` override the default cage number/tooltip.
-function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title }:
-  { info: PortInfo; hot: boolean; dim: boolean; lldp: boolean; showEdgeStub: boolean; box?: Box; label?: ReactNode; title?: string }) {
+function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visualHidden = false }:
+  { info: PortInfo; hot: boolean; dim: boolean; lldp: boolean; showEdgeStub: boolean; box?: Box; label?: ReactNode; title?: string; visualHidden?: boolean }) {
   const free = info.kind === 'free';
   const fill = fillFor(info, lldp);
   const side = info.side === 'top' ? Position.Top : Position.Bottom;
@@ -56,7 +56,8 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title }:
         outline: hot ? '1.5px solid white' : free ? '1px solid var(--cell-free-line)' : `1px solid ${fill}`,
         outlineOffset: hot ? 0 : -1,
         cursor: free ? 'default' : 'pointer',
-        opacity: dim ? (free ? 0.18 : 0.24) : 1,
+        opacity: visualHidden ? 0 : dim ? (free ? 0.18 : 0.24) : 1,
+        pointerEvents: visualHidden ? 'none' : undefined,
         transition: 'opacity 120ms, outline-color 120ms',
         zIndex: hot ? 2 : dim ? 0 : 1,
       }}
@@ -95,16 +96,32 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title }:
 // A broken-out cage: the cage box is split into `bo.channels` equal channel slivers (left→right),
 // each cabled channel slotting into its own sliver with its own handle. `box` is the cage's
 // absolute rect (real-layout) or undefined for a CELL-sized grid cage.
-function BreakoutCage({ cage, infos, bo, hot, dim, lldp, showEdgeStubs, box }:
-  { cage: string; infos: PortInfo[]; bo: Breakout; hot: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box }) {
+function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs, box }:
+  { cage: string; infos: PortInfo[]; bo: Breakout; hot: boolean; selected: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box }) {
+  const [hovered, setHovered] = useState(false);
   const n = Math.max(1, bo.channels);
   const W = box?.width ?? CELL, H = box?.height ?? CELL;
-  const gap = n > 2 ? 0.5 : 1;
-  const sw = (W - gap * (n - 1)) / n;
+  const { cols, rows } = breakoutGrid(n);
+  const colGap = cols > 2 ? 0.5 : 1;
+  const rowGap = rows > 1 ? 0.5 : 0;
+  const sw = (W - colGap * (cols - 1)) / cols;
+  const sh = (H - rowGap * (rows - 1)) / rows;
   const byCh = new Map(infos.map((i) => [i.channel ?? 1, i]));
+  const label = bo.speed ? `${n}×${bo.speed} breakout` : `${n}-channel breakout`;
+  const digits = Math.max(1, cage.length);
+  const fontSize = box ? Math.max(4, Math.min(13, H * 0.9, W / (digits * 0.62))) : 7;
+  const expanded = hovered || hot || selected;
+  const primary = infos[0] ?? freeCell(cage);
+  const collapsed = infos.length
+    ? { ...primary, channel: undefined, remote: `${infos.length}/${n} channels`, remotePort: '' }
+    : freeCell(cage);
+  const collapsedFill = fillFor(collapsed, lldp);
+  const collapsedFree = collapsed.kind === 'free';
   return (
     <div
-      title={`port ${cage} · ${n}×${bo.speed} breakout`}
+      title={`port ${cage} · ${label}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={box
         ? { position: 'absolute', left: box.left, top: box.top, width: W, height: H }
         : { position: 'relative', width: CELL, height: CELL }}
@@ -113,13 +130,41 @@ function BreakoutCage({ cage, infos, bo, hot, dim, lldp, showEdgeStubs, box }:
         const ch = i + 1;
         const info = byCh.get(ch) ?? freeCell(cage);
         const occ = info.kind !== 'free';
+        const col = i % cols;
+        const row = Math.floor(i / cols);
         return (
-          <PortCell key={ch} info={info} hot={hot} lldp={lldp} label="" box={{ left: i * (sw + gap), top: 0, width: sw, height: H }}
+          <PortCell key={ch} info={info} hot={hot} lldp={lldp} label="" box={{ left: col * (sw + colGap), top: row * (sh + rowGap), width: sw, height: sh }}
             dim={dim && !hot}
             showEdgeStub={showEdgeStubs}
-            title={occ ? `${cage}/${ch} → ${info.remote} ${info.remotePort}` : `port ${cage}/${ch} · free · ${bo.speed}`} />
+            visualHidden={!expanded}
+            title={occ ? `${cage}/${ch} → ${info.remote} ${info.remotePort}` : `port ${cage}/${ch} · free${bo.speed ? ` · ${bo.speed}` : ''}`} />
         );
       })}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 2,
+          background: collapsedFree ? 'var(--cell-free-bg)' : collapsedFill,
+          outline: collapsedFree ? '1px solid var(--cell-free-line)' : `1px solid ${collapsedFill}`,
+          outlineOffset: -1,
+          fontSize,
+          lineHeight: 1,
+          fontWeight: 700,
+          color: collapsedFree ? 'var(--cell-free-fg)' : 'var(--bg)',
+          opacity: expanded ? 0 : dim ? 0.24 : 1,
+          pointerEvents: expanded ? 'none' : 'auto',
+          cursor: 'pointer',
+          transition: 'opacity 120ms, outline-color 120ms',
+          zIndex: 3,
+        }}
+      >
+        {!collapsedFree && cage}
+      </div>
     </div>
   );
 }
@@ -127,8 +172,8 @@ function BreakoutCage({ cage, infos, bo, hot, dim, lldp, showEdgeStubs, box }:
 const freeCell = (port: string): PortInfo => ({ port, kind: 'free', side: 'bottom', remote: '', remotePort: '', desc: '', cableId: '' });
 
 // One cage: a breakout splits into channel slivers, otherwise it's a single cell (free if uncabled).
-function renderCage(cage: string, infos: PortInfo[] | undefined, bo: Breakout | undefined, hot: boolean, dim: boolean, lldp: boolean, showEdgeStubs: boolean, box?: Box) {
-  if (bo) return <BreakoutCage key={cage} cage={cage} infos={infos ?? []} bo={bo} hot={hot} dim={dim} lldp={lldp} showEdgeStubs={showEdgeStubs} box={box} />;
+function renderCage(cage: string, infos: PortInfo[] | undefined, bo: Breakout | undefined, hot: boolean, selected: boolean, dim: boolean, lldp: boolean, showEdgeStubs: boolean, box?: Box) {
+  if (bo) return <BreakoutCage key={cage} cage={cage} infos={infos ?? []} bo={bo} hot={hot} selected={selected} dim={dim} lldp={lldp} showEdgeStubs={showEdgeStubs} box={box} />;
   return <PortCell key={cage} info={infos?.[0] ?? freeCell(cage)} hot={hot} dim={dim && !hot} lldp={lldp} showEdgeStub={showEdgeStubs} box={box} />;
 }
 
@@ -281,14 +326,14 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
             const cw = Math.max(3, p.w * panel.W), ch = Math.max(3, p.h * panel.H);
             const box = { left: p.x * panel.W - cw / 2, top: p.y * panel.H - ch / 2, width: cw, height: ch };
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box);
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box);
           })}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${CELL}px)`, gridTemplateRows: `repeat(${rows}, ${CELL}px)`, gridAutoFlow: 'column', gap: CELL_GAP }}>
           {cages.map((cage) => {
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs);
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs);
           })}
         </div>
       )}

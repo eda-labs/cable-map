@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -177,7 +178,7 @@ func TestContractRoundTrip(t *testing.T) {
 	}
 }
 
-func TestGoldenTopologyScale(t *testing.T) {
+func TestGoldenTopologyFixture(t *testing.T) {
 	raw, err := os.ReadFile("testdata/golden-topology.json")
 	if err != nil {
 		t.Fatalf("read golden: %v", err)
@@ -191,13 +192,66 @@ func TestGoldenTopologyScale(t *testing.T) {
 	for _, node := range topo.Nodes {
 		rows += len(node.Table)
 	}
-	if len(topo.Nodes) < 1000 {
-		t.Fatalf("golden topology nodes = %d, want at least 1000", len(topo.Nodes))
+	if len(topo.Nodes) != 100 {
+		t.Fatalf("golden topology nodes = %d, want 100", len(topo.Nodes))
 	}
-	if len(topo.Links) < 8000 {
-		t.Fatalf("golden topology links = %d, want at least 8000", len(topo.Links))
+	if len(topo.Links) < 600 {
+		t.Fatalf("golden topology links = %d, want at least 600", len(topo.Links))
 	}
-	if rows < 20000 {
-		t.Fatalf("golden topology table rows = %d, want at least 20000", rows)
+	if rows < 1500 {
+		t.Fatalf("golden topology table rows = %d, want at least 1500", rows)
+	}
+
+	breakoutNodes := 0
+	eightChannelBreakoutNodes := 0
+	breakoutRows := 0
+	for _, node := range topo.Nodes {
+		if len(node.Breakouts) == 0 {
+			continue
+		}
+		breakoutNodes++
+		if b := node.Breakouts["8"]; b.Channels != 4 && b.Channels != 8 {
+			t.Fatalf("%s breakout cage 8 = %+v, want 4 or 8 channels", node.Name, b)
+		} else if b.Channels == 8 {
+			eightChannelBreakoutNodes++
+		}
+		for _, row := range node.Table {
+			if row.Label == "ethernet-1-8" {
+				t.Fatalf("%s uses breakout cage 8 but also has parent ethernet-1-8 row", node.Name)
+			}
+			if strings.HasPrefix(row.Label, "ethernet-1-8-") && row.Lag != "" {
+				breakoutRows++
+			}
+		}
+	}
+	if breakoutNodes == 0 {
+		t.Fatal("golden topology has no breakout nodes")
+	}
+	if eightChannelBreakoutNodes == 0 {
+		t.Fatal("golden topology has no 8-channel breakout nodes")
+	}
+	if breakoutRows == 0 {
+		t.Fatal("golden topology has no LAG rows on breakout channels")
+	}
+
+	mhLags := 0
+	breakoutMHLags := 0
+	for _, lag := range topo.Lags {
+		if !lag.Multihomed || lag.Isl {
+			continue
+		}
+		mhLags++
+		for _, member := range lag.Members {
+			if strings.HasPrefix(member.Port, "ethernet-1-8-") {
+				breakoutMHLags++
+				break
+			}
+		}
+	}
+	if mhLags == 0 {
+		t.Fatal("golden topology has no multihomed endpoint LAGs")
+	}
+	if breakoutMHLags == 0 {
+		t.Fatal("golden topology has no multihomed endpoint LAGs on breakout channels")
 	}
 }
