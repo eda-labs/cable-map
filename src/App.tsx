@@ -32,6 +32,7 @@ import NodeView from './NodeView';
 import NodeDetails from './NodeDetails';
 import NamespacePicker from './NamespacePicker';
 import WebGLEdgeLayer from './WebGLEdgeLayer';
+import WebGLNodeLayer from './WebGLNodeLayer';
 import { exportXlsx } from './xlsx';
 import { edgeRemote } from './edge-remote';
 import './app.css';
@@ -43,6 +44,7 @@ const NO_EDGES: RFEdge[] = [];
 const WEBGL_OK = (() => {
   try { const c = document.createElement('canvas'); return !!(c.getContext('webgl') || c.getContext('experimental-webgl')); } catch { return false; }
 })();
+const NO_NODES: RFNode[] = [];
 const edgeTypes: EdgeTypes = { cable: CableEdge };
 
 const LEGEND: Array<[string, string]> = [
@@ -58,6 +60,7 @@ const SEARCH_PORT_ZOOM = 3.2;
 const EDGE_LINK_MODE_ORDER: EdgeLinkMode[] = ['enabled', 'stub', 'hidden'];
 const LARGE_DEFAULT_VIEWPORT: Viewport = { x: 24, y: 24, zoom: 0.35 };
 const LARGE_VIEWPORT_PAD = 900;
+const LARGE_WEBGL_NODE_ZOOM = 0.2;
 
 type SearchMatcher = {
   raw: string;
@@ -589,11 +592,14 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const lldpOn = useLldp();
   const useWebglEdges = largeTopology && WEBGL_OK && !hideEdges && !webglEdgesUnavailable;
   const usePolishGlEdges = !largeTopology && WEBGL_OK && !hideEdges;
+  const useWebglNodeOverview = largeTopology && WEBGL_OK && !webglEdgesUnavailable && largeViewport.zoom < LARGE_WEBGL_NODE_ZOOM;
   const flowNodes = useMemo(
-    () => largeTopology
-      ? displayNodes.filter((node) => nodeIntersectsViewport(node, largeViewport, windowSize.width, windowSize.height))
-      : displayNodes,
-    [largeTopology, displayNodes, largeViewport, windowSize],
+    () => useWebglNodeOverview
+      ? NO_NODES
+      : largeTopology
+        ? displayNodes.filter((node) => nodeIntersectsViewport(node, largeViewport, windowSize.width, windowSize.height))
+        : displayNodes,
+    [useWebglNodeOverview, largeTopology, displayNodes, largeViewport, windowSize],
   );
   const flowNodeIds = useMemo(() => new Set(flowNodes.map((node) => node.id)), [flowNodes]);
   const flowEdges = useMemo(() => {
@@ -731,6 +737,9 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             {usePolishGlEdges && <GLEdges edges={displayEdges} dark={mode === 'dark'} />}
             {useWebglEdges && (
               <WebGLEdgeLayer nodes={displayNodes} edges={displayEdges} lldp={lldpOn} mode={mode} grouped={grouped} onUnavailable={markWebglEdgesUnavailable} />
+            )}
+            {largeTopology && (
+              <WebGLNodeLayer nodes={displayNodes} lldp={lldpOn} mode={mode} visible={useWebglNodeOverview} onUnavailable={markWebglEdgesUnavailable} />
             )}
             <Controls position="top-right" showInteractive={false}>
               <ControlButton
