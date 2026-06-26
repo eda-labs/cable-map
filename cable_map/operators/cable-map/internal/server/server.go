@@ -24,15 +24,20 @@ type Server struct {
 	store *eda.Store
 	port  string
 	spa   http.Handler
+	auth  *authManager
 }
 
 func New(store *eda.Store, port string) *Server {
-	return &Server{store: store, port: port, spa: spaHandler(distRoot())}
+	return &Server{store: store, port: port, spa: spaHandler(distRoot()), auth: newAuthManager()}
 }
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", s.healthz)
+	mux.HandleFunc("/oauth/login", s.auth.handleLogin)
+	mux.HandleFunc("/oauth/callback", s.auth.handleCallback)
+	mux.HandleFunc("/oauth/logout", s.auth.handleLogout)
+	mux.HandleFunc("/oauth/session", s.auth.handleSession)
 	mux.HandleFunc("/api/namespaces", s.namespaces)
 	mux.HandleFunc("/api/namespaces/stream", s.namespacesStream)
 	mux.HandleFunc("/api/toponode", s.topoNode)
@@ -40,7 +45,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/topology/stream", s.topologyStream)
 	mux.HandleFunc("/pdf", s.pdf)
 	mux.Handle("/", s.spa) // SPA + client routes (/, /print)
-	return mux
+	return s.auth.wrap(mux)
 }
 
 // Run serves until ctx is cancelled, then shuts down gracefully.

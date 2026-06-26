@@ -5,6 +5,7 @@ import './nokia-fonts.css'
 import './index.css'
 import App from './App.tsx'
 import Print from './Print.tsx'
+import { AuthGate } from './AuthGate.tsx'
 
 export type Mode = 'light' | 'dark';
 
@@ -102,10 +103,12 @@ const isPrint = location.pathname.startsWith('/print');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {isPrint ? (
-      <ThemeProvider theme={printTheme}><Print /></ThemeProvider>
-    ) : (
-      <Root />
-    )}
+    <AuthGate>
+      {isPrint ? (
+        <ThemeProvider theme={printTheme}><Print /></ThemeProvider>
+      ) : (
+        <Root />
+      )}
+    </AuthGate>
   </StrictMode>,
 )

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.2
+
+- Gate Cable Map data access, streams, and PDF export behind EDA Keycloak SSO.
+- Use keycloak-js silent SSO so users already signed into EDA get a per-tab
+  token without another credential prompt.
+- Allow `system-administrator` by default and add a dedicated read-only
+  `cable-map-viewer` EDA ClusterRole for non-admin users.
+- Add named-secret RBAC for the Keycloak client secret and EDA API CA bundle.
+
 ## v0.1.1
 
 - Refresh the Cable Map app and runtime image tags for the v0.1.1 release.
