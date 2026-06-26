@@ -1,7 +1,7 @@
 {
   "uuid": "f265f9e7-70d3-4d1e-b508-430b3f2b531c",
   "name": "Cable Map",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "displayName": "Cable Map",
   "description": "Cable Map status and topology entry point.",
   "showNavigationToolbar": true,
@@ -26,6 +26,7 @@
               "uuid": "c5b0a4a6-d82d-4d1f-a365-384632f0da68",
               "type": "dashletDataView",
               "title": "Cable Map",
+              "subtitle": "Click on View link of this panel to open the Cable Map UI",
               "width": 980,
               "height": 420,
               "fillWidth": true,
