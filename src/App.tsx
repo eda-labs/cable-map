@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance, type Viewport } from '@xyflow/react';
+import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, getViewportForBounds, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance, type Viewport } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
@@ -59,6 +59,8 @@ type EdgeLinkMode = 'enabled' | 'stub' | 'hidden';
 const SEARCH_PORT_ZOOM = 3.2;
 const EDGE_LINK_MODE_ORDER: EdgeLinkMode[] = ['enabled', 'stub', 'hidden'];
 const LARGE_DEFAULT_VIEWPORT: Viewport = { x: 24, y: 24, zoom: 0.35 };
+const LARGE_MIN_ZOOM = 0.02;
+const LARGE_MAX_ZOOM = 2;
 const LARGE_VIEWPORT_PAD = 900;
 const LARGE_WEBGL_NODE_ZOOM = 0.2;
 
@@ -72,6 +74,8 @@ type SearchMatcher = {
 
 type PortSearchTarget = { x: number; y: number; nodeId: string; port: string };
 type SearchHighlight = { nodes: string[]; edges: string[]; ports: string[] };
+type FlowBounds = { x: number; y: number; width: number; height: number };
+type FitNodesOptions = { padding: number; duration: number; maxZoom?: number };
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -292,6 +296,30 @@ function nodeIntersectsViewport(node: RFNode, viewport: Viewport, width: number,
     top <= height + LARGE_VIEWPORT_PAD;
 }
 
+function nodeBounds(node: RFNode): FlowBounds {
+  const width = node.measured?.width ?? node.width ?? node.initialWidth ?? 160;
+  const height = node.measured?.height ?? node.height ?? node.initialHeight ?? 80;
+  return { x: node.position.x, y: node.position.y, width, height };
+}
+
+function nodesBounds(nodes: RFNode[]): FlowBounds | null {
+  if (nodes.length === 0) return null;
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const node of nodes) {
+    const bounds = nodeBounds(node);
+    minX = Math.min(minX, bounds.x);
+    minY = Math.min(minY, bounds.y);
+    maxX = Math.max(maxX, bounds.x + bounds.width);
+    maxY = Math.max(maxY, bounds.y + bounds.height);
+  }
+
+  return { x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+}
+
 function useWindowSize() {
   const [size, setSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   useEffect(() => {
@@ -321,6 +349,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
   const [flow, setFlow] = useState<ReactFlowInstance | null>(null);
+  const flowHostRef = useRef<HTMLDivElement | null>(null);
   const [largeViewport, setLargeViewport] = useState<Viewport>(LARGE_DEFAULT_VIEWPORT);
   const windowSize = useWindowSize();
   const markWebglEdgesUnavailable = useCallback(() => setWebglEdgesUnavailable(true), []);
@@ -364,6 +393,30 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   useEffect(() => {
     if (largeTopology) setLargeViewport(LARGE_DEFAULT_VIEWPORT);
   }, [largeTopology, namespace]);
+
+  const fitNodes = useCallback((targetNodes: RFNode[], options: FitNodesOptions) => {
+    if (!flow || targetNodes.length === 0) return;
+    if (!largeTopology) {
+      void flow.fitView({ nodes: targetNodes, ...options });
+      return;
+    }
+
+    const bounds = nodesBounds(targetNodes);
+    const rect = flowHostRef.current?.getBoundingClientRect();
+    if (!bounds || !rect?.width || !rect.height) return;
+
+    const viewport = getViewportForBounds(
+      bounds,
+      rect.width,
+      rect.height,
+      LARGE_MIN_ZOOM,
+      options.maxZoom ?? LARGE_MAX_ZOOM,
+      options.padding,
+    );
+    void flow.setViewport(viewport, { duration: options.duration }).then((ok) => {
+      if (ok) setLargeViewport(flow.getViewport());
+    });
+  }, [flow, largeTopology]);
 
   const { nodes: builtNodes, edges, switchIds, adjacency } = useMemo(() => {
     const empty: Adjacency = { nodeEdges: new Map(), edgeEnds: new Map(), edgePorts: new Map(), search: new Map(), nodeLabels: new Map() };
@@ -443,6 +496,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   // selection, not on every data refresh that recomputes `shown`.
   const shownRef = useRef(shown);
   shownRef.current = shown;
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
 
   // Ctrl/Cmd+A selects all switches (ignored while typing in an input)
   useEffect(() => {
@@ -465,11 +520,14 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     if (!flow || !ready) return;
     const target = shownRef.current;
     const handle = window.setTimeout(() => {
-      if (!target || target.size === 0) { void flow.fitView({ padding: 0.12, duration: 400 }); return; }
-      void flow.fitView({ nodes: [...target].map((id) => ({ id })), padding: 0.2, duration: 400, maxZoom: 1.4 });
+      if (!target || target.size === 0) {
+        fitNodes(nodesRef.current, { padding: 0.12, duration: 400, maxZoom: largeTopology ? 0.5 : undefined });
+        return;
+      }
+      fitNodes(nodesRef.current.filter((node) => target.has(node.id)), { padding: 0.2, duration: 400, maxZoom: 1.4 });
     }, 60);
     return () => window.clearTimeout(handle);
-  }, [selectedNodeLabels, flow, ready]);
+  }, [selectedNodeLabels, flow, ready, fitNodes, largeTopology]);
   const activeStubEdgeIds = useTrace((s) => {
     if (!s.edges.size) return '';
     const out: string[] = [];
@@ -558,19 +616,20 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         void flow.setCenter(searchPortTarget.x, searchPortTarget.y, {
           zoom: SEARCH_PORT_ZOOM,
           duration: 350,
+        }).then((ok) => {
+          if (ok && largeTopology) setLargeViewport(flow.getViewport());
         });
         return;
       }
       if (searchTargetNodes.length === 0) return;
-      void flow.fitView({
-        nodes: searchTargetNodes,
+      fitNodes(searchTargetNodes, {
         padding: searchTargetNodes.length === 1 ? 0.45 : 0.25,
         duration: 350,
         maxZoom: 1.4,
       });
     }, 160);
     return () => window.clearTimeout(handle);
-  }, [flow, ready, searchMatcher, searchPortTarget, searchTargetNodes]);
+  }, [flow, ready, searchMatcher, searchPortTarget, searchTargetNodes, fitNodes, largeTopology]);
   const traceKey = useTrace((s) => s.key);
   const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
   const displayEdges = useMemo(() => {
@@ -711,7 +770,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Box ref={flowHostRef} sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
             nodes={flowNodes} edges={hideEdges ? NO_EDGES : flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
@@ -720,8 +779,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
             proOptions={{ hideAttribution: true }}
             onlyRenderVisibleElements={largeTopology}
-            minZoom={largeTopology ? 0.02 : 0.15}
-            maxZoom={largeTopology ? 2 : 4}
+            minZoom={largeTopology ? LARGE_MIN_ZOOM : 0.15}
+            maxZoom={largeTopology ? LARGE_MAX_ZOOM : 4}
             onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
             onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
             onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}
