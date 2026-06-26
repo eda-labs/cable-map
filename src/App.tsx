@@ -31,6 +31,7 @@ import CableEdge from './CableEdge';
 import NodeView from './NodeView';
 import NodeDetails from './NodeDetails';
 import NamespacePicker from './NamespacePicker';
+import { preloadFrontPanel } from './FrontPanel';
 import WebGLEdgeLayer from './WebGLEdgeLayer';
 import WebGLNodeLayer from './WebGLNodeLayer';
 import { exportXlsx } from './xlsx';
@@ -386,6 +387,13 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     }
     return streamTopology(namespace, (t) => { setTopo(t); setErr(''); }, setErr);
   }, [namespace, namespacesReady]);
+
+  useEffect(() => {
+    if (!topo) return;
+    for (const platform of new Set(topo.nodes.map((node) => node.platform).filter(Boolean))) {
+      void preloadFrontPanel(platform);
+    }
+  }, [topo]);
 
   const largeTopology = useMemo(() => topo ? isLargeTopology(topo) : false, [topo]);
   const effectiveEdgeLinkMode: EdgeLinkMode = edgeLinkMode;
