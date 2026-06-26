@@ -25,8 +25,8 @@ type Box = { left: number; top: number; width: number; height: number };
 // A single front-panel cage (or one breakout channel sliver). Occupied ports carry the handles
 // cables attach to, and gain a highlight ring when their cable is being traced. `box`
 // absolutely-positions it (real-layout mode); `label`/`title` override the default cage number/tooltip.
-function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visualHidden = false }:
-  { info: PortInfo; hot: boolean; dim: boolean; lldp: boolean; showEdgeStub: boolean; box?: Box; label?: ReactNode; title?: string; visualHidden?: boolean }) {
+function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visualHidden = false, channel = false }:
+  { info: PortInfo; hot: boolean; dim: boolean; lldp: boolean; showEdgeStub: boolean; box?: Box; label?: ReactNode; title?: string; visualHidden?: boolean; channel?: boolean }) {
   const free = info.kind === 'free';
   const fill = fillFor(info, lldp);
   const side = info.side === 'top' ? Position.Top : Position.Bottom;
@@ -45,7 +45,9 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
       style={{
         ...(box ? { position: 'absolute', left: box.left, top: box.top, width: box.width, height: box.height }
           : { position: 'relative', width: CELL, height: CELL }),
-        borderRadius: 2,
+        // breakout channels carry no ring of their own — the cage draws one ring around all of them
+        // and the gaps between them read as thin light dividers (see BreakoutCage).
+        borderRadius: channel ? 0 : 2,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: '"NokiaPureText", sans-serif',   // match the SVG silkscreen labels
         fontSize, lineHeight: 1, fontWeight: 700,
@@ -53,7 +55,7 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
         color: free ? 'var(--cell-free-fg)' : 'var(--bg)',
         background: free ? 'var(--cell-free-bg)' : fill,
         // occupied ports ring in their own cable colour; the traced port rings white
-        outline: hot ? '1.5px solid white' : free ? '1px solid var(--cell-free-line)' : `1px solid ${fill}`,
+        outline: channel ? 'none' : hot ? '1.5px solid white' : free ? '1px solid var(--cell-free-line)' : `1px solid ${fill}`,
         outlineOffset: hot ? 0 : -1,
         cursor: free ? 'default' : 'pointer',
         opacity: visualHidden ? 0 : dim ? (free ? 0.18 : 0.24) : 1,
@@ -80,7 +82,7 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
           }}
         />
       )}
-      {!free && (label ?? info.port)}
+      {(channel || !free) && (label ?? info.port)}
       {!free && (
         <>
           <Handle type="source" id={id} position={side} isConnectable={false}
@@ -99,6 +101,9 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
 function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs, box }:
   { cage: string; infos: PortInfo[]; bo: Breakout; hot: boolean; selected: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box }) {
   const [hovered, setHovered] = useState(false);
+  // per-channel trace state: each channel highlights/dims on its OWN cable, not the whole cage
+  const tracedEdges = useTrace((s) => s.edges);
+  const traceAny = useTrace((s) => s.any);
   const n = Math.max(1, bo.channels);
   const W = box?.width ?? CELL, H = box?.height ?? CELL;
   const { cols, rows } = breakoutGrid(n);
@@ -107,10 +112,12 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
   const sw = (W - colGap * (cols - 1)) / cols;
   const sh = (H - rowGap * (rows - 1)) / rows;
   const byCh = new Map(infos.map((i) => [i.channel ?? 1, i]));
+  // any channel of this cage in the active trace -> the whole cage rings white (one ring, like a port)
+  const anyHot = hot || infos.some((i) => !!i.cableId && tracedEdges.has(i.cableId));
   const label = bo.speed ? `${n}×${bo.speed} breakout` : `${n}-channel breakout`;
   const digits = Math.max(1, cage.length);
   const fontSize = box ? Math.max(4, Math.min(13, H * 0.9, W / (digits * 0.62))) : 7;
-  const expanded = hovered || hot || selected;
+  const expanded = hovered || anyHot || selected;
   const primary = infos[0] ?? freeCell(cage);
   const collapsed = infos.length
     ? { ...primary, channel: undefined, remote: `${infos.length}/${n} channels`, remotePort: '' }
@@ -122,9 +129,21 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
       title={`port ${cage} · ${label}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={box
-        ? { position: 'absolute', left: box.left, top: box.top, width: W, height: H }
-        : { position: 'relative', width: CELL, height: CELL }}
+      style={{
+        ...(box
+          ? { position: 'absolute', left: box.left, top: box.top, width: W, height: H }
+          : { position: 'relative', width: CELL, height: CELL }),
+        // expanded: one ring around the whole QSFP-sized port (white when traced), with the channel
+        // gaps reading as thin light dividers via the cage background showing through.
+        ...(expanded && {
+          borderRadius: 3,
+          overflow: 'hidden',
+          background: 'rgba(255,255,255,0.6)',
+          // constant ring — only the colour changes when traced (white), never the size/offset
+          outline: `1.5px solid ${anyHot ? 'white' : collapsedFree ? 'var(--cell-free-line)' : collapsedFill}`,
+          outlineOffset: 0,
+        }),
+      }}
     >
       {Array.from({ length: n }, (_, i) => {
         const ch = i + 1;
@@ -132,9 +151,13 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
         const occ = info.kind !== 'free';
         const col = i % cols;
         const row = Math.floor(i / cols);
+        // this channel is hot when its own cable is traced; dim when the cage is dimmed (cage not in
+        // the trace) or a trace is active and this channel's cable isn't part of it.
+        const chHot = !!info.cableId && tracedEdges.has(info.cableId);
+        const chDim = dim || (traceAny && !chHot);
         return (
-          <PortCell key={ch} info={info} hot={hot} lldp={lldp} label="" box={{ left: col * (sw + colGap), top: row * (sh + rowGap), width: sw, height: sh }}
-            dim={dim && !hot}
+          <PortCell key={ch} info={info} hot={chHot} lldp={lldp} channel label={String(ch)} box={{ left: col * (sw + colGap), top: row * (sh + rowGap), width: sw, height: sh }}
+            dim={chDim}
             showEdgeStub={showEdgeStubs}
             visualHidden={!expanded}
             title={occ ? `${cage}/${ch} → ${info.remote} ${info.remotePort}` : `port ${cage}/${ch} · free${bo.speed ? ` · ${bo.speed}` : ''}`} />

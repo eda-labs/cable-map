@@ -24,6 +24,7 @@ import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
 import { edgeRoute, useGroupedEdges } from './edgeRoute';
 import GLEdges from './GLEdges';
+import TraceHud from './TraceHud';
 import PolylineIcon from '@mui/icons-material/PolylineOutlined';
 import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
@@ -343,7 +344,6 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [namespacesReady, setNamespacesReady] = useState(false);
   const [edgeLinkMode, setEdgeLinkMode] = useState<EdgeLinkMode>('enabled');
   const [legendOpen, setLegendOpen] = useState(true);
-  const [hideEdges, setHideEdges] = useState(false); // dev: drop all cables to isolate edge render cost
   const [webglEdgesUnavailable, setWebglEdgesUnavailable] = useState(false);
   const grouped = useGroupedEdges();
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
@@ -657,8 +657,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
 
   const openNode = topo?.nodes.find((n) => n.name === open);
   const lldpOn = useLldp();
-  const useWebglEdges = largeTopology && WEBGL_OK && !hideEdges && !webglEdgesUnavailable;
-  const usePolishGlEdges = !largeTopology && WEBGL_OK && !hideEdges;
+  const useWebglEdges = largeTopology && WEBGL_OK && !webglEdgesUnavailable;
+  const usePolishGlEdges = !largeTopology && WEBGL_OK;
   const useWebglNodeOverview = largeTopology && WEBGL_OK && !webglEdgesUnavailable && largeViewport.zoom < LARGE_WEBGL_NODE_ZOOM;
   const flowNodes = useMemo(
     () => useWebglNodeOverview
@@ -781,7 +781,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       <Box ref={flowHostRef} sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
-            nodes={flowNodes} edges={hideEdges ? NO_EDGES : flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={flowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onInit={setFlow}
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
@@ -801,6 +801,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             fitViewOptions={{ padding: largeTopology ? 0.05 : 0.12, maxZoom: largeTopology ? 0.5 : 1.5 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+            <TraceHud />
             {usePolishGlEdges && <GLEdges edges={displayEdges} dark={mode === 'dark'} />}
             {useWebglEdges && (
               <WebGLEdgeLayer nodes={displayNodes} edges={displayEdges} lldp={lldpOn} mode={mode} grouped={grouped} onUnavailable={markWebglEdgesUnavailable} />
@@ -820,15 +821,6 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               >
                 <PolylineIcon htmlColor={!grouped ? 'var(--eda-blue-400)' : undefined} />
               </ControlButton>
-              {import.meta.env.DEV && (
-                <ControlButton
-                  onClick={() => setHideEdges((v) => !v)}
-                  title={hideEdges ? 'Show links (dev)' : 'Hide links — perf test (dev)'}
-                  aria-label="Toggle links (dev)"
-                >
-                  <SettingsEthernetIcon style={{ opacity: hideEdges ? 0.4 : 1 }} />
-                </ControlButton>
-              )}
               {hasEdgeLinks && (
                 <ControlButton
                   onClick={() => setEdgeLinkMode((current) => nextEdgeLinkMode(current))}

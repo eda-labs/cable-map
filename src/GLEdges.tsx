@@ -124,10 +124,19 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   const transform = useStore((s) => s.transform);
   const width = useStore((s) => s.width);
   const height = useStore((s) => s.height);
-  // a cheap signature of node positions: changes on drag/data, NOT on pan/zoom -> drives geometry rebuilds
+  // A complete signature of everything an edge endpoint depends on: node position AND handle
+  // measurement. Edge geometry = node position + handle offset, so both must drive the rebuild.
+  // Folding the per-node source/target handle counts (cheap, O(nodes), no per-handle iteration so
+  // pan/zoom stays free) makes this change the instant a newly-shown node's handles are measured —
+  // so toggling label filters / hiding edges always rebuilds correctly once handles settle, rather
+  // than racing un-measured nodes and dropping their cables. Stable across pan/zoom (no transform read).
   const posHash = useStore((s) => {
     let h = 0;
-    for (const n of s.nodeLookup.values()) { const p = n.internals.positionAbsolute; h = (h * 31 + p.x + p.y * 7) | 0; }
+    for (const n of s.nodeLookup.values()) {
+      const p = n.internals.positionAbsolute;
+      const hb = n.internals.handleBounds;
+      h = (h * 31 + p.x + p.y * 7 + (hb?.source?.length ?? 0) * 13 + (hb?.target?.length ?? 0) * 17) | 0;
+    }
     return h;
   });
   const lldpOn = useLldp();
