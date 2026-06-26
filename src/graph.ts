@@ -518,7 +518,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   }));
 
   // single-homed chips fan out below their one leaf in an EP_COLS-wide grid; multihomed
-  // (ESI) chips drop into a shared band underneath, centred between the leaves they bond.
+  // (ESI) chips are clustered per leaf set and wrap inside that leaf span.
   const byLeaf = new Map(leaves.map((l) => [l.name, l]));
   const leafTopOf = (id: string) => (pos.get(id)?.y ?? LEAF_Y) + swH(byLeaf.get(id)?.platform ?? '') + EP_TOP_GAP;
   const single = endpoints.filter((e) => e.data.kind !== 'mlag');
@@ -543,11 +543,70 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   const fanBottom = (lf: string) => leafTopOf(lf) + Math.ceil((fanCount.get(lf) ?? 0) / EP_COLS) * (EP_H + EP_VGAP);
   const bandY = (leaves.length ? Math.max(...leaves.map((l) => fanBottom(l.name))) : LEAF_Y) + 48;
   const centroid = (ep: Endpoint) => ep.leaves.reduce((s, n) => s + (leafCenter.get(n) ?? 0), 0) / ep.leaves.length;
-  let prevRight = -Infinity;
-  for (const ep of multi.toSorted((p, q) => centroid(p) - centroid(q))) {
-    const x = Math.max(centroid(ep) - EP_W / 2, prevRight + EP_HGAP);
-    prevRight = x + EP_W;
-    rfNodes.push({ id: ep.id, type: 'endpoint', position: { x, y: bandY }, width: EP_W, height: EP_H, initialWidth: EP_W, initialHeight: EP_H, data: ep.data, draggable: !compact });
+
+  const leafExtent = (id: string) => {
+    const lf = byLeaf.get(id);
+    const p = pos.get(id);
+    if (!lf || !p) return null;
+    const w = swW(lf.platform);
+    return { left: p.x, right: p.x + w };
+  };
+
+  const multiByLeaves = new Map<string, Endpoint[]>();
+  for (const ep of multi) {
+    const key = ep.leaves.toSorted(naturalName).join('|') || ep.id;
+    (multiByLeaves.get(key) ?? multiByLeaves.set(key, []).get(key)!).push(ep);
+  }
+
+  type MultiGroup = {
+    endpoints: Endpoint[];
+    startX: number;
+    endX: number;
+    cols: number;
+    rows: number;
+    lane: number;
+  };
+
+  const multiGroups: MultiGroup[] = [...multiByLeaves.values()].map((group) => {
+    const endpointsInGroup = group.toSorted((a, b) => naturalName(a.data.label, b.data.label) || naturalName(a.id, b.id));
+    const extents = endpointsInGroup[0].leaves.map(leafExtent).filter((x): x is NonNullable<typeof x> => x != null);
+    const fallbackCenter = endpointsInGroup.reduce((sum, ep) => sum + centroid(ep), 0) / endpointsInGroup.length;
+    const left = extents.length ? Math.min(...extents.map((e) => e.left)) : fallbackCenter - EP_W / 2;
+    const right = extents.length ? Math.max(...extents.map((e) => e.right)) : fallbackCenter + EP_W / 2;
+    const availableW = Math.max(EP_W, right - left);
+    const cols = Math.max(1, Math.min(endpointsInGroup.length, Math.floor((availableW + EP_HGAP) / (EP_W + EP_HGAP))));
+    const rows = Math.ceil(endpointsInGroup.length / cols);
+    const gridW = cols * EP_W + (cols - 1) * EP_HGAP;
+    const startX = left + (availableW - gridW) / 2;
+    return { endpoints: endpointsInGroup, startX, endX: startX + gridW, cols, rows, lane: 0 };
+  }).toSorted((a, b) => a.startX - b.startX || a.endX - b.endX);
+
+  const lanes: { right: number; rows: number }[] = [];
+  for (const group of multiGroups) {
+    let lane = lanes.findIndex((l) => group.startX >= l.right + EP_HGAP);
+    if (lane < 0) {
+      lane = lanes.length;
+      lanes.push({ right: -Infinity, rows: 0 });
+    }
+    group.lane = lane;
+    lanes[lane].right = Math.max(lanes[lane].right, group.endX);
+    lanes[lane].rows = Math.max(lanes[lane].rows, group.rows);
+  }
+
+  const laneY: number[] = [];
+  let nextLaneY = bandY;
+  for (const lane of lanes) {
+    laneY.push(nextLaneY);
+    nextLaneY += lane.rows * (EP_H + EP_VGAP) + EP_VGAP;
+  }
+
+  for (const group of multiGroups) {
+    for (const [i, ep] of group.endpoints.entries()) {
+      const col = i % group.cols, row = Math.floor(i / group.cols);
+      const x = group.startX + col * (EP_W + EP_HGAP);
+      const y = laneY[group.lane] + row * (EP_H + EP_VGAP);
+      rfNodes.push({ id: ep.id, type: 'endpoint', position: { x, y }, width: EP_W, height: EP_H, initialWidth: EP_W, initialHeight: EP_H, data: ep.data, draggable: !compact });
+    }
   }
 
   return { nodes: rfNodes, edges: rfEdges, adjacency: { nodeEdges, edgeEnds, edgePorts, search, nodeLabels } };
