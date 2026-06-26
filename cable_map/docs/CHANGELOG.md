@@ -8,6 +8,8 @@
 - Use EDA's public `auth` browser client and `/core/proxy/v1/identity` endpoint
   for keycloak-js, while keeping backend validation on the confidential `eda`
   client.
+- Serve the silent SSO callback script as a same-origin asset so the strict
+  `script-src 'self'` CSP does not block login completion.
 - Allow `system-administrator` by default and add a dedicated read-only
   `cable-map-viewer` EDA ClusterRole for non-admin users.
 - Add named-secret RBAC for the Keycloak client secret and EDA API CA bundle.
