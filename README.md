@@ -73,13 +73,23 @@ that image. Nothing is pushed to GitHub/ghcr. The committed `manifest.yaml` keep
 `ghcr.io/eda-labs/...` reference for publishing.
 
 The app installs a ServiceAccount, a Deployment (runtime image + cert-manager CSI +
-`eda-internal-trust-bundle` mounts), a ClusterIP Service on 8080, an `HttpProxy`
+`eda-internal-trust-bundle` mounts), named-secret RBAC for EDA SSO, a read-only
+`cable-map-viewer` EDA ClusterRole, a ClusterIP Service on 8080, an `HttpProxy`
 (`authType: atDestination`), and a launcher card under **Topology → Cable Map**. The
 browser entrypoint, relative to the EDA host, is:
 
 ```text
 /core/httpproxy/v1/cable-map/
 ```
+
+Cable Map uses EDA Keycloak SSO at the destination. The SPA uses `keycloak-js`
+with EDA's public browser client (`auth`) to silently obtain a per-tab access
+token from the existing EDA SSO browser session, then exchanges it with the
+backend for an HTTP-only Cable Map session cookie. The backend validates tokens
+with the confidential `eda` client secret. The default allowed roles are
+`cable-map-viewer,system-administrator`, so the built-in EDA administrator role
+can open it immediately and non-admin users can be granted the dedicated viewer
+role.
 
 ## Tests
 

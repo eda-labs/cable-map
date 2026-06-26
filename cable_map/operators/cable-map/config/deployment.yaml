@@ -17,6 +17,9 @@ metadata:
   namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       eda.labs/app: cable-map
@@ -41,6 +44,8 @@ spec:
                   fieldPath: metadata.namespace
             - name: PORT
               value: "8080"
+            - name: ALLOWED_ROLES
+              value: "cable-map-viewer,system-administrator" # app-set: ${allowedRoles}
           ports:
             - name: http
               containerPort: 8080

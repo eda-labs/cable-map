@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
@@ -49,6 +50,24 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 
 	var buf []byte
 	err := chromedp.Run(ctx,
+		network.Enable(),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			if s.auth == nil || !s.auth.enabled() {
+				return nil
+			}
+			c, err := r.Cookie(sessionCookieName)
+			if err != nil || c.Value == "" {
+				return fmt.Errorf("missing authenticated session")
+			}
+			if err := network.SetCookie(sessionCookieName, c.Value).
+				WithURL(fmt.Sprintf("http://127.0.0.1:%s/", s.port)).
+				WithPath("/").
+				WithHTTPOnly(true).
+				Do(ctx); err != nil {
+				return err
+			}
+			return nil
+		}),
 		chromedp.Navigate(target),
 		// Print.tsx sets data-print-ready="1" once /api/topology has loaded.
 		chromedp.WaitReady(`[data-print-ready="1"]`, chromedp.ByQuery),

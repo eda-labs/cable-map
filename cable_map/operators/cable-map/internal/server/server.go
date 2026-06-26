@@ -24,15 +24,20 @@ type Server struct {
 	store *eda.Store
 	port  string
 	spa   http.Handler
+	auth  *authManager
 }
 
 func New(store *eda.Store, port string) *Server {
-	return &Server{store: store, port: port, spa: spaHandler(distRoot())}
+	return &Server{store: store, port: port, spa: spaHandler(distRoot()), auth: newAuthManager()}
 }
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", s.healthz)
+	mux.HandleFunc("/oauth/login", s.auth.handleLogin)
+	mux.HandleFunc("/oauth/callback", s.auth.handleCallback)
+	mux.HandleFunc("/oauth/logout", s.auth.handleLogout)
+	mux.HandleFunc("/oauth/session", s.auth.handleSession)
 	mux.HandleFunc("/api/namespaces", s.namespaces)
 	mux.HandleFunc("/api/namespaces/stream", s.namespacesStream)
 	mux.HandleFunc("/api/toponode", s.topoNode)
@@ -40,7 +45,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/topology/stream", s.topologyStream)
 	mux.HandleFunc("/pdf", s.pdf)
 	mux.Handle("/", s.spa) // SPA + client routes (/, /print)
-	return withCSP(mux)
+	return withCSP(s.auth.wrap(mux))
 }
 
 const cspPolicy = "default-src 'self'; base-uri 'self'; object-src 'none'; " +
@@ -56,6 +61,14 @@ func withCSP(next http.Handler) http.Handler {
 
 // Run serves until ctx is cancelled, then shuts down gracefully.
 func (s *Server) Run(ctx context.Context) error {
+	if s.auth != nil && s.auth.enabled() {
+		setupCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		if err := s.auth.ensureAssignableRoles(setupCtx); err != nil {
+			log.Printf("[auth] could not ensure assignable Cable Map role/group: %v", err)
+		}
+		cancel()
+	}
+
 	srv := &http.Server{Addr: ":" + s.port, Handler: s.Handler()}
 	go func() {
 		<-ctx.Done()
@@ -136,6 +149,9 @@ func (s *Server) topologyStream(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "data: %s\n\n", b)
 			flush()
 		case <-ticker.C:
+			if !s.requestStillAuthenticated(r) {
+				return
+			}
 			io.WriteString(w, ": ping\n\n")
 			flush()
 		}
@@ -161,6 +177,9 @@ func (s *Server) namespacesStream(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "data: %s\n\n", b)
 			flush()
 		case <-ticker.C:
+			if !s.requestStillAuthenticated(r) {
+				return
+			}
 			io.WriteString(w, ": ping\n\n")
 			flush()
 		}
@@ -174,6 +193,10 @@ func nsFilter(r *http.Request) []string {
 		return []string{ns}
 	}
 	return nil
+}
+
+func (s *Server) requestStillAuthenticated(r *http.Request) bool {
+	return s.auth == nil || !s.auth.enabled() || s.auth.userFromRequest(r) != ""
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

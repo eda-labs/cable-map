@@ -9,6 +9,7 @@ spec:
     documentation: cable_map/docs
     readme: cable_map/docs/README.md
     license: cable_map/docs/LICENSE.md
+    settings: cable_map/settings/openapi/eda_oas_cable-map.eda.labs_appsettings.json
   author: eda-labs
   dependencies:
     # The Go operator runtime image (serves the SPA + topology API, reads EDA state via EDK).
@@ -26,6 +27,10 @@ spec:
   components:
     - cr:
         path: cable_map/operators/cable-map/config/deployment.yaml
+    - cr:
+        path: cable_map/operators/cable-map/config/rbac.yaml
+    - cr:
+        path: cable_map/operators/cable-map/config/access.yaml
     - cr:
         path: cable_map/operators/cable-map/config/service.yaml
     - cr:
