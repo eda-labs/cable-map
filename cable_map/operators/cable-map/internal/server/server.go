@@ -40,7 +40,18 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/topology/stream", s.topologyStream)
 	mux.HandleFunc("/pdf", s.pdf)
 	mux.Handle("/", s.spa) // SPA + client routes (/, /print)
-	return mux
+	return withCSP(mux)
+}
+
+const cspPolicy = "default-src 'self'; base-uri 'self'; object-src 'none'; " +
+	"script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+	"font-src 'self'; connect-src 'self'; worker-src 'self' blob:; child-src 'self' blob:"
+
+func withCSP(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy", cspPolicy)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // Run serves until ctx is cancelled, then shuts down gracefully.
