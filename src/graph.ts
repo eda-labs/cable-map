@@ -256,8 +256,8 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   };
   const bundles = new Map<string, Bundle>();
 
-  // Edge endpoints are grouped GLOBALLY (across nodes), keyed by LAG resource when bundled,
-  // so a multihomed LAG landing on two leaves becomes one shared chip instead of two.
+  // Edge endpoints are grouped globally only when the backend marked them with a LAG resource.
+  // Plain edge links stay per physical port, even when multiple links share the same peer label.
   type Member = { port: string; channel?: number; desc: string; remotePort: string; label: string; lldp: LldpStatus };
   type Accum = { key: string; label: string; full: string; lagName?: string; portsByNode: Map<string, Member[]> };
   const epAccum = new Map<string, Accum>();
@@ -331,7 +331,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
           continue;
         }
 
-        const key = r.lag ?? `${sw.name}|${name}`;   // LAG members share one key; plain servers key per-leaf
+        const key = r.lag ?? `${sw.name}|${r.label}`;   // LAG members share one key; plain edges key per-port
         const accum = epAccum.get(key) ?? epAccum.set(key, {
           key, label: shortEndpoint(sw.name, name), full: r.lag ?? name, lagName: r.lag, portsByNode: new Map(),
         }).get(key)!;
@@ -349,8 +349,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
     const leaves = [...a.portsByNode.keys()];
     const total = [...a.portsByNode.values()].reduce((s, m) => s + m.length, 0);
     const lag = lagOf(a.lagName);
-    const multihomed = leaves.length > 1 || !!lag?.multihomed;
-    const kind: EndpointData['kind'] = multihomed ? 'mlag' : (a.lagName || total > 1) ? 'lag' : 'edge';
+    const kind: EndpointData['kind'] = a.lagName ? (lag?.multihomed ? 'mlag' : 'lag') : 'edge';
     const epId = `ep|${a.key}`;
     const allMembers = [...a.portsByNode.values()].flat();
     const remotePort = allMembers[0].remotePort;
