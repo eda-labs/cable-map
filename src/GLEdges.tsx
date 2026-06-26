@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, useStoreApi, useReactFlow, useNodesInitialized, Position, type Edge as RFEdge, type InternalNode, type Node as RFNode } from '@xyflow/react';
 import { CABLE_COLOR, LLDP_COLOR, type CableKind } from './graph';
 import type { LldpStatus } from './api';
@@ -20,6 +20,7 @@ type Data = { kind: CableKind; a?: string; b?: string; count?: number; lldp?: Ll
 type Pt = { x: number; y: number; pos: Position };
 type Hit = { id: string; pts: XY[] };
 type Label = { key: string; x: number; y: number; text: string; color: string; badge: boolean };
+type PointerState = { active: boolean; x: number; y: number; overNode: boolean; lastHover: string | null };
 
 const FLOATS = 9;       // a_pos(2) a_norm(2) a_color(4) a_half(1)
 
@@ -132,10 +133,12 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   const loc = useRef<Record<string, number | WebGLUniformLocation | null>>({});
   const count = useRef(0);
   const hitRef = useRef<Hit[]>([]);            // per-cable polylines for hover/click hit-testing
+  const pointerRef = useRef<PointerState>({ active: false, x: 0, y: 0, overNode: false, lastHover: null });
+  const repickRef = useRef<(() => void) | null>(null);
   const [labels, setLabels] = useState<Label[]>([]);  // ×N + traced-endpoint labels (HTML overlay)
 
   // one-time GL init
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = ref.current;
     const context = canvas?.getContext('webgl', { antialias: true, premultipliedAlpha: true, alpha: true });
     if (!canvas || !context) return;
@@ -281,8 +284,9 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     context.drawArrays(context.TRIANGLES, 0, count.current);
   }, [width, height, store]);
 
-  // rebuild geometry exactly when geometry deps change (data / drag / route / trace / theme), then draw
-  useEffect(() => { rebuild(); draw(); }, [rebuild, draw]);
+  // rebuild geometry exactly when geometry deps change (data / drag / route / trace / theme), then draw.
+  // Layout timing keeps hover highlights in the same paint as the trace state update.
+  useLayoutEffect(() => { rebuild(); draw(); repickRef.current?.(); }, [rebuild, draw]);
   // pan/zoom (and resize): geometry is current, just re-issue uniforms + one draw call
   useEffect(() => { draw(); }, [transform, draw]);
 
@@ -291,7 +295,6 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   useEffect(() => {
     const pane = ref.current?.closest('.react-flow')?.querySelector<HTMLElement>('.react-flow__pane');
     if (!pane) return;
-    let raf = 0, lx = 0, ly = 0, lastHover: string | null = null;
     const pick = (clientX: number, clientY: number): string | null => {
       const p = rf.screenToFlowPosition({ x: clientX, y: clientY }, { snapToGrid: false });
       const zoom = store.getState().transform[2];
@@ -299,28 +302,56 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
       for (const h of hitRef.current) { const d = distToPolyline(h.pts, p.x, p.y); if (d < bestD) { bestD = d; best = h.id; } }
       return best;
     };
+    const setHover = (id: string | null) => {
+      const p = pointerRef.current;
+      if (id === p.lastHover) return;
+      p.lastHover = id;
+      trace.hover(id ? `cable:${id}` : null);
+    };
     // ports/nodes own the hover when the pointer is on them — never let a cable under a port win
     const overNode = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('.react-flow__node');
+    let raf = 0;
     const onMove = (e: PointerEvent) => {
-      if (overNode(e.target)) { lastHover = null; return; }
-      if (e.buttons) { pane.style.cursor = ''; return; } // panning: let React Flow own the cursor
-      lx = e.clientX; ly = e.clientY;
+      const p = pointerRef.current;
+      p.active = true;
+      p.x = e.clientX;
+      p.y = e.clientY;
+      p.overNode = overNode(e.target);
+      if (p.overNode) { pane.style.cursor = ''; setHover(null); return; }
+      if (e.buttons) { pane.style.cursor = ''; setHover(null); return; } // panning: let React Flow own the cursor
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        const id = pick(lx, ly);
+        const latest = pointerRef.current;
+        if (!latest.active || latest.overNode) return;
+        const id = pick(latest.x, latest.y);
         pane.style.cursor = id ? 'pointer' : ''; // pointer over a cable, like React Flow's SVG edges
-        if (id !== lastHover) { lastHover = id; trace.hover(id ? `cable:${id}` : null); }
+        setHover(id);
       });
     };
-    const onLeave = () => { pane.style.cursor = ''; if (lastHover) { lastHover = null; trace.hover(null); } };
+    const onLeave = () => {
+      pointerRef.current.active = false;
+      pointerRef.current.overNode = false;
+      pane.style.cursor = '';
+      setHover(null);
+    };
     const onClick = (e: MouseEvent) => { if (overNode(e.target)) return; const id = pick(e.clientX, e.clientY); if (id) { e.stopPropagation(); trace.pin(`cable:${id}`); } };
+    repickRef.current = () => {
+      const p = pointerRef.current;
+      if (!p.active || p.overNode) return;
+      const id = pick(p.x, p.y);
+      pane.style.cursor = id ? 'pointer' : '';
+      setHover(id);
+    };
     pane.addEventListener('pointermove', onMove);
     pane.addEventListener('pointerleave', onLeave);
     pane.addEventListener('click', onClick, true); // capture: pin before React Flow's onPaneClick clears
     return () => {
       if (raf) cancelAnimationFrame(raf);
       pane.style.cursor = '';
+      if (pointerRef.current.lastHover) trace.hover(null);
+      pointerRef.current = { active: false, x: 0, y: 0, overNode: false, lastHover: null };
+      repickRef.current = null;
       pane.removeEventListener('pointermove', onMove);
       pane.removeEventListener('pointerleave', onLeave);
       pane.removeEventListener('click', onClick, true);

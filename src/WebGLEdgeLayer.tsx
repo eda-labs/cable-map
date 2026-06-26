@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useViewport, type Edge as RFEdge, type Node as RFNode } from '@xyflow/react';
 import { CABLE_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W, LLDP_COLOR, switchPortCenter, type CableKind, type SwitchData } from './graph';
 import { useTrace } from './trace';
@@ -17,12 +17,6 @@ type ProgramInfo = {
   scale: WebGLUniformLocation;
   buffer: WebGLBuffer;
 };
-type IdleScheduler = Window & {
-  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
-  cancelIdleCallback?: (id: number) => void;
-};
-
-const BEZIER_SEGMENTS = 14;
 const BEND_SEGMENTS = 4;
 const SMOOTH_STEP_OFFSET = 20;
 const SMOOTH_STEP_RADIUS = 16;
@@ -205,6 +199,15 @@ function control(pos: Side, x1: number, y1: number, x2: number, y2: number): Poi
   }
 }
 
+function pointDistance(a: Point, b: Point): number {
+  return Math.hypot(b[0] - a[0], b[1] - a[1]);
+}
+
+function bezierSegmentCount(start: Point, c1: Point, c2: Point, end: Point): number {
+  const span = pointDistance(start, c1) + pointDistance(c1, c2) + pointDistance(c2, end);
+  return Math.min(72, Math.max(20, Math.round(span / 12)));
+}
+
 function curvePoint(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point {
   const mt = 1 - t;
   const w0 = mt * mt * mt;
@@ -219,8 +222,9 @@ function curvePoint(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Poin
 
 function bezierPoints(start: Point, c1: Point, c2: Point, end: Point): Point[] {
   const points = [start];
-  for (let i = 1; i <= BEZIER_SEGMENTS; i += 1) {
-    points.push(curvePoint(i / BEZIER_SEGMENTS, start, c1, c2, end));
+  const segments = bezierSegmentCount(start, c1, c2, end);
+  for (let i = 1; i <= segments; i += 1) {
+    points.push(curvePoint(i / segments, start, c1, c2, end));
   }
   return points;
 }
@@ -464,14 +468,9 @@ function useElementSize<T extends HTMLElement>(ref: RefObject<T | null>) {
   return size;
 }
 
-function scheduleIdle(callback: () => void) {
-  const scheduler = window as IdleScheduler;
-  if (scheduler.requestIdleCallback && scheduler.cancelIdleCallback) {
-    const id = scheduler.requestIdleCallback(callback, { timeout: 450 });
-    return () => scheduler.cancelIdleCallback?.(id);
-  }
-  const id = window.setTimeout(callback, 0);
-  return () => window.clearTimeout(id);
+function scheduleFrame(callback: () => void) {
+  const id = window.requestAnimationFrame(callback);
+  return () => window.cancelAnimationFrame(id);
 }
 
 export default function WebGLEdgeLayer({
@@ -505,8 +504,11 @@ export default function WebGLEdgeLayer({
   useEffect(() => {
     const seq = buildSeqRef.current + 1;
     buildSeqRef.current = seq;
-    setVertices(new Float32Array());
-    const cancel = scheduleIdle(() => {
+    if (!nodes.length || !edges.length) {
+      setVertices(new Float32Array());
+      return undefined;
+    }
+    const cancel = scheduleFrame(() => {
       const next = buildVertices(nodes, edges, colors, lldp, grouped, idleAlpha, traceAny, traceEdges);
       if (buildSeqRef.current === seq) setVertices(next);
     });
@@ -516,7 +518,7 @@ export default function WebGLEdgeLayer({
     };
   }, [nodes, edges, colors, lldp, grouped, idleAlpha, traceAny, traceEdges]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !size.width || !size.height) return;
     const dpr = window.devicePixelRatio || 1;

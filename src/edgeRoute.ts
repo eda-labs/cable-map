@@ -5,7 +5,7 @@
 // every edge reads it via useSyncExternalStore without prop-drilling or rebuilding the edge list.
 import { useSyncExternalStore } from 'react';
 
-let on = false;
+let on = true;
 const listeners = new Set<() => void>();
 const emit = () => { for (const l of listeners) l(); };
 
@@ -18,6 +18,6 @@ export function useGroupedEdges(): boolean {
   return useSyncExternalStore(
     (cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; },
     () => on,
-    () => false,
+    () => true,
   );
 }

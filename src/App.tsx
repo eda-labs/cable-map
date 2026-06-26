@@ -803,10 +803,14 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             <Controls position="top-right" showInteractive={false}>
               <ControlButton
                 onClick={() => edgeRoute.toggle()}
-                title={grouped ? 'Use direct links' : 'Use elbow link style'}
+                title={grouped ? 'Use curved links' : 'Use elbow link style'}
                 aria-label="Toggle cable routing"
+                style={{
+                  color: !grouped ? 'var(--eda-blue-400)' : undefined,
+                  background: !grouped ? 'color-mix(in srgb, var(--eda-blue-400) 12%, transparent)' : undefined,
+                }}
               >
-                <PolylineIcon style={{ color: grouped ? 'var(--eda-blue-400)' : undefined }} />
+                <PolylineIcon htmlColor={!grouped ? 'var(--eda-blue-400)' : undefined} />
               </ControlButton>
               {import.meta.env.DEV && (
                 <ControlButton

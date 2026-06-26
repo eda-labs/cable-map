@@ -9,6 +9,7 @@ export type XY = { x: number; y: number };
 
 // ---- shared ---------------------------------------------------------------
 const distance = (a: XY, b: XY) => Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+const bezierSegments = (span: number) => Math.min(96, Math.max(18, Math.round(span / 10)));
 
 // ---- bezier (getControlWithCurvature / calculateControlOffset / getBezierPath) ----
 const controlOffset = (d: number, c = 0.25) => (d >= 0 ? 0.5 * d : c * 25 * Math.sqrt(-d));
@@ -29,7 +30,7 @@ function bezierPolyline(s: XY, sp: Position, t: XY, tp: Position): XY[] {
   const c2 = control(tp, t.x, t.y, s.x, s.y);
   // sample density from the control-polygon length so long/curvier cables stay smooth
   const span = distance(s, c1) + distance(c1, c2) + distance(c2, t);
-  const segs = Math.min(96, Math.max(16, Math.round(span / 11)));
+  const segs = bezierSegments(span);
   const out: XY[] = [{ x: s.x, y: s.y }];
   for (let i = 1; i <= segs; i++) {
     const u = i / segs;
@@ -166,7 +167,7 @@ function archPolyline(s: XY, t: XY): XY[] {
   const lift = Math.min(Math.max(Math.abs(t.x - s.x) * 0.35, 60), 200);
   const c1: XY = { x: s.x, y: s.y - lift }, c2: XY = { x: t.x, y: t.y - lift };
   const span = distance(s, c1) + distance(c1, c2) + distance(c2, t);
-  const segs = Math.min(96, Math.max(16, Math.round(span / 11)));
+  const segs = bezierSegments(span);
   const out: XY[] = [{ x: s.x, y: s.y }];
   for (let i = 1; i <= segs; i++) {
     const u = i / segs;
