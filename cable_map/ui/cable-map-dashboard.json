@@ -1,11 +1,11 @@
 {
   "uuid": "f265f9e7-70d3-4d1e-b508-430b3f2b531c",
   "name": "Cable Map",
-  "version": "0.1.1",
+  "version": "0.1.5",
   "displayName": "Cable Map",
-  "description": "Open the cable-map topology, front-panel and cable-table view.",
+  "description": "Cable Map status and topology entry point.",
   "showNavigationToolbar": true,
-  "lastChanged": "2026-06-21T00:00:00Z",
+  "lastChanged": "2026-06-26T00:00:00Z",
   "screens": [
     {
       "name": "Cable Map",
@@ -19,20 +19,120 @@
           "uuid": "f3bc1d43-e5d4-44af-9c1c-90e866c54f59",
           "type": "flexRow",
           "flexDirection": "row",
-          "horizontalAlignment": "center",
-          "verticalAlignment": "center",
+          "horizontalAlignment": "start",
+          "verticalAlignment": "start",
           "components": [
             {
-              "uuid": "d1836dd3-e02e-42c8-8db4-c618a92cf67f",
+              "uuid": "c5b0a4a6-d82d-4d1f-a365-384632f0da68",
               "type": "dashletDataView",
               "title": "Cable Map",
-              "subtitle": "Open the standalone cable-map UI with React Flow, front panels, cable tables and PDF export.",
-              "width": 400,
-              "height": 300,
+              "width": 980,
+              "height": 420,
+              "fillWidth": true,
+              "showStatusBar": false,
+              "showFilters": false,
+              "showInfoPanel": false,
               "navigationTarget": {
                 "edaRoute": "external",
                 "targetReference": "/core/httpproxy/v1/cable-map/",
                 "useNewTab": true
+              },
+              "componentConfiguration": {
+                "apiConfiguration": {
+                  "api": ".cluster.apps.cable-map.status",
+                  "queryType": "eql",
+                  "requestType": "get",
+                  "definition": {
+                    "initialModel": {
+                      "schema": "v1",
+                      "modelName": "CableMapStatus",
+                      "primaryKey": "id",
+                      "showGroupDisplay": "no",
+                      "flat": true,
+                      "fields": [
+                        {
+                          "fieldName": "service",
+                          "label": "Service",
+                          "type": "string",
+                          "sortable": true,
+                          "minWidth": 160,
+                          "flex": 1.4
+                        },
+                        {
+                          "fieldName": "open",
+                          "label": "View",
+                          "type": "string",
+                          "sortable": false,
+                          "minWidth": 100,
+                          "flex": 0.7
+                        },
+                        {
+                          "fieldName": "status",
+                          "label": "Status",
+                          "type": "string",
+                          "sortable": true,
+                          "minWidth": 170,
+                          "flex": 1.6
+                        },
+                        {
+                          "fieldName": "namespaces",
+                          "label": "Namespaces",
+                          "type": "number",
+                          "sortable": true,
+                          "minWidth": 130,
+                          "flex": 1
+                        },
+                        {
+                          "fieldName": "nodes",
+                          "label": "Nodes",
+                          "type": "number",
+                          "sortable": true,
+                          "minWidth": 100,
+                          "flex": 0.8
+                        },
+                        {
+                          "fieldName": "links",
+                          "label": "Links",
+                          "type": "number",
+                          "sortable": true,
+                          "minWidth": 100,
+                          "flex": 0.8
+                        },
+                        {
+                          "fieldName": "lags",
+                          "label": "LAGs",
+                          "type": "number",
+                          "sortable": true,
+                          "minWidth": 100,
+                          "flex": 0.8
+                        },
+                        {
+                          "fieldName": "url",
+                          "label": "URL",
+                          "type": "string",
+                          "visible": false,
+                          "sortable": false,
+                          "width": "260px"
+                        },
+                        {
+                          "fieldName": "details",
+                          "label": "Details",
+                          "type": "string",
+                          "visible": false,
+                          "sortable": false,
+                          "width": "260px"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "additionalConfiguration": {
+                  "navTargetsConfig": {
+                    "edaRoute": "external",
+                    "targetReference": "/core/httpproxy/v1/cable-map/",
+                    "useNewTab": true
+                  }
+                }
               }
             }
           ]

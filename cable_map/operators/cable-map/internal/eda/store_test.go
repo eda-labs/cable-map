@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	edav1 "eda.dev/edk/api/v1"
+	"eda.dev/edk/pkg/utils/jspath"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -106,6 +107,41 @@ func TestTopoNodeLookup(t *testing.T) {
 	}
 	if got.GetName() != "leaf2" {
 		t.Fatalf("store returned mutable cache object, name=%q", got.GetName())
+	}
+}
+
+func TestDashboardStatusLocked(t *testing.T) {
+	if _, err := jspath.NewFromString(dashboardStatusJsPath); err != nil {
+		t.Fatalf("dashboard status jspath is invalid: %v", err)
+	}
+
+	s := &Store{
+		caches: map[string]map[string]*unstructured.Unstructured{
+			edav1.KTopoNodeGVK.Kind: {
+				"eda|leaf1": topoNode("leaf1", "eda"),
+				"eda|leaf2": topoNode("leaf2", "eda"),
+			},
+			edav1.KTopoLinkGVK.Kind: {},
+			"Interface":             {},
+			"Breakout":              {},
+		},
+		anySynced: true,
+	}
+	got := s.dashboardStatusLocked()
+	if got.ID != "cable-map" || got.Service != "Cable Map" || got.Open != "View" || got.URL != "/core/httpproxy/v1/cable-map/" {
+		t.Fatalf("identity/open fields: %+v", got)
+	}
+	if got.Status != "Reachable / Ready" || got.HTTP != "Reachable" || got.Data != "Ready" {
+		t.Fatalf("status fields: %+v", got)
+	}
+	if got.Namespaces != 1 || got.Nodes != 2 || got.Links != 0 || got.LAGs != 0 {
+		t.Fatalf("counts: %+v", got)
+	}
+
+	s.lastErr = "stream unavailable"
+	got = s.dashboardStatusLocked()
+	if got.Data != "Degraded" || got.Status != "Reachable / Degraded" || got.Details != "stream unavailable" {
+		t.Fatalf("degraded status: %+v", got)
 	}
 }
 
