@@ -22,22 +22,42 @@ const SR1_LINECARD_STENCIL: Record<string, string> = {
   'imm36-800g-qsfpdd': '7750 SR-1se',
 };
 
-// Modular chassis whose faceplate is fixed by the fitted MDA: the stencil is "<platform> <mda-type>"
-// (slash sanitised for the filename), e.g. SR-1s + ms18-100gb-qsfp28 -> "7750 SR-1s ms18-100gb-qsfp28".
-const MDA_VARIANT_CHASSIS = new Set(['7750 SR-1', '7750 SR-1s', '7750 SR-1se']);
+// 7750 SR-1 and the modular 7750 SR-1s both have TWO side-by-side MDA bays: stencil is
+// "<platform> <mda-slot1>_<mda-slot2>" (a single MDA mirrors into both slots so it still matches).
+const TWO_BAY_CHASSIS = new Set(['7750 SR-1', '7750 SR-1s']);
+// SR-1se carries a single MDA: stencil is "<platform> <mda>" (slash sanitised for the filename).
+const SINGLE_MDA_CHASSIS = new Set(['7750 SR-1se']);
+
+// '/' and '+' are mangled in stencil filenames/URLs (slash = path sep, '+' decodes to space in the
+// static-server path), so the composites are written with them flattened to '-'; match that here.
+const sanitise = (t: string) => t.replace(/[/+]/g, '-');
+const mdaTypes = (components?: Component[]): string[] =>
+  (components ?? [])
+    .filter((c) => c.kind === 'mda' && c.type)
+    .sort((a, b) => (a.slot ?? '').localeCompare(b.slot ?? '', undefined, { numeric: true }))
+    .map((c) => sanitise(c.type!));
 
 // The stencil name to render for a node: a card-derived variant for modular chassis when that stencil
 // exists, else its platform if that already names a stencil, else the platform unchanged (schematic).
 export function stencilFor(platform: string, components?: Component[]): string {
-  if (MDA_VARIANT_CHASSIS.has(platform)) {
-    const mda = components?.find((c) => c.kind === 'mda')?.type;
-    const variant = mda && `${platform} ${mda.replace(/\//g, '-')}`;
-    if (variant && KNOWN.has(variant)) return variant;
+  // Two-bay chassis (SR-1, modular SR-1s): pair the fitted MDAs into a composite name.
+  if (TWO_BAY_CHASSIS.has(platform)) {
+    const mdas = mdaTypes(components);
+    if (mdas.length) {
+      const pair = `${platform} ${mdas[0]}_${mdas[1] ?? mdas[0]}`;
+      if (KNOWN.has(pair)) return pair;
+    }
   }
+  // 7750 SR-1: integrated line-card variants report the bare modular platform -> fixed-variant stencil.
   if (platform === '7750 SR-1') {
     const lineCard = components?.find((c) => c.kind === 'lineCard')?.type;
     if (lineCard && SR1_LINECARD_STENCIL[lineCard]) return SR1_LINECARD_STENCIL[lineCard];
     if (components?.some((c) => c.type === 'cpm-1s')) return '7750 SR-1s';
+  }
+  if (SINGLE_MDA_CHASSIS.has(platform)) {
+    const mda = mdaTypes(components)[0];
+    const variant = mda && `${platform} ${mda}`;
+    if (variant && KNOWN.has(variant)) return variant;
   }
   if (KNOWN.has(platform)) return platform;
   return platform;
