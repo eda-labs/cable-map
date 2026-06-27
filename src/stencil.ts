@@ -27,6 +27,9 @@ const SR1_LINECARD_STENCIL: Record<string, string> = {
 const TWO_BAY_CHASSIS = new Set(['7750 SR-1', '7750 SR-1s']);
 // SR-1se resolves to "<platform> <mda>" for its distinct card faceplate.
 const SINGLE_MDA_CHASSIS = new Set(['7750 SR-1se']);
+// Modular SR chassis render strictly from their fitted cards — there is no bare-platform base stencil,
+// and an unresolved one must not fall back to one.
+const MODULAR_CHASSIS = new Set(['7750 SR-1', '7750 SR-1s', '7750 SR-2s', '7750 SR-2se']);
 
 // '/' and '+' are mangled in stencil filenames/URLs (slash = path sep, '+' decodes to space in the
 // static-server path), so the composites are written with them flattened to '-'; match that here.
@@ -103,13 +106,14 @@ export function stencilFor(platform: string, components?: Component[]): string {
   if (platform === '7750 SR-1') {
     const lineCard = components?.find((c) => c.kind === 'lineCard')?.type;
     if (lineCard && SR1_LINECARD_STENCIL[lineCard]) return SR1_LINECARD_STENCIL[lineCard];
-    if (components?.some((c) => c.type === 'cpm-1s')) return '7750 SR-1s';
   }
   if (SINGLE_MDA_CHASSIS.has(platform)) {
     const mda = mdaTypes(components)[0];
     const variant = mda && `${platform} ${mda}`;
     if (variant && KNOWN.has(variant)) return variant;
   }
+  // Component-driven only: no card-derived composite matched, so don't fall back to a base panel.
+  if (MODULAR_CHASSIS.has(platform)) return platform;
   if (KNOWN.has(platform)) return platform;
   return platform;
 }
