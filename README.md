@@ -12,8 +12,8 @@ single OCI app image).
 
 ## Repository layout
 
-- `src/`, `index.html`, `vite.config.ts` — the React SPA (unchanged frontend).
 - `cable_map/` — the `edabuilder` project app:
+  - `frontend/` — the React SPA (`src/`, `index.html`, `vite.config.ts`, `package.json`); built and `go:embed`-ed into the operator.
   - `operators/cable-map/cmd/main.go` — operator entrypoint (EDK + HTTP server).
   - `operators/cable-map/internal/topology` — pure topology derivation (+ tests).
   - `operators/cable-map/internal/eda` — EDK state streams (`pkg/cr` + `pkg/state`).
@@ -28,20 +28,23 @@ single OCI app image).
 ## Prerequisites
 
 - Go ≥ 1.26.4 (the workspace pins this; `go.work` / `go.mod` use it).
-- The EDK is wired from a local checkout via `replace eda.dev/edk => ../../edk` in
-  `cable_map/go.mod` (the canonical Nokia submodule isn't reachable here).
+- The EDK (`eda.dev/edk`, a vanity path → `github.com/nokia-eda/edk`) is fetched directly from
+  GitHub. Requires access to that private repo: `gh auth setup-git` (or SSH/`.netrc`) so `go` can
+  clone it, and `go env -w GOPRIVATE=eda.dev/edk` the first time the version is bumped.
 - `pnpm`, `docker`, `kubectl`, `edabuilder`.
 
 ## Local development (frontend)
 
+The SPA lives in `cable_map/frontend/`. From the repo root:
+
 ```sh
-pnpm install
+pnpm -C cable_map/frontend install
 make dev        # Vite dev server; /api is mocked from the golden topology fixture
 ```
 
 The Go backend only returns live data inside the cluster (it needs the EDA internal
-certs). Use `pnpm dev` for UI work against the built-in mock topology. To proxy
-to a real backend instead, run with `EDA_API=http://host:port pnpm dev`.
+certs). Use `make dev` for UI work against the built-in mock topology. To proxy
+to a real backend instead, run with `EDA_API=http://host:port make dev`.
 
 ## Common commands
 

@@ -13,7 +13,7 @@ const mockNamespace = 'demo'
 // MOCK_TOPOLOGY=/abs/path.json overrides the bundled golden topology, for previewing ad-hoc fixtures.
 const mockTopologyPath = process.env.MOCK_TOPOLOGY
   ? new URL(`file://${process.env.MOCK_TOPOLOGY}`)
-  : new URL('./cable_map/operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url)
+  : new URL('../operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url)
 
 const sendJSON = (res: ServerResponse, status: number, body: unknown) => {
   res.statusCode = status

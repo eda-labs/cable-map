@@ -6,11 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:cluster": "devspace dev",
     "build": "tsc -b && vite build",
     "lint": "oxlint .",
     "preview": "vite preview",
-    "deploy:eda:local": "bash scripts/deploy-local.sh",
     "gen:frontpanel-meta": "node scripts/gen-frontpanel-meta.mjs",
     "gen:golden-topology": "node scripts/gen-golden-topology.mjs"
   },
