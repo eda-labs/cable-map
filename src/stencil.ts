@@ -25,7 +25,7 @@ const SR1_LINECARD_STENCIL: Record<string, string> = {
 // 7750 SR-1 and the modular 7750 SR-1s both have TWO side-by-side MDA bays: stencil is
 // "<platform> <mda-slot1>_<mda-slot2>" (a single MDA mirrors into both slots so it still matches).
 const TWO_BAY_CHASSIS = new Set(['7750 SR-1', '7750 SR-1s']);
-// SR-1se carries a single MDA: stencil is "<platform> <mda>" (slash sanitised for the filename).
+// SR-1se resolves to "<platform> <mda>" for its distinct card faceplate.
 const SINGLE_MDA_CHASSIS = new Set(['7750 SR-1se']);
 
 // '/' and '+' are mangled in stencil filenames/URLs (slash = path sep, '+' decodes to space in the
@@ -40,11 +40,62 @@ const mdaTypes = (components?: Component[]): string[] =>
 // The stencil name to render for a node: a card-derived variant for modular chassis when that stencil
 // exists, else its platform if that already names a stencil, else the platform unchanged (schematic).
 export function stencilFor(platform: string, components?: Component[]): string {
+  // 7750 SR-1s also takes a full-width XMA-s (s18/s36) that fills the XCM -> single faceplate;
+  // its ms* MDAs pair via the two-bay branch below.
+  if (platform === '7750 SR-1s') {
+    const xma = mdaTypes(components).find((t) => /^s18|^s36/.test(t));
+    if (xma) {
+      const v = `7750 SR-1s ${/^s18/.test(xma) ? 's18-100gb-qsfp28' : 's36-400gb-qsfpdd'}`;
+      if (KNOWN.has(v)) return v;
+    }
+  }
   // Two-bay chassis (SR-1, modular SR-1s): pair the fitted MDAs into a composite name.
   if (TWO_BAY_CHASSIS.has(platform)) {
     const mdas = mdaTypes(components);
     if (mdas.length) {
       const pair = `${platform} ${mdas[0]}_${mdas[1] ?? mdas[0]}`;
+      if (KNOWN.has(pair)) return pair;
+    }
+  }
+  // 7750 SR-2se: two stacked XCM slots, each a 36-port XMA or an IOM with 2 MDAs -> "<c1>_<c2>"
+  // (5×5 matrix). All 36-port XMA SKUs (x2-s36*/m36*) collapse to one code; mse* map to themselves.
+  // NB: per-slot grouping uses the MDA's slot prefix — verify against a real onboarded SR-2se.
+  if (platform === '7750 SR-2se') {
+    const slotCode = (t: string) => (/^x2-s36|^m36/.test(t) ? 'x2-s36-800g-qsfpdd' : sanitise(t));
+    const bySlot = new Map<string, string>();
+    for (const c of components ?? []) {
+      if (c.kind !== 'mda' || !c.type) continue;
+      const slot = (c.slot ?? '').split(/[/-]/)[0];
+      if (!bySlot.has(slot)) bySlot.set(slot, slotCode(c.type));
+    }
+    const codes = [...bySlot.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .map((e) => e[1]);
+    if (codes.length) {
+      const pair = `7750 SR-2se ${codes[0]}_${codes[1] ?? codes[0]}`;
+      if (KNOWN.has(pair)) return pair;
+    }
+  }
+  // 7750 SR-2s: same 2-XCM structure as SR-2se -> "<c1>_<c2>" (10×10). Each XCM = a full XMA-s
+  // (s18/s36, SKUs collapse to one code each) or an IOM-s with 2 MDA-s. Group MDAs by XCM slot.
+  if (platform === '7750 SR-2s') {
+    const slotCode = (t: string) =>
+      /^s18/.test(t) ? 's18-100gb-qsfp28'
+        : /^s36/.test(t) ? 's36-400gb-qsfpdd'
+          : t.endsWith('-b') && /^ms16/.test(t) ? 'ms16-100gb-sfpdd-4-100gb-qsfp28' // -b rev, same faceplate
+            : t.endsWith('-b') && /^ms8/.test(t) ? 'ms8-100gb-sfpdd-2-100gb-qsfp28'
+              : sanitise(t);
+    const bySlot = new Map<string, string>();
+    for (const c of components ?? []) {
+      if (c.kind !== 'mda' || !c.type) continue;
+      const slot = (c.slot ?? '').split(/[/-]/)[0];
+      if (!bySlot.has(slot)) bySlot.set(slot, slotCode(c.type));
+    }
+    const codes = [...bySlot.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .map((e) => e[1]);
+    if (codes.length) {
+      const pair = `7750 SR-2s ${codes[0]}_${codes[1] ?? codes[0]}`;
       if (KNOWN.has(pair)) return pair;
     }
   }

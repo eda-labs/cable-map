@@ -5,6 +5,10 @@ highlights on the canvas. Read this before touching anything under `public/front
 `scripts/compose-*`, `scripts/*-frontpanel*`, `src/FrontPanel.tsx`, `src/SwitchNode.tsx`,
 `src/stencil.ts`, or `src/frontpanel-meta.json`.
 
+The supported-hardware **source of truth** is the SR-SIM Installation and Setup Guide
+(Appendix A): <https://documentation.nokia.com/sr/25-7/7750-sr/pdf/SR-SIM_Installation_and_Setup_Guide_25.7.R1.pdf>.
+A per-chassis coverage audit against it is in **§12**.
+
 ---
 
 ## 1. What a "stencil" is
@@ -90,15 +94,43 @@ Every cage gets a `<text>` label, format copied verbatim from the existing panel
 
 ## 4. Composing a modular chassis
 
-Modular chassis (SR-1, SR-1s, SR-2s, SR-2se) are **chassis frame + one card per bay**,
-each card nested in its own `<svg viewBox>` sized to the bay, ids namespaced per slot,
-data-ports slot-prefixed. The result renders chassis + cards as one panel.
+> **Source of truth: the SR-SIM Installation and Setup Guide PDF**
+> <https://documentation.nokia.com/sr/25-7/7750-sr/pdf/SR-SIM_Installation_and_Setup_Guide_25.7.R1.pdf>
+> **Appendix A** is the supported-hardware list. Use it to decide *whether a platform is
+> modular at all*, and to get the per-bay card list. Cross-check against EDA's component
+> model: a platform that reports `kind: mda` components is **modular** (compose it); one with
+> an **integrated** `kind: lineCard` / IMM is **fixed** (single faceplate, no compose).
+
+### Which 7750 platforms are modular (per the SR-SIM PDF + EDA model)
+| Platform | Type | Notes |
+|---|---|---|
+| **7750 SR-1** | modular | two MDA bays (`me*` cards) → `N×N` composites |
+| **7750 SR-1s** | modular | "6.0 Tbps HD Modular System" chassis, two MDA-s bays (`ms*` cards) |
+| **7750 SR-2s** | **10×10 matrix** | same 2-XCM structure as SR-2se (interchangeable geometry). Per SR-SIM Table 57, each XCM slot = a full XMA-s (`s18-100gb-qsfp28`, `s36-400gb-qsfpdd`) **or** an IOM-s with 2 MDA-s bays (the 8 `ms*` cards, same as the SR-1s) → **100 composites** `7750 SR-2s <a>_<b>`. Built by `scripts/compose-sr2s.mjs` (clone of the SR-2se engine with `-2s` modules: CPM-2s, XCM-2s, IOM-s, chassis `7750_SR-2s__Front_`). XMA-s cages don't derive, so s18/s36 are recovered tagged from the original composites (`stencils/.sr2s-xma-*.txt`). The old `6p/12p/16p/24p` composites were **not** in the PDF's SR-2s list (those XMA-s are for SR-7s/14s) and were replaced. |
+| **7750 SR-2se** | **5×5 matrix** | 2 stacked XCM slots; each XCM = one full-width 36-port XMA2-s **or** an IOM2-se XIOM with two half-width MDA2-se bays. The 5 slot configs (`x2-s36-800g-qsfpdd`, `mse24-200g-sfpdd`, `mse14-800g-4-400g`, `mse6-800g-qsfpdd`, `mse6-800g-cfp2-dco`) × both slots → **25 composites** `7750 SR-2se <a>_<b>`. No bare/base — every config is a named pair. Full module hierarchy: chassis → 2× CPM-2se → 2× XCM-2se carrier → IOM2-se → 2× MDA2-se (only MDAs/XMA are port-tagged). The XMA2-s cages don't cluster with the MDA heuristic, so the XMA's tagged card is reused from the original composite (recovered from git into `stencils/.sr2se-orig-tagged.svg`). Built by `scripts/compose-sr2se.mjs`. |
+| **7750 SR-1se** | **fixed** | integrated 36-port QSFP-DD IMM (`imm36-…`); the 9.6/14.4/19.2 Tbps and 400G/800G are throughput/optics tiers of the **same** faceplate — one stencil, no bays |
+| **7750 SR-1-24D/46S/48D/92S, SR-1x-…** | fixed | integrated FP5 line card |
+
+So **SR-1, SR-1s, SR-2s** are per-card-pair composites; **SR-2se** is the full 5×5 XCM-slot
+matrix; SR-1se and the rest are single faceplates resolved straight by name. (Tell:
+`stencils/7750 SR-1se/` has only fixed `…36-port…QSFP-DD…` SVGs — no `Modular System`
+chassis and no MDA cards, unlike `stencils/7750 SR-1s/`.)
+
+Resolver status: SR-1 / SR-1s (`TWO_BAY_CHASSIS`), SR-1se (`SINGLE_MDA_CHASSIS`), and SR-2s /
+SR-2se (dedicated branches: group MDAs by XCM slot → `<platform> <c1>_<c2>`, XMA SKUs collapse
+to one code per faceplate) are all wired in `stencil.ts`.
+
+Open items for SR-2se: (1) eyeball module alignment in `/stencils.html` (CPM `25,18`/`100,18`,
+XCM `4,36`/`4,60`, IOM inner `9.5,0 155.8×23.6`, MDA bays `1.7`/`76.4` within the IOM); (2)
+the 4 bays are numbered `1-`…`4-` and the resolver groups MDAs by slot prefix — confirm both
+against an onboarded SR-2se's actual `ethernet-<slot>-<port>` interface numbering.
+
+Modular chassis are **chassis frame + one card per bay**, each card nested in its own
+`<svg viewBox>` sized to the bay, ids namespaced per slot, data-ports slot-prefixed.
 
 `scripts/compose-sr1.mjs` is the SR-1 / SR-1s engine; the drivers
 `compose-sr1-all.mjs` / `compose-sr1s-all.mjs` fan out every ordered card pair (two bays →
 `N×N` composites). `compose-modular.mjs` is the SR-2s/2se engine.
-
-Get the card types from Appendix A of the following PDF: https://documentation.nokia.com/sr/25-7/7750-sr/pdf/SR-SIM_Installation_and_Setup_Guide_25.7.R1.pdf
 
 ### Finding bay geometry
 A modular chassis is a flat (Inkscape/EMF) SVG. To find the bays, scan the chassis paths
@@ -289,3 +321,48 @@ Run the dev server and open `http://localhost:<port>/stencils.html`. Features:
 
 Dev-gitignored files are excluded via `.git/info/exclude` (local-only; do **not** add them
 to the tracked `.gitignore`).
+
+---
+
+## 12. Coverage audit — SR-OS chassis (SR-SIM Appendix A, 25.7.R1)
+
+Cross-check of every SR-OS chassis the SR-SIM lists vs. what has stencils. **Key insight:**
+SR-SIM models almost every chassis with **1–2 line-card slots** (not its physical slot
+count), so each is either *fixed* (1 stencil), *single-MDA* (N faceplates, one per card), or
+*2-bay/2-XCM* (a matrix) — never a combinatorial blow-up. (The 7220/7215/7730 families are
+SR Linux, not SR-OS, and already covered.)
+
+### Covered
+`7750 SR-1` (49), `SR-1-24D/46S/48D/92S`, `SR-1s` (65), `SR-1se`, `SR-1x-48D/92S`,
+`SR-2s` (100, Table 57), `SR-2se` (25, Table 59).
+
+### Missing — and how each should be built
+
+| Chassis | SR-SIM card structure (Appendix A) | Build shape |
+|---|---|---|
+| **7250 IXR-6 / IXR-10** | `cpm-ixr` + IMM line card: `imm36-100g-qsfp28` (m36), `imm48-sfp+2-qsfp28` (m48) | single-MDA → 2 faceplates each |
+| **7250 IXR-e** | `imm24-sfp++8-sfp28+2-qsfp28` (m24), `imm14-10g-sfp++4-1g-tx` (m14) | 2 faceplates |
+| **7250 IXR-e2 / e2c / ec** | fixed integrated: `m2-qsfpdd+2-qsfp28+24-sfp28` / `m12-sfp28+2-qsfp28` / `m4-1g-tx+20-1g-sfp+6-10g-sfp+` | 1 fixed faceplate each |
+| **7250 IXR-R4** | `iom-ixr-r4` + 6 MDAs (`m6-…-100g-qsfp28`, `m20-1g-csfp`, `m10-10g-sfp+`, `m4-…-100g-cfp2`, `m6-…-25g-sfp28`, `m10-1g-sfp+2-10g-sfp+`) | single-MDA → 6 |
+| **7250 IXR-R6 / R6d / R6dl** | `(cp)iom-ixr-r6(d)` + 6 / 8 / 10 MDAs (`m1-400g…`, `m5-100g…`, `m18-25g…`, `m2-cfp2`, `m20/m46/m80-…`, `a32-chds1v2`, …) | single-MDA → 6–10 |
+| **7250 IXR-s** | `imm48-sfp++6-qsfp28` (m48) | 1 fixed |
+| **7250 IXR-X / X3** | `imm32-qsfp28+4-qsfpdd` (m32), `imm6-qsfpdd+48-sfp56` (m6) / `imm36-qsfpdd` (m36) | missing. NB the `7250 IXR-X1b`/`X3b` stencils we already have are **SR Linux** platforms (different from these SR-OS `IXR-X`/`IXR-X3`) |
+| **7450 ESS-7 / ESS-12** | `iom5-e` + `me6-100gb-qsfp28` | single-MDA → 1 (+ more me\* if extended) |
+| **7750 SR-1e/2e/3e** | `imm-2pac-fp3`/`iom4-e` + many `me*`/`isa2` cards | single-IOM, many MDAs |
+| **7750 SR-7 / SR-12 / SR-12e** | `iom5-e`/`iom4-e(-b/-hs)`/`imm*` + ~15 `me*`/`isa2`/`imm` cards | single-IOM, large MDA list |
+| **7750 SR-7s / SR-14s** | `xcm-7s/14s` (s18/s36 + `ms*`) **and** `xcm2-7s/14s` (x2-s36 + `mse*` + m36) | **= SR-2s + SR-2se cards** — reuse `compose-sr2s.mjs` / `compose-sr2se.mjs` with the SR-7s/14s chassis + `xcm(2)-7s/14s` carriers |
+| **7750 SR-a4 / a8** | `iom-a` + `maxp*`/`ma*` MDAs (`maxp1-100gb-cfp`, `ma44-1gb-csfp`, `ma2-10gb-sfp+12-1gb-sfp`, …) | single-MDA → ~10 |
+| **7950 XRS-20/20e** | `xcm-x20`/`xcm2-x20` + `x*` MDAs (`x2-100g-tun`, `x40-10g-sfp`, `x4-100g-cfp2`, `x12-400g-qsfpdd`, `x24-100g-qsfp28`, `x6-200g-cfp2-dco`, `x6-400g-cfp8`) | single-/2-XCM matrix |
+
+### Build notes
+- **SR-7s / SR-14s are free wins** — same card sets and 2-XCM geometry as SR-2s/SR-2se;
+  just swap the chassis + carrier SVGs in the existing composers.
+- **Most IXR / ESS / SR-a** are single-MDA or fixed → use the `compose-sr1.mjs` 1-bay path
+  (or a small derive) per card. Need each chassis SVG + its IOM/IMM carrier + the `m*` cards
+  from `stencils/` (7250 IXR, 7450 ESS, 7750 SR Interface Modules, 7950 XRS dirs).
+- **Reusable technique — XMA recovery:** wide multi-port XMA cards (`x2-s36`, `s18/s36`,
+  `x24-…`) draw cages as merged shapes the cage heuristic can't cluster. Recover the
+  already-tagged card from an original composite (git) or an existing render, renumber the
+  data-port slot, re-isolate ids (see `compose-sr2s.mjs` `XMA`, `compose-sr2se.mjs` `XMA_INNER`).
+- **Resolver:** each new chassis needs a `stencilFor` branch (fixed → bare name; single-MDA →
+  `SINGLE_MDA_CHASSIS`; 2-bay/2-XCM → a pair branch like SR-2s/SR-2se).
