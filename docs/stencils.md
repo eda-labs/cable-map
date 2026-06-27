@@ -366,3 +366,9 @@ SR Linux, not SR-OS, and already covered.)
   data-port slot, re-isolate ids (see `compose-sr2s.mjs` `XMA`, `compose-sr2se.mjs` `XMA_INNER`).
 - **Resolver:** each new chassis needs a `stencilFor` branch (fixed → bare name; single-MDA →
   `SINGLE_MDA_CHASSIS`; 2-bay/2-XCM → a pair branch like SR-2s/SR-2se).
+- **Blank bays (partial fill):** every matrix has a `blank` config (MDA blanking plate for
+  SR-1/SR-1s, XCM filler for SR-2s/2se). The resolver places each MDA by its bay/XCM slot and
+  fills empty bays with `blank` — so one MDA installed renders `<card>_blank` / `blank_<card>`,
+  not a mirrored card. (`blank_blank` is dropped — it has no ports.) NB for SR-2s/2se the blank
+  is at **XCM-slot** granularity; an IOM with only one of its two MDA bays filled still renders
+  two of that type (the inner-IOM partial case isn't separately enumerated).

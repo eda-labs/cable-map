@@ -49,11 +49,17 @@ export function stencilFor(platform: string, components?: Component[]): string {
       if (KNOWN.has(v)) return v;
     }
   }
-  // Two-bay chassis (SR-1, modular SR-1s): pair the fitted MDAs into a composite name.
+  // Two-bay chassis (SR-1, modular SR-1s): place each MDA in its bay; an empty bay -> a blank plate
+  // (e.g. one MDA installed -> "<card>_blank" / "blank_<card>").
   if (TWO_BAY_CHASSIS.has(platform)) {
-    const mdas = mdaTypes(components);
-    if (mdas.length) {
-      const pair = `${platform} ${mdas[0]}_${mdas[1] ?? mdas[0]}`;
+    const bay = new Map<string, string>();
+    for (const c of components ?? []) {
+      if (c.kind !== 'mda' || !c.type) continue;
+      const b = (c.slot ?? '').split('/').pop() || '1';
+      if (!bay.has(b)) bay.set(b, sanitise(c.type));
+    }
+    if (bay.size) {
+      const pair = `${platform} ${bay.get('1') ?? 'blank'}_${bay.get('2') ?? 'blank'}`;
       if (KNOWN.has(pair)) return pair;
     }
   }
@@ -68,11 +74,8 @@ export function stencilFor(platform: string, components?: Component[]): string {
       const slot = (c.slot ?? '').split(/[/-]/)[0];
       if (!bySlot.has(slot)) bySlot.set(slot, slotCode(c.type));
     }
-    const codes = [...bySlot.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
-      .map((e) => e[1]);
-    if (codes.length) {
-      const pair = `7750 SR-2se ${codes[0]}_${codes[1] ?? codes[0]}`;
+    if (bySlot.size) {
+      const pair = `7750 SR-2se ${bySlot.get('1') ?? 'blank'}_${bySlot.get('2') ?? 'blank'}`;
       if (KNOWN.has(pair)) return pair;
     }
   }
@@ -91,11 +94,8 @@ export function stencilFor(platform: string, components?: Component[]): string {
       const slot = (c.slot ?? '').split(/[/-]/)[0];
       if (!bySlot.has(slot)) bySlot.set(slot, slotCode(c.type));
     }
-    const codes = [...bySlot.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
-      .map((e) => e[1]);
-    if (codes.length) {
-      const pair = `7750 SR-2s ${codes[0]}_${codes[1] ?? codes[0]}`;
+    if (bySlot.size) {
+      const pair = `7750 SR-2s ${bySlot.get('1') ?? 'blank'}_${bySlot.get('2') ?? 'blank'}`;
       if (KNOWN.has(pair)) return pair;
     }
   }
