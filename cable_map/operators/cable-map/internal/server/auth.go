@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -102,18 +103,25 @@ func isLoopback(r *http.Request) bool {
 // param that SSE EventSource must use since it can't set headers) against EDA's JWKS, and checks it
 // carries an allowed role.
 func (a *authManager) authenticate(r *http.Request) bool {
-	tok := bearerToken(r.Header.Get("Authorization"))
+	tok, via := bearerToken(r.Header.Get("Authorization")), "header"
 	if tok == "" {
-		tok = r.URL.Query().Get("access_token")
+		tok, via = r.URL.Query().Get("access_token"), "query"
 	}
 	if tok == "" {
+		log.Printf("[auth] %s: no token (Authorization header present=%t)", r.URL.Path, r.Header.Get("Authorization") != "")
 		return false
 	}
 	claims := jwt.MapClaims{}
 	if _, err := jwt.ParseWithClaims(tok, claims, a.keyfunc, jwt.WithValidMethods([]string{"RS256"})); err != nil {
+		log.Printf("[auth] %s: token via %s failed to verify: %v", r.URL.Path, via, err)
 		return false
 	}
-	return a.isAllowed(rolesFromClaims(claims))
+	roles := rolesFromClaims(claims)
+	if !a.isAllowed(roles) {
+		log.Printf("[auth] %s: role denied; token roles=%v", r.URL.Path, roles)
+		return false
+	}
+	return true
 }
 
 func (a *authManager) keyfunc(t *jwt.Token) (any, error) {

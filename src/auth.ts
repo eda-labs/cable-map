@@ -5,7 +5,7 @@
 import Keycloak from 'keycloak-js';
 
 const BASE = import.meta.env.BASE_URL;
-const isLoopback = (h: string) => /^(localhost|127\.|0\.0\.0\.0)$/.test(h);
+const isLoopback = (h: string) => h === 'localhost' || h === '0.0.0.0' || h === '::1' || h.startsWith('127.');
 
 let kc: Keycloak | null = null;
 let latest = '';

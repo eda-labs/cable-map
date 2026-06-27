@@ -18,7 +18,7 @@ function withToken(url: string): string {
 
 export async function fetchTopology(namespace = ''): Promise<Topology> {
   const qs = namespace ? `?ns=${encodeURIComponent(namespace)}` : '';
-  const res = await fetch(`${BASE}api/topology${qs}`, { headers: await authHeader() });
+  const res = await fetch(withToken(`${BASE}api/topology${qs}`), { headers: await authHeader() });
   if (!res.ok) throw new Error(`topology ${res.status}: ${(await res.json()).error || ''}`);
   return res.json();
 }
@@ -28,7 +28,7 @@ export async function fetchTopology(namespace = ''): Promise<Topology> {
 // `retry:` hint). Returns an unsubscribe that closes the stream.
 export async function fetchNamespaces(): Promise<string[]> {
   try {
-    const res = await fetch(`${BASE}api/namespaces`, { headers: await authHeader() });
+    const res = await fetch(withToken(`${BASE}api/namespaces`), { headers: await authHeader() });
     return res.ok ? await res.json() : [];
   } catch { return []; }
 }

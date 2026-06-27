@@ -21,14 +21,15 @@ import (
 )
 
 type Server struct {
-	store *eda.Store
-	port  string
-	spa   http.Handler
-	auth  *authManager
+	store    *eda.Store
+	port     string
+	spa      http.Handler
+	auth     *authManager
+	renderer *pdfRenderer
 }
 
 func New(store *eda.Store, port string) *Server {
-	return &Server{store: store, port: port, spa: spaHandler(distRoot()), auth: newAuthManager()}
+	return &Server{store: store, port: port, spa: spaHandler(distRoot()), auth: newAuthManager(), renderer: newPDFRenderer()}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -60,6 +61,7 @@ func (s *Server) Run(ctx context.Context) error {
 	srv := &http.Server{Addr: ":" + s.port, Handler: s.Handler()}
 	go func() {
 		<-ctx.Done()
+		s.renderer.close() // tear down the pooled headless Chrome
 		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(shutCtx)

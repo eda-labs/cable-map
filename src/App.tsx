@@ -5,6 +5,7 @@ import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
   CircularProgress, Chip, Divider, TextField, Tabs, Tab, Grow,
   FormControl, InputAdornment, Select, MenuItem, Checkbox, ListItemText,
+  Snackbar, Alert,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
@@ -19,7 +20,7 @@ import SvgGlyph from './icons/SvgGlyph';
 import pdfIcon from './icons/pdf.svg?raw';
 import excelIcon from './icons/excel.svg?raw';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
-import { currentToken } from './auth';
+import { authHeader, currentToken } from './auth';
 import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, isLargeTopology, switchPortCenter, type SwitchData } from './graph';
 import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
@@ -341,6 +342,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [query, setQuery] = useState('');
   const [selectedNodeLabels, setSelectedNodeLabels] = useState<string[]>([]); // [] = no filter
   const [namespace, setNamespace] = useState('');
+  const [pdfState, setPdfState] = useState<{ status: 'idle' | 'loading' | 'error'; message?: string }>({ status: 'idle' });
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [namespacesReady, setNamespacesReady] = useState(false);
   const [edgeLinkMode, setEdgeLinkMode] = useState<EdgeLinkMode>('enabled');
@@ -676,7 +678,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     return displayEdges.filter((edge) => flowNodeIds.has(String(edge.source)) && flowNodeIds.has(String(edge.target)));
   }, [useWebglEdges, usePolishGlEdges, largeTopology, displayEdges, flowNodeIds]);
 
-  const openPdf = (ids: string[]) => {
+  const openPdf = async (ids: string[]) => {
+    if (pdfState.status === 'loading') return;
     const targets = ids.length ? ids : (topo?.nodes.map((n) => n.name) ?? []);
     const params = new URLSearchParams();
     if (ids.length) params.set('nodes', ids.join(','));
@@ -684,13 +687,45 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     const sub = edgeRemote.subset(targets);
     if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
     const tok = currentToken();
-    if (tok) params.set('access_token', tok); // /pdf is a navigation (window.open) — can't set a header
+    if (tok) params.set('access_token', tok); // header gets stripped by the proxy; query param survives
     const qs = params.toString();
-    window.open(`${BASE}pdf${qs ? `?${qs}` : ''}`, '_blank');
+    setPdfState({ status: 'loading' });
+    try {
+      const res = await fetch(`${BASE}pdf${qs ? `?${qs}` : ''}`, { headers: await authHeader() });
+      if (!res.ok) {
+        const detail = await res.json().then((b) => b?.error).catch(() => '');
+        throw new Error(detail ? `PDF export failed: ${detail}` : `PDF export failed (HTTP ${res.status})`);
+      }
+      const blob = await res.blob();
+      if (blob.size === 0) throw new Error('PDF export returned an empty document');
+      const name = /filename="?([^"]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'cable-map.pdf';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setPdfState({ status: 'idle' });
+    } catch (e) {
+      // fetch only throws (TypeError) when the request never completed
+      const message = e instanceof TypeError ? 'PDF export failed: service unreachable'
+        : e instanceof Error ? e.message : 'PDF export failed';
+      setPdfState({ status: 'error', message });
+    }
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <Snackbar
+        open={pdfState.status === 'error'}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setPdfState({ status: 'idle' })}>
+          {pdfState.message}
+        </Alert>
+      </Snackbar>
       <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar variant="dense" sx={{ gap: 1.5, position: 'relative' }}>
           <img src={`${BASE}eda.svg`} alt="EDA" style={{ height: 26 }} />
@@ -749,9 +784,12 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           {ready && (
             <Tooltip title={selected.length ? `Download PDF (${selected.length} selected)` : 'Download PDF (all nodes)'}>
               <IconButton size="small" sx={{ color: 'text.primary' }}
+                disabled={pdfState.status === 'loading'}
                 onClick={() => openPdf(selected)}>
                 <Badge badgeContent={selected.length} color="primary">
-                  <SvgGlyph src={pdfIcon} />
+                  {pdfState.status === 'loading'
+                    ? <CircularProgress size={24} color="primary" /> // keep 24px or the toolbar shifts on swap
+                    : <SvgGlyph src={pdfIcon} />}
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -913,8 +951,11 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               <Box sx={{ flex: 1 }} />
               <Tooltip title="Download PDF">
                 <IconButton size="small" sx={{ color: 'text.primary' }}
+                  disabled={pdfState.status === 'loading'}
                   onClick={() => openPdf([openNode.name])}>
-                  <SvgGlyph src={pdfIcon} />
+                  {pdfState.status === 'loading'
+                    ? <CircularProgress size={24} color="primary" /> // keep 24px or the toolbar shifts on swap
+                    : <SvgGlyph src={pdfIcon} />}
                 </IconButton>
               </Tooltip>
               {topo && (
