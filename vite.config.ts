@@ -83,12 +83,12 @@ const mockApiPlugin = (): Plugin => ({
 
 // Dev-only: public/ assets aren't in the module graph, so editing a front-panel SVG never triggers
 // HMR. Watch them and ping the client (the stencil viewer re-fetches the changed panel in place).
+const isPanel = (f: string) => f.replace(/\\/g, '/').includes('/public/frontpanel/') && f.endsWith('.svg')
 const frontpanelHmr = (): Plugin => ({
   name: 'cable-map-frontpanel-hmr',
   configureServer(server: ViteDevServer) {
     const dir = new URL('./public/frontpanel', import.meta.url)
     server.watcher.add(dir.pathname)
-    const isPanel = (f: string) => f.replace(/\\/g, '/').includes('/public/frontpanel/') && f.endsWith('.svg')
     const notify = (file: string) => { if (isPanel(file)) server.ws.send({ type: 'custom', event: 'cable-map:frontpanel' }) }
     server.watcher.on('add', notify)
     server.watcher.on('change', notify)

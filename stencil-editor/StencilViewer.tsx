@@ -16,7 +16,7 @@ import { BASE } from '../src/api';
 import SwitchNode from '../src/SwitchNode';
 import type { SwitchData } from '../src/graph';
 
-const ALL = Object.keys(frontpanelMeta).sort();
+const ALL = Object.keys(frontpanelMeta).toSorted();
 const BASE_SUB = '— base —';
 
 // split a stencil name into [platform group, variant subtype]. Only the modular chassis fan out into
@@ -41,7 +41,7 @@ const GROUPS = (() => {
   for (const arr of map.values()) arr.sort((a, b) => a.sub.localeCompare(b.sub, undefined, { numeric: true }));
   return map;
 })();
-const GROUP_NAMES = [...GROUPS.keys()].sort();
+const GROUP_NAMES = [...GROUPS.keys()].toSorted();
 
 type Meta = { ports: number; rows: number; aspect: number; slotted: boolean; layout: { p: string; x: number; y: number; w: number; h: number }[] };
 const META = frontpanelMeta as Record<string, Meta>;
@@ -98,6 +98,8 @@ function userBox(svg: SVGSVGElement, p: SVGGraphicsElement) {
 function Inspector({ name, fillCages, rev, onPick }: { name: string; fillCages: boolean; rev: number; onPick: (p: Pick | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const sel = useRef<{ el: SVGPathElement; fill: string } | null>(null);
+  const onPickRef = useRef(onPick);
+  onPickRef.current = onPick;
 
   const paintCages = (svg: SVGSVGElement) => {
     for (const p of svg.querySelectorAll<SVGPathElement>('path[data-port]')) {
@@ -179,7 +181,7 @@ function Inspector({ name, fillCages, rev, onPick }: { name: string; fillCages: 
       const fill = path.getAttribute('style')?.match(/fill\s*:\s*[^;]+/)?.[0] || path.getAttribute('fill') || '(none)';
       const d = path.getAttribute('d') || '';
       navigator.clipboard?.writeText(d).catch(() => {});
-      onPick({ port: path.getAttribute('data-port'), d, fill, cx: +c.cx.toFixed(2), cy: +c.cy.toFixed(2), w: +c.w.toFixed(2), h: +c.h.toFixed(2) });
+      onPickRef.current({ port: path.getAttribute('data-port'), d, fill, cx: +c.cx.toFixed(2), cy: +c.cy.toFixed(2), w: +c.w.toFixed(2), h: +c.h.toFixed(2) });
     };
     el.addEventListener('mousemove', onMove);
     el.addEventListener('mouseleave', clearHov);
@@ -205,7 +207,10 @@ export default function StencilViewer() {
   const [sub, setSub] = useState(subs[0]?.sub ?? BASE_SUB);
   const [pick, setPick] = useState<Pick | null>(null);
   const [rev, setRev] = useState(0);
-  const name = useMemo(() => (subs.find((s) => s.sub === sub) ?? subs[0])?.name ?? ALL[0], [subs, sub]);
+  const name = useMemo(() => {
+    const list = GROUPS.get(group) ?? [];
+    return (list.find((s) => s.sub === sub) ?? list[0])?.name ?? ALL[0];
+  }, [group, sub]);
   const subIdx = subs.findIndex((s) => s.sub === sub);
 
   // hot-reload: re-fetch the current panel in place when its SVG is regenerated (keeps the selection)

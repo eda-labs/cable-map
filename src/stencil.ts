@@ -37,7 +37,7 @@ const sanitise = (t: string) => t.replace(/[/+]/g, '-');
 const mdaTypes = (components?: Component[]): string[] =>
   (components ?? [])
     .filter((c) => c.kind === 'mda' && c.type)
-    .sort((a, b) => (a.slot ?? '').localeCompare(b.slot ?? '', undefined, { numeric: true }))
+    .toSorted((a, b) => (a.slot ?? '').localeCompare(b.slot ?? '', undefined, { numeric: true }))
     .map((c) => sanitise(c.type!));
 
 // The stencil name to render for a node: a card-derived variant for modular chassis when that stencil
@@ -46,9 +46,9 @@ export function stencilFor(platform: string, components?: Component[]): string {
   // 7750 SR-1s also takes a full-width XMA-s (s18/s36) that fills the XCM -> single faceplate;
   // its ms* MDAs pair via the two-bay branch below.
   if (platform === '7750 SR-1s') {
-    const xma = mdaTypes(components).find((t) => /^s18|^s36/.test(t));
+    const xma = mdaTypes(components).find((t) => t.startsWith('s18') || t.startsWith('s36'));
     if (xma) {
-      const v = `7750 SR-1s ${/^s18/.test(xma) ? 's18-100gb-qsfp28' : 's36-400gb-qsfpdd'}`;
+      const v = `7750 SR-1s ${xma.startsWith('s18') ? 's18-100gb-qsfp28' : 's36-400gb-qsfpdd'}`;
       if (KNOWN.has(v)) return v;
     }
   }
@@ -86,10 +86,10 @@ export function stencilFor(platform: string, components?: Component[]): string {
   // (s18/s36, SKUs collapse to one code each) or an IOM-s with 2 MDA-s. Group MDAs by XCM slot.
   if (platform === '7750 SR-2s') {
     const slotCode = (t: string) =>
-      /^s18/.test(t) ? 's18-100gb-qsfp28'
-        : /^s36/.test(t) ? 's36-400gb-qsfpdd'
-          : t.endsWith('-b') && /^ms16/.test(t) ? 'ms16-100gb-sfpdd-4-100gb-qsfp28' // -b rev, same faceplate
-            : t.endsWith('-b') && /^ms8/.test(t) ? 'ms8-100gb-sfpdd-2-100gb-qsfp28'
+      t.startsWith('s18') ? 's18-100gb-qsfp28'
+        : t.startsWith('s36') ? 's36-400gb-qsfpdd'
+          : t.endsWith('-b') && t.startsWith('ms16') ? 'ms16-100gb-sfpdd-4-100gb-qsfp28' // -b rev, same faceplate
+            : t.endsWith('-b') && t.startsWith('ms8') ? 'ms8-100gb-sfpdd-2-100gb-qsfp28'
               : sanitise(t);
     const bySlot = new Map<string, string>();
     for (const c of components ?? []) {
