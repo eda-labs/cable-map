@@ -38,12 +38,30 @@ var kinds = []crKind{
 	{"interfaces.eda.nokia.com", "v1alpha1", "Breakout"},
 }
 
-const debounce = 300 * time.Millisecond
+const (
+	debounce              = 300 * time.Millisecond
+	dashboardStatusJsPath = ".cluster.apps.cable-map.status"
+)
 
 var (
 	ErrTopoNodeNotFound  = errors.New("toponode not found")
 	ErrTopoNodeAmbiguous = errors.New("toponode name exists in multiple namespaces")
 )
+
+type DashboardStatus struct {
+	ID         string `json:"id"`
+	Service    string `json:"service"`
+	Open       string `json:"open"`
+	URL        string `json:"url"`
+	HTTP       string `json:"http"`
+	Data       string `json:"data"`
+	Status     string `json:"status"`
+	Namespaces int    `json:"namespaces"`
+	Nodes      int    `json:"nodes"`
+	Links      int    `json:"links"`
+	LAGs       int    `json:"lags"`
+	Details    string `json:"details,omitempty"`
+}
 
 type topoSub struct {
 	filter []string
@@ -65,8 +83,9 @@ type Store struct {
 	nsSubs   map[*nsSub]struct{}
 	timer    *time.Timer
 
-	anySynced bool
-	lastErr   string
+	anySynced  bool
+	lastErr    string
+	statusLast string
 }
 
 // NewStore starts the per-resource streams and returns immediately; data fills in as the
@@ -90,6 +109,7 @@ func (s *Store) streamKind(ctx context.Context, k crKind) {
 		sc, err := state.Stream(jp, []string{"**"}, state.Context(ctx))
 		if err != nil {
 			s.setErr(err)
+			s.scheduleRebuild()
 			log.Printf("[eda] stream %s subscribe failed: %v", k.kind, err)
 			if !sleep(ctx, 2*time.Second) {
 				return
@@ -100,6 +120,7 @@ func (s *Store) streamKind(ctx context.Context, k crKind) {
 			data, syncComplete, err := sc.Get()
 			if err != nil {
 				s.setErr(err)
+				s.scheduleRebuild()
 				log.Printf("[eda] stream %s recv error: %v", k.kind, err)
 				break // reconnect
 			}
@@ -159,7 +180,6 @@ func (s *Store) scheduleRebuild() {
 
 func (s *Store) rebuild() {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.timer = nil
 
 	// namespaces
@@ -190,6 +210,18 @@ func (s *Store) rebuild() {
 		}
 		sub.last = j
 		sendTopo(sub, snapVal[sub.fkey])
+	}
+
+	status := s.dashboardStatusLocked()
+	statusJSON := mustJSON(status)
+	shouldPublishStatus := statusJSON != s.statusLast
+	if shouldPublishStatus {
+		s.statusLast = statusJSON
+	}
+	s.mu.Unlock()
+
+	if shouldPublishStatus {
+		publishDashboardStatus(status)
 	}
 }
 
@@ -318,6 +350,56 @@ func (s *Store) namespacesLocked() []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func (s *Store) dashboardStatusLocked() DashboardStatus {
+	namespaces := s.namespacesLocked()
+	topo := s.snapshotLocked(nil)
+	dataStatus := "Ready"
+	if !s.anySynced {
+		dataStatus = "Syncing"
+	}
+	if s.lastErr != "" {
+		if s.anySynced {
+			dataStatus = "Degraded"
+		} else {
+			dataStatus = "Unavailable"
+		}
+	}
+
+	status := DashboardStatus{
+		ID:         "cable-map",
+		Service:    "Cable Map",
+		Open:       "View",
+		URL:        "/core/httpproxy/v1/cable-map/",
+		HTTP:       "Reachable",
+		Data:       dataStatus,
+		Status:     "Reachable / " + dataStatus,
+		Namespaces: len(namespaces),
+		Nodes:      len(topo.Nodes),
+		Links:      len(topo.Links),
+		LAGs:       len(topo.Lags),
+	}
+	if s.lastErr != "" {
+		status.Details = s.lastErr
+	}
+	return status
+}
+
+func publishDashboardStatus(status DashboardStatus) {
+	if err := state.Update(dashboardStatusJsPath, status); err != nil {
+		var updateWarning *state.UpdateWarning
+		if errors.As(err, &updateWarning) {
+			log.Printf("[eda] dashboard status update warning: %v", updateWarning)
+			return
+		}
+		log.Printf("[eda] dashboard status update failed: %v", err)
+	}
+}
+
+func mustJSON(v any) string {
+	b, _ := json.Marshal(v)
+	return string(b)
 }
 
 // ---- helpers --------------------------------------------------------------------

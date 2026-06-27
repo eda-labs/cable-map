@@ -17,6 +17,8 @@ metadata:
   namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       eda.labs/app: cable-map
@@ -72,6 +74,11 @@ spec:
               mountPath: /var/run/eda/tls/internal/client
             - name: trustbundle
               mountPath: /var/run/eda/tls/internal/trust
+            # eda-api CA, so we can verify TLS when fetching the keycloak JWKS from eda-api.<ns>.svc
+            # to validate user bearer tokens. Mounted (not read via the API) so no RBAC is needed.
+            - name: eda-api-ca
+              mountPath: /var/run/eda/tls/eda-api
+              readOnly: true
       volumes:
         - name: tls
           csi:
@@ -88,3 +95,7 @@ spec:
             defaultMode: 420
             name: eda-internal-trust-bundle
             optional: false
+        - name: eda-api-ca
+          secret:
+            defaultMode: 420
+            secretName: eda-api-ca

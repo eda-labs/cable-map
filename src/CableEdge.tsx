@@ -6,7 +6,7 @@ import { useLldp } from './lldp';
 import { useGroupedEdges } from './edgeRoute';
 import type { LldpStatus } from './api';
 
-type Data = { kind: CableKind; a: string; b: string; count?: number; lldp?: LldpStatus; forceOn?: boolean };
+type Data = { kind: CableKind; a: string; b: string; count?: number; lldp?: LldpStatus; forceOn?: boolean; fast?: boolean };
 
 const ctrlOffset = (dist: number, c = 0.25) => (dist >= 0 ? 0.5 * dist : c * 25 * Math.sqrt(-dist));
 function control(pos: Position, x1: number, y1: number, x2: number, y2: number): [number, number] {
@@ -24,10 +24,16 @@ function control(pos: Position, x1: number, y1: number, x2: number, y2: number):
 function CableEdge(props: EdgeProps) {
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props;
   const d = data as Data;
-  const traced = useTrace((s) => s.edges.has(id));
-  const traceAny = useTrace((s) => s.any);
-  const smallTrace = useTrace((s) => s.edges.size <= 4);
-  const remoteVisible = useTrace((s) => !id.startsWith('stub|') || s.key === `cable:${id}`);
+  const traceBits = useTrace((s) => [
+    s.any ? '1' : '0',
+    s.edges.has(id) ? '1' : '0',
+    s.edges.size <= 4 ? '1' : '0',
+    !id.startsWith('stub|') || s.key === `cable:${id}` ? '1' : '0',
+  ].join(''));
+  const traceAny = traceBits[0] === '1';
+  const traced = traceBits[1] === '1';
+  const smallTrace = traceBits[2] === '1';
+  const remoteVisible = traceBits[3] === '1';
   const mode: Mode = !traceAny ? 'idle' : traced || d.forceOn ? 'on' : 'dim';
   // only label when a SMALL trace is active (single cable / LAG) — tracing a whole
   // switch lights 8-20 cables and stacked end labels would just be noise.
@@ -81,7 +87,7 @@ function CableEdge(props: EdgeProps) {
           opacity: dim ? 0.12 : on ? 1 : 'var(--edge-idle)',
           transition: 'stroke-width 120ms, opacity 120ms',
         }} />
-      {count > 1 && (
+      {count > 1 && (!d.fast || on) && (
         <EdgeLabelRenderer>
           <div style={{
             position: 'absolute', transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,

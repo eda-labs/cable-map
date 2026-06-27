@@ -1,0 +1,41 @@
+apiVersion: core.eda.nokia.com/v1
+kind: ClusterRole
+metadata:
+  labels:
+    eda.labs/app: cable-map
+    eda.labs/app-group: app-cable-map
+  name: cable-map-viewer
+  namespace: eda-system # eda-set: ${EDA_BASE_NAMESPACE}
+spec:
+  description: Read-only access to the Cable Map topology viewer.
+  resourceRules:
+    - apiGroups:
+        - cable-map.eda.labs/v1alpha1
+      resources:
+        - "*"
+      permissions: read
+    - apiGroups:
+        - core.eda.nokia.com/v1
+      resources:
+        - httpproxies
+        - toponodes
+        - topolinks
+      permissions: read
+    - apiGroups:
+        - interfaces.eda.nokia.com/v1
+      resources:
+        - interfaces
+      permissions: read
+    - apiGroups:
+        - interfaces.eda.nokia.com/v1alpha1
+      resources:
+        - breakouts
+      permissions: read
+  tableRules:
+    - path: .cluster.apps.cable-map.**
+      permissions: read
+  urlRules:
+    - path: /core/httpproxy/v1/cable-map
+      permissions: read
+    - path: /core/httpproxy/v1/cable-map/**
+      permissions: read

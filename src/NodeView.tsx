@@ -6,6 +6,7 @@ import FrontPanel from './FrontPanel';
 import RemoteCell from './RemoteCell';
 import { portIdx, cageKey, type Node, type Row } from './api';
 import { slottedOf } from './graph';
+import { stencilFor, componentsOf } from './stencil';
 
 type Props = {
   node: Node;
@@ -32,7 +33,8 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
 
   // cage ids occupied by this node's cables, derived from the interface names (slot-aware) so the
   // panel highlights match the stencil's data-port on both fixed and modular chassis.
-  const slotted = slottedOf(node.platform);
+  const stencil = stencilFor(node.platform, componentsOf(node.raw));
+  const slotted = slottedOf(stencil);
   const occupied = rows.map((r) => cageKey(r.label, slotted)).filter((c): c is string => c != null);
   const sorted = rows.toSorted((a, b) => (portIdx(a.label) ?? 0) - (portIdx(b.label) ?? 0));
   // print leaves empty cells blank (room to write); the drawer shows a dash
@@ -50,7 +52,7 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
       )}
 
       <Paper variant="outlined" className="fp-wrap" sx={{ p: 1, width: '100%', bgcolor: 'transparent', flexShrink: 0 }}>
-        <FrontPanel platform={node.platform} occupied={occupied}
+        <FrontPanel platform={stencil} occupied={occupied}
           hovered={interactive ? hovered : null}
           onHover={interactive ? setHovered : undefined}
           maxHeight={panelMaxHeight} onReady={onPanelReady} />

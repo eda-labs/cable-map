@@ -21,13 +21,15 @@ import (
 )
 
 type Server struct {
-	store *eda.Store
-	port  string
-	spa   http.Handler
+	store    *eda.Store
+	port     string
+	spa      http.Handler
+	auth     *authManager
+	renderer *pdfRenderer
 }
 
 func New(store *eda.Store, port string) *Server {
-	return &Server{store: store, port: port, spa: spaHandler(distRoot())}
+	return &Server{store: store, port: port, spa: spaHandler(distRoot()), auth: newAuthManager(), renderer: newPDFRenderer()}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -40,7 +42,18 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/topology/stream", s.topologyStream)
 	mux.HandleFunc("/pdf", s.pdf)
 	mux.Handle("/", s.spa) // SPA + client routes (/, /print)
-	return mux
+	return withCSP(s.auth.wrap(mux))
+}
+
+const cspPolicy = "default-src 'self'; base-uri 'self'; object-src 'none'; " +
+	"script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+	"font-src 'self'; connect-src 'self'; worker-src 'self' blob:; child-src 'self' blob:"
+
+func withCSP(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy", cspPolicy)
+		next.ServeHTTP(w, r)
+	})
 }
 
 // Run serves until ctx is cancelled, then shuts down gracefully.
@@ -48,6 +61,7 @@ func (s *Server) Run(ctx context.Context) error {
 	srv := &http.Server{Addr: ":" + s.port, Handler: s.Handler()}
 	go func() {
 		<-ctx.Done()
+		s.renderer.close() // tear down the pooled headless Chrome
 		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(shutCtx)

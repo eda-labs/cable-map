@@ -9,16 +9,17 @@ spec:
     documentation: cable_map/docs
     readme: cable_map/docs/README.md
     license: cable_map/docs/LICENSE.md
+    settings: cable_map/settings/openapi/eda_oas_cable-map.eda.labs_appsettings.json
   author: eda-labs
   dependencies:
     # The Go operator runtime image (serves the SPA + topology API, reads EDA state via EDK).
     # edabuilder bakes this container into the single OCI app image at publish/deploy time.
     - container:
-        image: ghcr.io/eda-labs/cable-map/operators/cable-map:latest
+        image: ghcr.io/eda-labs/cable-map/operators/cable-map:v0.1.7
         name: cable-map
   description: Cable-map topology and front-panel view for EDA fabrics.
   group: cable-map.eda.labs
-  image: ghcr.io/eda-labs/cable-map:v0.1.1
+  image: ghcr.io/eda-labs/cable-map:v0.1.7
   supportedCoreVersions:
     - v5.0.0-0
   title: Cable Map
@@ -26,6 +27,8 @@ spec:
   components:
     - cr:
         path: cable_map/operators/cable-map/config/deployment.yaml
+    - cr:
+        path: cable_map/operators/cable-map/config/access.yaml
     - cr:
         path: cable_map/operators/cable-map/config/service.yaml
     - cr:

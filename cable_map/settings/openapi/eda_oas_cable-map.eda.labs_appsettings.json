@@ -1,0 +1,33 @@
+{
+  "description": "AppSettings is the Schema for the Cable Map app settings API.",
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object.",
+      "type": "string"
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents.",
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "spec": {
+      "description": "AppSettingsSpec defines Cable Map install-time settings.",
+      "type": "object",
+      "title": "Specification",
+      "properties": {
+        "allowedRoles": {
+          "description": "Comma-separated EDA role names allowed to use Cable Map. A user is allowed if they hold any listed role; the internal edarole_ prefix is handled automatically. Defaults allow the dedicated Cable Map viewer role and EDA system administrators.",
+          "type": "string",
+          "title": "Allowed EDA role(s)",
+          "default": "cable-map-viewer,system-administrator"
+        }
+      },
+      "x-eda-nokia-com": {
+        "ui-order-priority": 30
+      }
+    }
+  }
+}

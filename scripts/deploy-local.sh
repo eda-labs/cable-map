@@ -32,7 +32,7 @@ echo "==> push operator image to dev registry"
 docker push "$PUSH_IMAGE"
 
 echo "==> edabuilder deploy (in-cluster target)"
-sed "s#image: ghcr.io/eda-labs/cable-map/operators/cable-map:latest#image: ${DEP_IMAGE}#" \
+sed -E "s#image: ghcr.io/eda-labs/cable-map/operators/cable-map:[^[:space:]]+#image: ${DEP_IMAGE}#" \
   cable_map/manifest.yaml > "$TMP/manifest.yaml"
 edabuilder deploy --app "manifest=${TMP}/manifest.yaml,context=${ROOT}" --skip-generate --verbose
 

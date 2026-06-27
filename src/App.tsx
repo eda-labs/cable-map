@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance } from '@xyflow/react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { ReactFlow, Background, BackgroundVariant, Controls, ControlButton, Panel, useNodesState, getViewportForBounds, type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes, type ReactFlowInstance, type Viewport } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   AppBar, Toolbar, Typography, Box, Drawer, IconButton, Tooltip, Badge,
   CircularProgress, Chip, Divider, TextField, Tabs, Tab, Grow,
-  FormControl, InputAdornment, Select, MenuItem,
+  FormControl, InputAdornment, Select, MenuItem, Checkbox, ListItemText,
+  Snackbar, Alert,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
@@ -19,10 +20,13 @@ import SvgGlyph from './icons/SvgGlyph';
 import pdfIcon from './icons/pdf.svg?raw';
 import excelIcon from './icons/excel.svg?raw';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
-import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, switchPortCenter, type SwitchData } from './graph';
+import { authHeader, currentToken } from './auth';
+import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, isLargeTopology, switchPortCenter, type SwitchData } from './graph';
 import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
 import { edgeRoute, useGroupedEdges } from './edgeRoute';
+import GLEdges from './GLEdges';
+import TraceHud from './TraceHud';
 import PolylineIcon from '@mui/icons-material/PolylineOutlined';
 import SwitchNode from './SwitchNode';
 import EndpointNode from './EndpointNode';
@@ -30,13 +34,21 @@ import CableEdge from './CableEdge';
 import NodeView from './NodeView';
 import NodeDetails from './NodeDetails';
 import NamespacePicker from './NamespacePicker';
+import { preloadFrontPanel } from './FrontPanel';
+import WebGLEdgeLayer from './WebGLEdgeLayer';
+import WebGLNodeLayer from './WebGLNodeLayer';
 import { exportXlsx } from './xlsx';
 import { edgeRemote } from './edge-remote';
 import './app.css';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
-// stable empty edge list for the dev "hide links" perf toggle (avoids a new [] each render)
+// cables render on the WebGL layer (GLEdges); React Flow gets an empty edge list. Stable ref so the
+// no-edges path doesn't allocate a new [] each render. Falls back to SVG edges if WebGL is unavailable.
 const NO_EDGES: RFEdge[] = [];
+const WEBGL_OK = (() => {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl') || c.getContext('experimental-webgl')); } catch { return false; }
+})();
+const NO_NODES: RFNode[] = [];
 const edgeTypes: EdgeTypes = { cable: CableEdge };
 
 const LEGEND: Array<[string, string]> = [
@@ -48,9 +60,13 @@ const LLDP_LEGEND: Array<[string, string]> = [
 
 type Mode = 'light' | 'dark';
 type EdgeLinkMode = 'enabled' | 'stub' | 'hidden';
-const NODE_LABEL_FILTER_ALL = '__all__';
 const SEARCH_PORT_ZOOM = 3.2;
 const EDGE_LINK_MODE_ORDER: EdgeLinkMode[] = ['enabled', 'stub', 'hidden'];
+const LARGE_DEFAULT_VIEWPORT: Viewport = { x: 24, y: 24, zoom: 0.35 };
+const LARGE_MIN_ZOOM = 0.02;
+const LARGE_MAX_ZOOM = 2;
+const LARGE_VIEWPORT_PAD = 900;
+const LARGE_WEBGL_NODE_ZOOM = 0.2;
 
 type SearchMatcher = {
   raw: string;
@@ -62,6 +78,8 @@ type SearchMatcher = {
 
 type PortSearchTarget = { x: number; y: number; nodeId: string; port: string };
 type SearchHighlight = { nodes: string[]; edges: string[]; ports: string[] };
+type FlowBounds = { x: number; y: number; width: number; height: number };
+type FitNodesOptions = { padding: number; duration: number; maxZoom?: number };
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -269,24 +287,76 @@ function edgeLinkModeIcon(mode: EdgeLinkMode) {
   }
 }
 
+function nodeIntersectsViewport(node: RFNode, viewport: Viewport, width: number, height: number): boolean {
+  const nodeWidth = node.width ?? node.measured?.width ?? 160;
+  const nodeHeight = node.height ?? node.measured?.height ?? 80;
+  const left = node.position.x * viewport.zoom + viewport.x;
+  const top = node.position.y * viewport.zoom + viewport.y;
+  const right = (node.position.x + nodeWidth) * viewport.zoom + viewport.x;
+  const bottom = (node.position.y + nodeHeight) * viewport.zoom + viewport.y;
+  return right >= -LARGE_VIEWPORT_PAD &&
+    left <= width + LARGE_VIEWPORT_PAD &&
+    bottom >= -LARGE_VIEWPORT_PAD &&
+    top <= height + LARGE_VIEWPORT_PAD;
+}
+
+function nodeBounds(node: RFNode): FlowBounds {
+  const width = node.measured?.width ?? node.width ?? node.initialWidth ?? 160;
+  const height = node.measured?.height ?? node.height ?? node.initialHeight ?? 80;
+  return { x: node.position.x, y: node.position.y, width, height };
+}
+
+function nodesBounds(nodes: RFNode[]): FlowBounds | null {
+  if (nodes.length === 0) return null;
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const node of nodes) {
+    const bounds = nodeBounds(node);
+    minX = Math.min(minX, bounds.x);
+    minY = Math.min(minY, bounds.y);
+    maxX = Math.max(maxX, bounds.x + bounds.width);
+    maxY = Math.max(maxY, bounds.y + bounds.height);
+  }
+
+  return { x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+}
+
+function useWindowSize() {
+  const [size, setSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  useEffect(() => {
+    const update = () => setSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return size;
+}
+
 export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: () => void }) {
   const [topo, setTopo] = useState<Topology | null>(null);
   const [err, setErr] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
-  const [selectedNodeLabelFilter, setSelectedNodeLabelFilter] = useState(NODE_LABEL_FILTER_ALL);
+  const [selectedNodeLabels, setSelectedNodeLabels] = useState<string[]>([]); // [] = no filter
   const [namespace, setNamespace] = useState('');
+  const [pdfState, setPdfState] = useState<{ status: 'idle' | 'loading' | 'error'; message?: string }>({ status: 'idle' });
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [namespacesReady, setNamespacesReady] = useState(false);
   const [edgeLinkMode, setEdgeLinkMode] = useState<EdgeLinkMode>('enabled');
   const [legendOpen, setLegendOpen] = useState(true);
-  const [hideEdges, setHideEdges] = useState(false); // dev: drop all cables to isolate edge render cost
+  const [webglEdgesUnavailable, setWebglEdgesUnavailable] = useState(false);
   const grouped = useGroupedEdges();
   const [drawerTab, setDrawerTab] = useState(0);      // 0 = Ports, 1 = Details
   useEffect(() => { setDrawerTab(0); }, [open]);      // reset to Ports when a new node opens
   const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
   const [flow, setFlow] = useState<ReactFlowInstance | null>(null);
+  const flowHostRef = useRef<HTMLDivElement | null>(null);
+  const [largeViewport, setLargeViewport] = useState<Viewport>(LARGE_DEFAULT_VIEWPORT);
+  const windowSize = useWindowSize();
+  const markWebglEdgesUnavailable = useCallback(() => setWebglEdgesUnavailable(true), []);
 
   // drag the top edge of the drawer to resize its height
   const startResize = (e: React.PointerEvent) => {
@@ -313,6 +383,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   // Reconnects when the namespace changes; clears first so stale data never lingers.
   useEffect(() => {
     setTopo(null);
+    setWebglEdgesUnavailable(false);
     if (!namespace) {
       setErr((current) => current || (namespacesReady ? 'no namespaces with topology resources' : ''));
       return;
@@ -320,13 +391,51 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     return streamTopology(namespace, (t) => { setTopo(t); setErr(''); }, setErr);
   }, [namespace, namespacesReady]);
 
+  useEffect(() => {
+    if (!topo) return;
+    for (const platform of new Set(topo.nodes.map((node) => node.platform).filter(Boolean))) {
+      void preloadFrontPanel(platform);
+    }
+  }, [topo]);
+
+  const largeTopology = useMemo(() => topo ? isLargeTopology(topo) : false, [topo]);
+  const effectiveEdgeLinkMode: EdgeLinkMode = edgeLinkMode;
+
+  useEffect(() => {
+    if (largeTopology) setLargeViewport(LARGE_DEFAULT_VIEWPORT);
+  }, [largeTopology, namespace]);
+
+  const fitNodes = useCallback((targetNodes: RFNode[], options: FitNodesOptions) => {
+    if (!flow || targetNodes.length === 0) return;
+    if (!largeTopology) {
+      void flow.fitView({ nodes: targetNodes, ...options });
+      return;
+    }
+
+    const bounds = nodesBounds(targetNodes);
+    const rect = flowHostRef.current?.getBoundingClientRect();
+    if (!bounds || !rect?.width || !rect.height) return;
+
+    const viewport = getViewportForBounds(
+      bounds,
+      rect.width,
+      rect.height,
+      LARGE_MIN_ZOOM,
+      options.maxZoom ?? LARGE_MAX_ZOOM,
+      options.padding,
+    );
+    void flow.setViewport(viewport, { duration: options.duration }).then((ok) => {
+      if (ok) setLargeViewport(flow.getViewport());
+    });
+  }, [flow, largeTopology]);
+
   const { nodes: builtNodes, edges, switchIds, adjacency } = useMemo(() => {
     const empty: Adjacency = { nodeEdges: new Map(), edgeEnds: new Map(), edgePorts: new Map(), search: new Map(), nodeLabels: new Map() };
     if (!topo) return { nodes: [] as RFNode[], edges: [], switchIds: new Set<string>(), adjacency: empty };
-    const g = buildGraph(topo);
+    const g = buildGraph(topo, { compact: false, tiered: largeTopology });
     setAdjacency(g.adjacency);
     return { nodes: g.nodes, edges: g.edges, switchIds: new Set(topo.nodes.map((n) => n.name)), adjacency: g.adjacency };
-  }, [topo]);
+  }, [topo, largeTopology]);
 
   // nodes live in React Flow state so dragging + selection apply. On a live update we keep
   // each existing node's current position (so a stream tick never snaps a dragged node back)
@@ -348,35 +457,35 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       for (const nodeLabels of adjacency.nodeLabels.values()) {
         for (const label of nodeLabels) labels.add(label);
       }
-      return [
-        { value: NODE_LABEL_FILTER_ALL, label: 'Labels: All Nodes' },
-        ...[...labels]
-          .toSorted((left, right) => left.localeCompare(right))
-          .map((value) => ({ value, label: value })),
-      ];
+      return [...labels].toSorted((left, right) => left.localeCompare(right));
     },
     [adjacency],
   );
 
   useEffect(() => {
-    setSelectedNodeLabelFilter(NODE_LABEL_FILTER_ALL);
+    setSelectedNodeLabels([]);
   }, [namespace]);
 
+  // drop any selected labels that no longer exist (e.g. after a namespace/topology change)
   useEffect(() => {
-    if (selectedNodeLabelFilter === NODE_LABEL_FILTER_ALL) return;
-    const optionExists = nodeLabelFilterOptions.some((option) => option.value === selectedNodeLabelFilter);
-    if (!optionExists) setSelectedNodeLabelFilter(NODE_LABEL_FILTER_ALL);
-  }, [nodeLabelFilterOptions, selectedNodeLabelFilter]);
+    setSelectedNodeLabels((prev) => {
+      const next = prev.filter((v) => nodeLabelFilterOptions.includes(v));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [nodeLabelFilterOptions]);
 
-  // the label filter HIDES everything that doesn't match: a node must carry the selected label.
-  // A matched switch keeps its endpoint chips
-  // (servers) so its cabling stays intact. null = no filter (show everything).
-  const filterActive = selectedNodeLabelFilter !== NODE_LABEL_FILTER_ALL;
+  // the label filter HIDES everything that doesn't match: a node must carry ANY selected label.
+  // A matched switch keeps its endpoint chips (servers) so its cabling stays intact.
+  // null = no filter (show everything).
+  const filterActive = selectedNodeLabels.length > 0;
   const shown = useMemo<Set<string> | null>(() => {
     if (!filterActive) return null;
+    const sel = new Set(selectedNodeLabels);
     const out = new Set<string>();
     for (const [id, set] of adjacency.nodeLabels) {
-      if (!set.has(selectedNodeLabelFilter)) continue;
+      let match = false;
+      for (const s of sel) if (set.has(s)) { match = true; break; }
+      if (!match) continue;
       out.add(id);
     }
     // keep a matched node's directly-attached context: a switch pulls in its endpoint chips (servers),
@@ -392,7 +501,14 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       }
     }
     return out;
-  }, [filterActive, selectedNodeLabelFilter, adjacency, switchIds]);
+  }, [filterActive, selectedNodeLabels, adjacency, switchIds]);
+
+  // read the latest `shown` via a ref so the auto-fit effect (below) fires on the user's label
+  // selection, not on every data refresh that recomputes `shown`.
+  const shownRef = useRef(shown);
+  shownRef.current = shown;
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
 
   // Ctrl/Cmd+A selects all switches (ignored while typing in an input)
   useEffect(() => {
@@ -409,6 +525,20 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
 
   const hasEdgeLinks = useMemo(() => edges.some((e) => isStubEdge(e.id)), [edges]);
   const ready = !!topo && topo.nodes.length > 0;
+
+  // auto-fit the canvas to the matched nodes whenever the label selection changes
+  useEffect(() => {
+    if (!flow || !ready) return;
+    const target = shownRef.current;
+    const handle = window.setTimeout(() => {
+      if (!target || target.size === 0) {
+        fitNodes(nodesRef.current, { padding: 0.12, duration: 400, maxZoom: largeTopology ? 0.5 : undefined });
+        return;
+      }
+      fitNodes(nodesRef.current.filter((node) => target.has(node.id)), { padding: 0.2, duration: 400, maxZoom: 1.4 });
+    }, 60);
+    return () => window.clearTimeout(handle);
+  }, [selectedNodeLabels, flow, ready, fitNodes, largeTopology]);
   const activeStubEdgeIds = useTrace((s) => {
     if (!s.edges.size) return '';
     const out: string[] = [];
@@ -417,16 +547,16 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   });
   const directlyActiveStubEdges = useMemo(() => new Set(activeStubEdgeIds ? activeStubEdgeIds.split('\n') : []), [activeStubEdgeIds]);
   const activeStubEdges = useMemo(
-    () => edgeLinkMode === 'stub' ? expandActiveStubEdges(edges, directlyActiveStubEdges) : directlyActiveStubEdges,
-    [edgeLinkMode, edges, directlyActiveStubEdges],
+    () => effectiveEdgeLinkMode === 'stub' ? expandActiveStubEdges(edges, directlyActiveStubEdges) : directlyActiveStubEdges,
+    [effectiveEdgeLinkMode, edges, directlyActiveStubEdges],
   );
   const activeStubPortIds = useMemo(
-    () => edgeLinkMode === 'stub' ? activeStubPorts(activeStubEdges, adjacency, switchIds) : [],
-    [edgeLinkMode, activeStubEdges, adjacency, switchIds],
+    () => effectiveEdgeLinkMode === 'stub' ? activeStubPorts(activeStubEdges, adjacency, switchIds) : [],
+    [effectiveEdgeLinkMode, activeStubEdges, adjacency, switchIds],
   );
   const activeStubEndpointIds = useMemo(() => {
     const out = new Set<string>();
-    if (edgeLinkMode !== 'stub') return out;
+    if (effectiveEdgeLinkMode !== 'stub') return out;
     for (const edgeId of activeStubEdges) {
       if (!edgeVisibleForShown(edgeId, shown, adjacency)) continue;
       const ends = adjacency.edgeEnds.get(edgeId);
@@ -436,13 +566,13 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       }
     }
     return out;
-  }, [edgeLinkMode, activeStubEdges, shown, adjacency, switchIds]);
+  }, [effectiveEdgeLinkMode, activeStubEdges, shown, adjacency, switchIds]);
   const displayNodes = useMemo(() => {
-    let ns = edgeLinkMode === 'enabled'
+    let ns = effectiveEdgeLinkMode === 'enabled'
       ? nodes
       : nodes.filter((n) => n.type !== 'endpoint' || activeStubEndpointIds.has(n.id));
     if (shown) ns = ns.filter((n) => shown.has(n.id));
-    if (edgeLinkMode !== 'stub') return ns;
+    if (effectiveEdgeLinkMode !== 'stub') return ns;
     const out: RFNode[] = [];
     for (const node of ns) {
       out.push(node.type === 'switch'
@@ -450,7 +580,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         : node);
     }
     return out;
-  }, [edgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds]);
+  }, [effectiveEdgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds]);
   const searchMatcher = useMemo(() => buildSearchMatcher(query), [query]);
   const displayNodeIds = useMemo(() => new Set(displayNodes.map((n) => n.id)), [displayNodes]);
   const searchTargetIds = useMemo(() => {
@@ -497,52 +627,105 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         void flow.setCenter(searchPortTarget.x, searchPortTarget.y, {
           zoom: SEARCH_PORT_ZOOM,
           duration: 350,
+        }).then((ok) => {
+          if (ok && largeTopology) setLargeViewport(flow.getViewport());
         });
         return;
       }
       if (searchTargetNodes.length === 0) return;
-      void flow.fitView({
-        nodes: searchTargetNodes,
+      fitNodes(searchTargetNodes, {
         padding: searchTargetNodes.length === 1 ? 0.45 : 0.25,
         duration: 350,
         maxZoom: 1.4,
       });
     }, 160);
     return () => window.clearTimeout(handle);
-  }, [flow, ready, searchMatcher, searchPortTarget, searchTargetNodes]);
+  }, [flow, ready, searchMatcher, searchPortTarget, searchTargetNodes, fitNodes, largeTopology]);
   const traceKey = useTrace((s) => s.key);
   const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
   const displayEdges = useMemo(() => {
     let base = edges;
-    if (edgeLinkMode === 'stub') {
+    if (effectiveEdgeLinkMode === 'stub') {
       base = edges
         .filter((e) => !isStubEdge(e.id) || activeStubEdges.has(e.id))
         .map((e) => activeStubEdges.has(e.id)
           ? Object.assign({}, e, { data: Object.assign({}, e.data, { forceOn: true }) })
           : e);
-    } else if (edgeLinkMode === 'hidden') {
+    } else if (effectiveEdgeLinkMode === 'hidden') {
       base = edges.filter((e) => !isStubEdge(e.id));
     }
     if (shown) base = base.filter((e) => edgeVisibleForShown(e.id, shown, adjacency));
     return elevatedEdge ? base.map((e) => (e.id === elevatedEdge ? { ...e, zIndex: 1 } : e)) : base;
-  }, [edgeLinkMode, edges, activeStubEdges, elevatedEdge, shown, adjacency]);
+  }, [effectiveEdgeLinkMode, edges, activeStubEdges, elevatedEdge, shown, adjacency]);
 
   const openNode = topo?.nodes.find((n) => n.name === open);
   const lldpOn = useLldp();
+  const useWebglEdges = largeTopology && WEBGL_OK && !webglEdgesUnavailable;
+  const usePolishGlEdges = !largeTopology && WEBGL_OK;
+  const useWebglNodeOverview = largeTopology && WEBGL_OK && !webglEdgesUnavailable && largeViewport.zoom < LARGE_WEBGL_NODE_ZOOM;
+  const flowNodes = useMemo(
+    () => useWebglNodeOverview
+      ? NO_NODES
+      : largeTopology
+        ? displayNodes.filter((node) => nodeIntersectsViewport(node, largeViewport, windowSize.width, windowSize.height))
+        : displayNodes,
+    [useWebglNodeOverview, largeTopology, displayNodes, largeViewport, windowSize],
+  );
+  const flowNodeIds = useMemo(() => new Set(flowNodes.map((node) => node.id)), [flowNodes]);
+  const flowEdges = useMemo(() => {
+    if (useWebglEdges || usePolishGlEdges) return NO_EDGES;
+    if (!largeTopology) return displayEdges;
+    return displayEdges.filter((edge) => flowNodeIds.has(String(edge.source)) && flowNodeIds.has(String(edge.target)));
+  }, [useWebglEdges, usePolishGlEdges, largeTopology, displayEdges, flowNodeIds]);
 
-  const openPdf = (ids: string[]) => {
+  const openPdf = async (ids: string[]) => {
+    if (pdfState.status === 'loading') return;
     const targets = ids.length ? ids : (topo?.nodes.map((n) => n.name) ?? []);
     const params = new URLSearchParams();
     if (ids.length) params.set('nodes', ids.join(','));
     if (namespace) params.set('ns', namespace);
     const sub = edgeRemote.subset(targets);
     if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
+    const tok = currentToken();
+    if (tok) params.set('access_token', tok); // header gets stripped by the proxy; query param survives
     const qs = params.toString();
-    window.open(`${BASE}pdf${qs ? `?${qs}` : ''}`, '_blank');
+    setPdfState({ status: 'loading' });
+    try {
+      const res = await fetch(`${BASE}pdf${qs ? `?${qs}` : ''}`, { headers: await authHeader() });
+      if (!res.ok) {
+        const detail = await res.json().then((b) => b?.error).catch(() => '');
+        throw new Error(detail ? `PDF export failed: ${detail}` : `PDF export failed (HTTP ${res.status})`);
+      }
+      const blob = await res.blob();
+      if (blob.size === 0) throw new Error('PDF export returned an empty document');
+      const name = /filename="?([^"]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'cable-map.pdf';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setPdfState({ status: 'idle' });
+    } catch (e) {
+      // fetch only throws (TypeError) when the request never completed
+      const message = e instanceof TypeError ? 'PDF export failed: service unreachable'
+        : e instanceof Error ? e.message : 'PDF export failed';
+      setPdfState({ status: 'error', message });
+    }
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <Snackbar
+        open={pdfState.status === 'error'}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setPdfState({ status: 'idle' })}>
+          {pdfState.message}
+        </Alert>
+      </Snackbar>
       <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar variant="dense" sx={{ gap: 1.5, position: 'relative' }}>
           <img src={`${BASE}eda.svg`} alt="EDA" style={{ height: 26 }} />
@@ -569,17 +752,24 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               />
             </Box>
           )}
-          {ready && (
+          {ready && nodeLabelFilterOptions.length > 0 && (
             <FormControl size="small" sx={{ width: 260 }}>
               <Select
-                value={selectedNodeLabelFilter}
-                onChange={(e) => setSelectedNodeLabelFilter(e.target.value)}
+                multiple
+                displayEmpty
+                value={selectedNodeLabels}
+                onChange={(e) => setSelectedNodeLabels(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(sel) => sel.length === 0
+                  ? <Box component="span" sx={{ color: 'text.secondary' }}>Label filter</Box>
+                  : sel.length === 1 ? sel[0] : `${sel.length} labels`}
                 inputProps={{ 'aria-label': 'Label filter' }}
+                MenuProps={{ slotProps: { paper: { sx: { maxHeight: 360 } } } }}
                 sx={{ height: 31 }}
               >
-                {nodeLabelFilterOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+                {nodeLabelFilterOptions.map((value) => (
+                  <MenuItem key={value} value={value} dense>
+                    <Checkbox size="small" checked={selectedNodeLabels.includes(value)} sx={{ py: 0, mr: 0.5 }} />
+                    <ListItemText primary={value} slotProps={{ primary: { noWrap: true } }} />
                   </MenuItem>
                 ))}
               </Select>
@@ -594,9 +784,12 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           {ready && (
             <Tooltip title={selected.length ? `Download PDF (${selected.length} selected)` : 'Download PDF (all nodes)'}>
               <IconButton size="small" sx={{ color: 'text.primary' }}
+                disabled={pdfState.status === 'loading'}
                 onClick={() => openPdf(selected)}>
                 <Badge badgeContent={selected.length} color="primary">
-                  <SvgGlyph src={pdfIcon} />
+                  {pdfState.status === 'loading'
+                    ? <CircularProgress size={24} color="primary" /> // keep 24px or the toolbar shifts on swap
+                    : <SvgGlyph src={pdfIcon} />}
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -626,49 +819,63 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Box ref={flowHostRef} sx={{ flex: 1, minHeight: 0 }}>
         {ready ? (
           <ReactFlow
-            nodes={displayNodes} edges={hideEdges ? NO_EDGES : displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={flowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onInit={setFlow}
             colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
             proOptions={{ hideAttribution: true }}
-            minZoom={0.15}
-            maxZoom={4}
-            onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
+            onlyRenderVisibleElements={largeTopology}
+            minZoom={largeTopology ? LARGE_MIN_ZOOM : 0.15}
+            maxZoom={largeTopology ? LARGE_MAX_ZOOM : 4}
+            onNodeClick={(_, n) => {
+              if (!switchIds.has(n.id)) return;
+              const k = `node:${n.id}`;
+              // first click pins the node's trace (highlight holds while you pan); a second click on
+              // the already-pinned node opens the drawer.
+              if (trace.getPinned() === k) setOpen(n.id); else trace.pin(k);
+            }}
+            onNodeDoubleClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
             onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
             onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}
             onEdgeMouseLeave={() => trace.hover(null)}
             onSelectionChange={onSel}
             onPaneClick={() => { setSelected([]); trace.clear(); }}
-            fitView fitViewOptions={{ padding: 0.12 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
+            onMove={largeTopology ? (_, nextViewport) => setLargeViewport(nextViewport) : undefined}
+            fitView={!largeTopology}
+            defaultViewport={largeTopology ? LARGE_DEFAULT_VIEWPORT : undefined}
+            fitViewOptions={{ padding: largeTopology ? 0.05 : 0.12, maxZoom: largeTopology ? 0.5 : 1.5 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+            <TraceHud />
+            {usePolishGlEdges && <GLEdges edges={displayEdges} dark={mode === 'dark'} />}
+            {useWebglEdges && (
+              <WebGLEdgeLayer nodes={displayNodes} edges={displayEdges} lldp={lldpOn} mode={mode} grouped={grouped} onUnavailable={markWebglEdgesUnavailable} />
+            )}
+            {largeTopology && (
+              <WebGLNodeLayer nodes={displayNodes} lldp={lldpOn} mode={mode} visible={useWebglNodeOverview} onUnavailable={markWebglEdgesUnavailable} />
+            )}
             <Controls position="top-right" showInteractive={false}>
               <ControlButton
                 onClick={() => edgeRoute.toggle()}
-                title={grouped ? 'Direct cabling' : 'Group cables through a shared bus'}
+                title={grouped ? 'Use curved links' : 'Use elbow link style'}
                 aria-label="Toggle cable routing"
+                style={{
+                  color: !grouped ? 'var(--eda-blue-400)' : undefined,
+                  background: !grouped ? 'color-mix(in srgb, var(--eda-blue-400) 12%, transparent)' : undefined,
+                }}
               >
-                <PolylineIcon style={{ color: grouped ? 'var(--eda-blue-400)' : undefined }} />
+                <PolylineIcon htmlColor={!grouped ? 'var(--eda-blue-400)' : undefined} />
               </ControlButton>
-              {import.meta.env.DEV && (
-                <ControlButton
-                  onClick={() => setHideEdges((v) => !v)}
-                  title={hideEdges ? 'Show links (dev)' : 'Hide links — perf test (dev)'}
-                  aria-label="Toggle links (dev)"
-                >
-                  <SettingsEthernetIcon style={{ opacity: hideEdges ? 0.4 : 1 }} />
-                </ControlButton>
-              )}
               {hasEdgeLinks && (
                 <ControlButton
                   onClick={() => setEdgeLinkMode((current) => nextEdgeLinkMode(current))}
                   title={edgeLinkModeTitle(edgeLinkMode)}
                   aria-label={edgeLinkModeTitle(edgeLinkMode)}
                 >
-                  {edgeLinkModeIcon(edgeLinkMode)}
+                  {edgeLinkModeIcon(effectiveEdgeLinkMode)}
                 </ControlButton>
               )}
             </Controls>
@@ -744,8 +951,11 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
               <Box sx={{ flex: 1 }} />
               <Tooltip title="Download PDF">
                 <IconButton size="small" sx={{ color: 'text.primary' }}
+                  disabled={pdfState.status === 'loading'}
                   onClick={() => openPdf([openNode.name])}>
-                  <SvgGlyph src={pdfIcon} />
+                  {pdfState.status === 'loading'
+                    ? <CircularProgress size={24} color="primary" /> // keep 24px or the toolbar shifts on swap
+                    : <SvgGlyph src={pdfIcon} />}
                 </IconButton>
               </Tooltip>
               {topo && (
