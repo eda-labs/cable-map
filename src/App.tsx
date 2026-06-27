@@ -789,7 +789,14 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             onlyRenderVisibleElements={largeTopology}
             minZoom={largeTopology ? LARGE_MIN_ZOOM : 0.15}
             maxZoom={largeTopology ? LARGE_MAX_ZOOM : 4}
-            onNodeClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
+            onNodeClick={(_, n) => {
+              if (!switchIds.has(n.id)) return;
+              const k = `node:${n.id}`;
+              // first click pins the node's trace (highlight holds while you pan); a second click on
+              // the already-pinned node opens the drawer.
+              if (trace.getPinned() === k) setOpen(n.id); else trace.pin(k);
+            }}
+            onNodeDoubleClick={(_, n) => { if (switchIds.has(n.id)) setOpen(n.id); }}
             onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
             onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}
             onEdgeMouseLeave={() => trace.hover(null)}

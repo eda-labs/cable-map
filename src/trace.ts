@@ -131,6 +131,7 @@ export const trace = {
     fTerm = ''; fLabels = []; hoverKey = null; pinnedKey = null; base = EMPTY; state = EMPTY; emit();
   },
   isPinned: () => !!pinnedKey,
+  getPinned: () => pinnedKey,
 };
 
 function subscribe(cb: () => void) { listeners.add(cb); return () => { listeners.delete(cb); }; }

@@ -4,6 +4,7 @@
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 import frontpanelMeta from './frontpanel-meta.json';
 import { cageKey, breakoutChannel, type Topology, type LagInfo, type LldpStatus, type Breakout } from './api';
+import { stencilFor, componentsOf } from './stencil';
 import type { Adjacency } from './trace';
 
 type FpMeta = { ports: number; rows: number; aspect: number; slotted: boolean; layout: PortPos[] };
@@ -254,6 +255,10 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   const tiered = options.tiered ?? compact;
   const byName = new Map(topo.nodes.map((n) => [n.name, n]));
   const role = (name: string) => byName.get(name)?.role ?? 'leaf';
+  // the stencil each node renders (its platform, or card-derived for modular SROS chassis); drives all
+  // sizing + FP_META lookups, while node.platform stays the displayed model name.
+  const stencilByName = new Map(topo.nodes.map((n) => [n.name, stencilFor(n.platform, componentsOf(n.raw))]));
+  const stencilOf = (name: string) => stencilByName.get(name) ?? '';
   const lagOf = (name?: string): LagInfo | undefined => (name ? topo.lags[name] : undefined);
   const sideBetween = (node: string, remote: string): 'top' | 'bottom' =>
     tierOf(role(remote)) <= tierOf(role(node)) ? 'top' : 'bottom';
@@ -294,7 +299,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   const epAccum = new Map<string, Accum>();
 
   for (const sw of topo.nodes) {
-    const slotted = slottedOf(sw.platform);
+    const slotted = slottedOf(stencilOf(sw.name));
     for (const r of sw.table ?? []) {
       const p = cageKey(r.label, slotted);
       if (p == null) continue;
@@ -305,7 +310,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
         // uplinks leave the top; a same-tier peer link (leaf↔leaf MLAG ISL) also routes over
         // the top, into the open space above — routing it below would dive through the host band.
         const side: 'top' | 'bottom' = remoteTier <= tierOf(sw.role) ? 'top' : 'bottom';
-        const rp = cageKey(r.remotePort, slottedOf(byName.get(r.remoteNode)?.platform ?? '')) ?? p;
+        const rp = cageKey(r.remotePort, slottedOf(stencilOf(r.remoteNode))) ?? p;
         // canonical per-cable id, stable across the mirrored far-side row
         const ends = [`${sw.name}:${r.remotePort}`, `${r.remoteNode}:${r.label}`].toSorted();
         const cableId = `isl|${ends[0]}|${ends[1]}`;
@@ -431,10 +436,11 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   const leaves = topo.nodes.filter((n) => tierOf(n.role) >= 2);
   const cores = topo.nodes.filter((n) => tierOf(n.role) < 2);
 
-  const swW = (p: string) => compact
+  // sized by the node's resolved stencil (callers pass the node name, not its display platform)
+  const swW = (name: string) => { const p = stencilOf(name); return compact
     ? COMPACT_SWITCH_W
-    : layoutOf(p) ? panelDims(rowsOf(p), aspectOf(p)).w + STRIP_PAD * 2 : switchW(portCountOf(p), rowsOf(p));
-  const swH = (p: string) => compact ? COMPACT_SWITCH_H : switchHOf(p);
+    : layoutOf(p) ? panelDims(rowsOf(p), aspectOf(p)).w + STRIP_PAD * 2 : switchW(portCountOf(p), rowsOf(p)); };
+  const swH = (name: string) => compact ? COMPACT_SWITCH_H : switchHOf(stencilOf(name));
   const pos = new Map<string, { x: number; y: number }>();
   const leafCenter = new Map<string, number>();
 
@@ -478,28 +484,28 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
       pod.leaves.sort((a, b) => naturalName(a.name, b.name));
       pod.spines.sort((a, b) => naturalName(a.name, b.name));
 
-      const maxLeafW = Math.max(1, ...pod.leaves.map((n) => swW(n.platform)));
-      const maxLeafH = Math.max(1, ...pod.leaves.map((n) => swH(n.platform)));
+      const maxLeafW = Math.max(1, ...pod.leaves.map((n) => swW(n.name)));
+      const maxLeafH = Math.max(1, ...pod.leaves.map((n) => swH(n.name)));
       const cols = Math.max(1, Math.min(LEAF_COLS, pod.leaves.length || 1));
       const leafRowGap = maxLeafH + EP_TOP_GAP + 2 * (EP_H + EP_VGAP) + 72;
       const leafGridW = cols * maxLeafW + (cols - 1) * GAP_X;
-      const spineGridW = pod.spines.reduce((sum, n) => sum + swW(n.platform), 0) + Math.max(0, pod.spines.length - 1) * SPINE_GAP;
+      const spineGridW = pod.spines.reduce((sum, n) => sum + swW(n.name), 0) + Math.max(0, pod.spines.length - 1) * SPINE_GAP;
       const podW = Math.max(leafGridW, spineGridW, switchW(32, 2));
 
       const leafStartX = cursor + (podW - leafGridW) / 2;
       for (const [i, leaf] of pod.leaves.entries()) {
         const col = i % cols;
         const row = Math.floor(i / cols);
-        const x = leafStartX + col * (maxLeafW + GAP_X) + (maxLeafW - swW(leaf.platform)) / 2;
+        const x = leafStartX + col * (maxLeafW + GAP_X) + (maxLeafW - swW(leaf.name)) / 2;
         const y = LEAF_TIER_Y + row * leafRowGap;
         pos.set(leaf.name, { x, y });
-        leafCenter.set(leaf.name, x + swW(leaf.platform) / 2);
+        leafCenter.set(leaf.name, x + swW(leaf.name) / 2);
       }
 
       let sx = cursor + (podW - spineGridW) / 2;
       for (const spine of pod.spines) {
         pos.set(spine.name, { x: sx, y: SPINE_TIER_Y });
-        sx += swW(spine.platform) + SPINE_GAP;
+        sx += swW(spine.name) + SPINE_GAP;
       }
       cursor += podW + POD_GAP;
     }
@@ -507,7 +513,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
     const supers = cores.filter((n) => tierOf(n.role) === 0).toSorted((a, b) => naturalName(a.name, b.name));
     const totalW = Math.max(cursor - POD_GAP, switchW(32, 2));
     for (const [i, node] of supers.entries()) {
-      const w = swW(node.platform);
+      const w = swW(node.name);
       const x = supers.length <= 1 ? (totalW - w) / 2 : (totalW - w) * (i / (supers.length - 1));
       pos.set(node.name, { x, y: SPINE_Y });
     }
@@ -516,20 +522,20 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
     const SLOT_GAP = 64;
     let cursor = 0;
     for (const lf of leaves) {
-      const w = Math.max(swW(lf.platform), EP_COLS * EP_W + (EP_COLS - 1) * EP_HGAP);
+      const w = Math.max(swW(lf.name), EP_COLS * EP_W + (EP_COLS - 1) * EP_HGAP);
       const x = cursor;
-      pos.set(lf.name, { x: x + (w - swW(lf.platform)) / 2, y: LEAF_Y });
+      pos.set(lf.name, { x: x + (w - swW(lf.name)) / 2, y: LEAF_Y });
       leafCenter.set(lf.name, x + w / 2);
       cursor += w + SLOT_GAP;
     }
     const spanL = 0, spanR = Math.max(cursor - SLOT_GAP, switchW(32, 2));
     // cores centred above the leaf span
     if (cores.length) {
-      const totalW = cores.reduce((s, c) => s + swW(c.platform), 0) + (cores.length - 1) * 120;
+      const totalW = cores.reduce((s, c) => s + swW(c.name), 0) + (cores.length - 1) * 120;
       let cx = (spanL + spanR) / 2 - totalW / 2;
       for (const c of cores) {
         pos.set(c.name, { x: cx, y: SPINE_Y });
-        cx += swW(c.platform) + 120;
+        cx += swW(c.name) + 120;
       }
     }
   }
@@ -538,14 +544,15 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
     const nodePorts = switchPorts.get(n.name) ?? [];
     return {
       id: n.name, type: 'switch', position: pos.get(n.name) ?? { x: 0, y: 0 },
-      width: swW(n.platform),
-      height: swH(n.platform),
-      initialWidth: swW(n.platform),
-      initialHeight: swH(n.platform),
+      width: swW(n.name),
+      height: swH(n.name),
+      initialWidth: swW(n.name),
+      initialHeight: swH(n.name),
       data: {
-        name: n.name, role: n.role, platform: n.platform, portCount: portCountOf(n.platform), rows: rowsOf(n.platform),
-        ports: nodePorts, layout: compact ? undefined : layoutOf(n.platform),
-        aspect: aspectOf(n.platform), breakouts: compact ? undefined : breakoutsWithInferredChannels(n.breakouts, nodePorts), compact,
+        name: n.name, role: n.role, platform: n.platform,
+        portCount: portCountOf(stencilOf(n.name)), rows: rowsOf(stencilOf(n.name)),
+        ports: nodePorts, layout: compact ? undefined : layoutOf(stencilOf(n.name)),
+        aspect: aspectOf(stencilOf(n.name)), breakouts: compact ? undefined : breakoutsWithInferredChannels(n.breakouts, nodePorts), compact,
       } satisfies SwitchData,
       draggable: !compact,
     };
@@ -554,7 +561,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   // single-homed chips fan out below their one leaf in an EP_COLS-wide grid; multihomed
   // (ESI) chips are clustered per leaf set and wrap inside that leaf span.
   const byLeaf = new Map(leaves.map((l) => [l.name, l]));
-  const leafTopOf = (id: string) => (pos.get(id)?.y ?? LEAF_Y) + swH(byLeaf.get(id)?.platform ?? '') + EP_TOP_GAP;
+  const leafTopOf = (id: string) => (pos.get(id)?.y ?? LEAF_Y) + swH(id) + EP_TOP_GAP;
   const single = endpoints.filter((e) => e.data.kind !== 'mlag');
   const multi = endpoints.filter((e) => e.data.kind === 'mlag');
 
@@ -582,7 +589,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
     const lf = byLeaf.get(id);
     const p = pos.get(id);
     if (!lf || !p) return null;
-    const w = swW(lf.platform);
+    const w = swW(lf.name);
     return { left: p.x, right: p.x + w };
   };
 

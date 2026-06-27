@@ -20,6 +20,8 @@ type Data = { kind: CableKind; a?: string; b?: string; count?: number; lldp?: Ll
 type Pt = { x: number; y: number; pos: Position };
 type Hit = { id: string; pts: XY[] };
 type Label = { key: string; x: number; y: number; text: string; color: string; badge: boolean };
+// cached per-cable geometry — trace-independent (polyline + per-vertex miter normals/length factor)
+type Geom = { id: string; pts: XY[]; n: number; mnx: Float64Array; mny: Float64Array; ml: Float64Array; kind?: CableKind; lldp?: LldpStatus; cnt: number; forceOn: boolean; a?: string; b?: string };
 type PointerState = { active: boolean; x: number; y: number; overNode: boolean; lastHover: string | null };
 
 const FLOATS = 9;       // a_pos(2) a_norm(2) a_color(4) a_half(1)
@@ -151,6 +153,8 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   const loc = useRef<Record<string, number | WebGLUniformLocation | null>>({});
   const count = useRef(0);
   const hitRef = useRef<Hit[]>([]);            // per-cable polylines for hover/click hit-testing
+  // cached geometry: recomputed only when edges/positions/routing change (NOT on hover/trace)
+  const geomCache = useRef<{ edges: RFEdge[]; posHash: number; grouped: boolean; geom: Geom[] } | null>(null);
   const pointerRef = useRef<PointerState>({ active: false, x: 0, y: 0, overNode: false, lastHover: null });
   const repickRef = useRef<(() => void) | null>(null);
   const [labels, setLabels] = useState<Label[]>([]);  // ×N + traced-endpoint labels (HTML overlay)
@@ -192,82 +196,88 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     // nodesReady dep re-runs this once measurement settles, so an EDA update can't draw garbage.
     if (!nodesReady) return;
     const { nodeLookup } = store.getState();
+
+    // --- GEOMETRY pass (cached) -----------------------------------------------------------------
+    // Resolving endpoints, sampling each cable's polyline (bezier/elbow) and computing the miter
+    // normals is the expensive work — and none of it depends on the trace/hover state. Recompute it
+    // only when the edge set, node positions/handles, or routing change; a hover reuses the cache.
+    const c = geomCache.current;
+    if (!c || c.edges !== edges || c.posHash !== posHash || c.grouped !== grouped) {
+      const offsetCache = new Map<string, Map<string, number>>();
+      const stemOffsets = (nodeId: string) => {
+        let m = offsetCache.get(nodeId);
+        if (!m) { m = buildStemOffsets(nodeLookup.get(nodeId)?.internals.handleBounds?.source ?? []); offsetCache.set(nodeId, m); }
+        return m;
+      };
+      const geom: Geom[] = [];
+      for (const e of edges) {
+        const s = handlePoint(nodeLookup.get(e.source), e.sourceHandle, 'source');
+        const t = handlePoint(nodeLookup.get(e.target), e.targetHandle, 'target');
+        if (!s || !t) continue;
+        const d = e.data as Data | undefined;
+        const peerArch = d?.kind === 'isl' && s.pos === Position.Top && t.pos === Position.Top;
+        const sDx = grouped ? (stemOffsets(e.source).get(e.sourceHandle ?? '') ?? 0) : 0;
+        const tDx = grouped ? (stemOffsets(e.target).get((e.targetHandle ?? '').replace(/t$/, '')) ?? 0) : 0;
+        const pts = cablePolyline({ x: s.x, y: s.y }, s.pos, { x: t.x, y: t.y }, t.pos, grouped, peerArch, sDx, tDx);
+        if (pts.length < 2) continue;
+        const n = Math.min(pts.length, 512);
+        // per-vertex miter normal + length factor (the width-independent geometry of the join)
+        const mnx = new Float64Array(n), mny = new Float64Array(n), ml = new Float64Array(n);
+        for (let i = 0; i < n; i++) {
+          let inx = 0, iny = 0, outx = 0, outy = 0;
+          if (i > 0) { const dx = pts[i].x - pts[i - 1].x, dy = pts[i].y - pts[i - 1].y, l = Math.hypot(dx, dy) || 1; inx = -dy / l; iny = dx / l; }
+          if (i < n - 1) { const dx = pts[i + 1].x - pts[i].x, dy = pts[i + 1].y - pts[i].y, l = Math.hypot(dx, dy) || 1; outx = -dy / l; outy = dx / l; }
+          if (i === 0) { mnx[i] = outx; mny[i] = outy; ml[i] = 1; }
+          else if (i === n - 1) { mnx[i] = inx; mny[i] = iny; ml[i] = 1; }
+          else {
+            let mx = inx + outx, my = iny + outy;
+            const l = Math.hypot(mx, my);
+            if (l < 1e-6) { mnx[i] = outx; mny[i] = outy; ml[i] = 1; }
+            else { mx /= l; my /= l; const cos = mx * outx + my * outy; mnx[i] = mx; mny[i] = my; ml[i] = 1 / (cos < 0.25 ? 0.25 : cos); if (ml[i] > 4) ml[i] = 4; } // miter limit
+          }
+        }
+        geom.push({ id: e.id, pts, n, mnx, mny, ml, kind: d?.kind, lldp: d?.lldp, cnt: d?.count ?? 1, forceOn: !!d?.forceOn, a: d?.a, b: d?.b });
+      }
+      hitRef.current = geom.map((g) => ({ id: g.id, pts: g.pts }));
+      geomCache.current = { edges, posHash, grouped, geom };
+    }
+    const geom = geomCache.current!.geom;
+
+    // --- APPEARANCE pass (runs on every hover — cheap: colour/alpha/width + buffer write only) ---
     const theme = dark ? 'd' : 'l';
-    const ordered = edges.toSorted((a, b) => Number(tracedEdges.has(a.id)) - Number(tracedEdges.has(b.id))); // traced last (on top)
-    // pass 1: resolve endpoints/style + the exact React Flow polyline; sum verts for an exact allocation.
-    // also collect per-cable hit-test polylines and the few HTML labels (×N badges + traced endpoints).
-    type Item = { id: string; pts: XY[]; col: [number, number, number]; alpha: number; half: number };
-    const items: Item[] = [];
-    const labelOut: Label[] = [];
+    const ordered = geom.toSorted((a, b) => Number(tracedEdges.has(a.id)) - Number(tracedEdges.has(b.id))); // traced last (on top)
     const smallTrace = tracedEdges.size <= 4;   // matches the SVG edge: only label a small trace
     let totalVerts = 0;
-    const offsetCache = new Map<string, Map<string, number>>();
-    const stemOffsets = (nodeId: string) => {
-      let m = offsetCache.get(nodeId);
-      if (!m) { m = buildStemOffsets(nodeLookup.get(nodeId)?.internals.handleBounds?.source ?? []); offsetCache.set(nodeId, m); }
-      return m;
-    };
-    for (const e of ordered) {
-      const s = handlePoint(nodeLookup.get(e.source), e.sourceHandle, 'source');
-      const t = handlePoint(nodeLookup.get(e.target), e.targetHandle, 'target');
-      if (!s || !t) continue;
-      const d = e.data as Data | undefined;
-      const on = tracedEdges.has(e.id) || !!d?.forceOn;
-      const dim = traceAny && !on;
-      const css = lldpOn ? LLDP_COLOR[d?.lldp ?? 'none'] : CABLE_COLOR[d?.kind ?? 'isl'];
-      const col = resolveColor(css, theme);
-      const alpha = dim ? 0.12 : on ? 1 : 0.55;
-      const cnt = d?.count ?? 1;
-      const half = ((on ? 2.6 : 1.1) + (cnt > 1 ? 1 : 0)) / 2;
-      const peerArch = d?.kind === 'isl' && s.pos === Position.Top && t.pos === Position.Top;
-      const sDx = grouped ? (stemOffsets(e.source).get(e.sourceHandle ?? '') ?? 0) : 0;
-      const tDx = grouped ? (stemOffsets(e.target).get((e.targetHandle ?? '').replace(/t$/, '')) ?? 0) : 0;
-      const pts = cablePolyline({ x: s.x, y: s.y }, s.pos, { x: t.x, y: t.y }, t.pos, grouped, peerArch, sDx, tDx);
-      if (pts.length < 2) continue;
-      items.push({ id: e.id, pts, col, alpha, half });
-      totalVerts += (pts.length - 1) * 6;
-      if (cnt > 1) { const m = pointAtFraction(pts, 0.5); labelOut.push({ key: `${e.id}:n`, x: m.x, y: m.y, text: `×${cnt}`, color: css, badge: true }); }
-      if (on && smallTrace) {
-        const pa = pointAtFraction(pts, 0.18), pb = pointAtFraction(pts, 0.82);
-        if (d?.a) labelOut.push({ key: `${e.id}:a`, x: pa.x, y: pa.y, text: d.a, color: css, badge: false });
-        if (d?.b) labelOut.push({ key: `${e.id}:b`, x: pb.x, y: pb.y, text: d.b, color: css, badge: false });
-      }
-    }
-    hitRef.current = items.map((it) => ({ id: it.id, pts: it.pts }));
-    setLabels((prev) => sameLabels(prev, labelOut) ? prev : labelOut);
+    for (const g of ordered) totalVerts += (g.n - 1) * 6;
     const data = new Float32Array(totalVerts * FLOATS);
     let o = 0;
     const push = (x: number, y: number, nx: number, ny: number, col: [number, number, number], a: number, half: number) => {
       data[o++] = x; data[o++] = y; data[o++] = nx; data[o++] = ny;
       data[o++] = col[0]; data[o++] = col[1]; data[o++] = col[2]; data[o++] = a; data[o++] = half;
     };
-    // pass 2: tessellate each polyline into a thick-line triangle list with MITER joins — one shared
-    // normal per vertex, scaled by 1/cos(half-angle) so the line keeps a constant screen-space width
-    // through curves (matches the SVG stroke; per-segment normals would notch/wobble at every bend).
-    const mnx = new Float64Array(512), mny = new Float64Array(512), mmag = new Float64Array(512);
-    for (const { pts, col, alpha, half } of items) {
-      const n = Math.min(pts.length, 512);
-      for (let i = 0; i < n; i++) {
-        let inx = 0, iny = 0, outx = 0, outy = 0;
-        if (i > 0) { const dx = pts[i].x - pts[i - 1].x, dy = pts[i].y - pts[i - 1].y, l = Math.hypot(dx, dy) || 1; inx = -dy / l; iny = dx / l; }
-        if (i < n - 1) { const dx = pts[i + 1].x - pts[i].x, dy = pts[i + 1].y - pts[i].y, l = Math.hypot(dx, dy) || 1; outx = -dy / l; outy = dx / l; }
-        let mx: number, my: number, ml: number;
-        if (i === 0) { mx = outx; my = outy; ml = 1; }
-        else if (i === n - 1) { mx = inx; my = iny; ml = 1; }
-        else {
-          mx = inx + outx; my = iny + outy;
-          const l = Math.hypot(mx, my);
-          if (l < 1e-6) { mx = outx; my = outy; ml = 1; }
-          else { mx /= l; my /= l; const cos = mx * outx + my * outy; ml = 1 / (cos < 0.25 ? 0.25 : cos); if (ml > 4) ml = 4; } // miter limit
-        }
-        mnx[i] = mx; mny[i] = my; mmag[i] = half * ml;
-      }
+    const labelOut: Label[] = [];
+    for (const g of ordered) {
+      const on = tracedEdges.has(g.id) || g.forceOn;
+      const dim = traceAny && !on;
+      const css = lldpOn ? LLDP_COLOR[g.lldp ?? 'none'] : CABLE_COLOR[g.kind ?? 'isl'];
+      const col = resolveColor(css, theme);
+      const alpha = dim ? 0.12 : on ? 1 : 0.55;
+      const half = ((on ? 2.6 : 1.1) + (g.cnt > 1 ? 1 : 0)) / 2;
+      const { pts, mnx, mny, ml, n } = g;
       for (let i = 0; i < n - 1; i++) {
         const p = pts[i], q = pts[i + 1];
-        push(p.x, p.y, mnx[i], mny[i], col, alpha, mmag[i]); push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mmag[i]); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mmag[i + 1]);
-        push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mmag[i]); push(q.x, q.y, -mnx[i + 1], -mny[i + 1], col, alpha, mmag[i + 1]); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mmag[i + 1]);
+        const mi = half * ml[i], mj = half * ml[i + 1];
+        push(p.x, p.y, mnx[i], mny[i], col, alpha, mi); push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
+        push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, -mnx[i + 1], -mny[i + 1], col, alpha, mj); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
+      }
+      if (g.cnt > 1) { const m = pointAtFraction(pts, 0.5); labelOut.push({ key: `${g.id}:n`, x: m.x, y: m.y, text: `×${g.cnt}`, color: css, badge: true }); }
+      if (on && smallTrace) {
+        const pa = pointAtFraction(pts, 0.18), pb = pointAtFraction(pts, 0.82);
+        if (g.a) labelOut.push({ key: `${g.id}:a`, x: pa.x, y: pa.y, text: g.a, color: css, badge: false });
+        if (g.b) labelOut.push({ key: `${g.id}:b`, x: pb.x, y: pb.y, text: g.b, color: css, badge: false });
       }
     }
+    setLabels((prev) => sameLabels(prev, labelOut) ? prev : labelOut);
     count.current = o / FLOATS;
     context.bindBuffer(context.ARRAY_BUFFER, buf.current);
     context.bufferData(context.ARRAY_BUFFER, data.subarray(0, o), context.DYNAMIC_DRAW);

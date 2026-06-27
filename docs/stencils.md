@@ -120,7 +120,7 @@ Resolver status: SR-1 / SR-1s (`TWO_BAY_CHASSIS`), SR-1se (`SINGLE_MDA_CHASSIS`)
 SR-2se (dedicated branches: group MDAs by XCM slot → `<platform> <c1>_<c2>`, XMA SKUs collapse
 to one code per faceplate) are all wired in `stencil.ts`.
 
-Open items for SR-2se: (1) eyeball module alignment in `/stencils.html` (CPM `25,18`/`100,18`,
+Open items for SR-2se: (1) eyeball module alignment in `/stencil-editor/` (CPM `25,18`/`100,18`,
 XCM `4,36`/`4,60`, IOM inner `9.5,0 155.8×23.6`, MDA bays `1.7`/`76.4` within the IOM); (2)
 the 4 bays are numbered `1-`…`4-` and the resolver groups MDAs by slot prefix — confirm both
 against an onboarded SR-2se's actual `ethernet-<slot>-<port>` interface numbering.
@@ -255,14 +255,15 @@ a port number). It records `hasC` per label, which the bake step uses to emit `c
 
 ---
 
-## 9. Dev inspector — `/stencils.html`
+## 9. Dev inspector — `/stencil-editor/`
 
-A dev-only tool for building and reviewing stencils. **Its own Vite entry**
-(`stencils.html` → `src/stencils-main.tsx` → `src/StencilViewer.tsx`), so it is **never in
+A dev-only tool for building and reviewing stencils. **Its own Vite entry** in the
+`stencil-editor/` dir (`index.html` → `main.tsx` → `StencilViewer.tsx`), so it is **never in
 the prod build** (`vite build` only builds `index.html`; verified the inspector strings are
-absent from `dist/`). All three files are gitignored.
+absent from `dist/`). The dir is tracked but `stencil-editor` is added to `tsconfig.app.json`
+`include` so it still typechecks.
 
-Run the dev server and open `http://localhost:<port>/stencils.html`. Features:
+Run the dev server and open `http://localhost:<port>/stencil-editor/`. Features:
 
 - **platform group → subtype** cascading dropdowns. Only the modular chassis (SR-1, SR-1s,
   SR-2s, SR-2se) fan out into card-config subtypes; every fixed platform is its own group.
@@ -296,7 +297,7 @@ Run the dev server and open `http://localhost:<port>/stencils.html`. Features:
    - every composite serves a real SVG, not the ~600-byte SPA fallback;
    - port counts == sum of the two cards;
    - two-row slots are odd-top/even-bottom;
-   - eyeball each in `/stencils.html` (fill cages on, arrow through subtypes), comparing the
+   - eyeball each in `/stencil-editor/` (fill cages on, arrow through subtypes), comparing the
      baked labels against the silkscreen and the canvas-node layout.
 
 ---
@@ -316,7 +317,7 @@ Run the dev server and open `http://localhost:<port>/stencils.html`. Features:
 | `scripts/compose-sr1.mjs` | dev-gitignored | SR-1/SR-1s compose engine (`--slots`) |
 | `scripts/compose-sr1-all.mjs`, `compose-sr1s-all.mjs` | dev-gitignored | drivers |
 | `scripts/derive-frontpanel.mjs` | dev-gitignored | fixed-chassis derive |
-| `src/StencilViewer.tsx`, `src/stencils-main.tsx`, `stencils.html` | dev-gitignored | `/stencils.html` inspector |
+| `stencil-editor/{index.html,main.tsx,StencilViewer.tsx}` | tracked (dev entry, not in prod build) | `/stencil-editor/` inspector |
 | `vite.config.ts` `frontpanelHmr` | committed | dev SVG hot-reload plugin |
 
 Dev-gitignored files are excluded via `.git/info/exclude` (local-only; do **not** add them

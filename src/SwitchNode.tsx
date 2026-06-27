@@ -333,14 +333,17 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
         opacity: mode === 'dim' ? 0.32 : 1, transition: 'opacity 140ms, border-color 140ms',
         contentVisibility: d.showEdgeStubs ? 'visible' : 'auto',
         containIntrinsicSize: panel ? `${panel.W + 16}px ${panel.H + 44}px` : '220px 96px',
+        // real-layout: pin the node to the port-panel width (matches graph.ts swW) so a long platform
+        // name in the header can't widen it past the furthest ports — the header truncates instead.
+        ...(panel ? { width: panel.W + 16, boxSizing: 'border-box' as const } : {}),
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, height: 20 }}>
-        {icon && <span style={{ lineHeight: 0, width: 18, height: 18 }} dangerouslySetInnerHTML={{ __html: icon.replace(/width="\d+"/, 'width="18"').replace(/height="\d+"/, 'height="18"') }} />}
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg)' }}>{d.name}</span>
-        <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 400 }}>{d.platform}</span>
-        <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 8.5, color: 'var(--muted)' }}>{used}/{d.portCount}</span>
+        {icon && <span style={{ lineHeight: 0, width: 18, height: 18, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: icon.replace(/width="\d+"/, 'width="18"').replace(/height="\d+"/, 'height="18"') }} />}
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0, maxWidth: '60%' }}>{d.name}</span>
+        <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{d.platform}</span>
+        <span style={{ flex: 1, minWidth: 0 }} />
+        <span style={{ fontSize: 8.5, color: 'var(--muted)', flexShrink: 0 }}>{used}/{d.portCount}</span>
       </div>
       {panel ? (
         <div style={{ position: 'relative', width: panel.W, height: panel.H }}>
