@@ -40,6 +40,8 @@ spec:
               value: /tmp
             - name: CHROMEDP_NO_SANDBOX # chromium refuses to run as root without --no-sandbox
               value: "1"
+            - name: CABLE_MAP_DISABLE_AUTH # local dev: FE is auth-skipped on localhost, no EDA token to validate
+              value: "1"
           ports:
             - name: http
               containerPort: 8080

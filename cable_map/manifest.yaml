@@ -28,8 +28,6 @@ spec:
     - cr:
         path: cable_map/operators/cable-map/config/deployment.yaml
     - cr:
-        path: cable_map/operators/cable-map/config/rbac.yaml
-    - cr:
         path: cable_map/operators/cable-map/config/access.yaml
     - cr:
         path: cable_map/operators/cable-map/config/service.yaml

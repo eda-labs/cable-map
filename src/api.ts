@@ -1,15 +1,24 @@
 // Contract types are generated from the Go structs (internal/topology/contract.go) into
 // `src/topology.gen.ts` by tygo (`make ts-contract`); re-exported here so the app imports them from `./api`.
 import type { Topology } from './topology.gen';
+import { authHeader, currentToken } from './auth';
 export type { Node, Edge, Row, LagInfo, LagMember, Breakout, Topology, LldpStatus } from './topology.gen';
 
 // Vite base (trailing slash) — prefix all same-origin URLs so they resolve under
 // the EDA HttpProxy sub-path as well as at the root.
 export const BASE = import.meta.env.BASE_URL;
 
+// EventSource can't set an Authorization header, so the keycloak-js token rides as a query param on
+// SSE/navigation URLs; the backend accepts ?access_token= equivalently to a bearer header.
+function withToken(url: string): string {
+  const tok = currentToken();
+  if (!tok) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(tok)}`;
+}
+
 export async function fetchTopology(namespace = ''): Promise<Topology> {
   const qs = namespace ? `?ns=${encodeURIComponent(namespace)}` : '';
-  const res = await fetch(`${BASE}api/topology${qs}`);
+  const res = await fetch(`${BASE}api/topology${qs}`, { headers: await authHeader() });
   if (!res.ok) throw new Error(`topology ${res.status}: ${(await res.json()).error || ''}`);
   return res.json();
 }
@@ -19,14 +28,14 @@ export async function fetchTopology(namespace = ''): Promise<Topology> {
 // `retry:` hint). Returns an unsubscribe that closes the stream.
 export async function fetchNamespaces(): Promise<string[]> {
   try {
-    const res = await fetch(`${BASE}api/namespaces`);
+    const res = await fetch(`${BASE}api/namespaces`, { headers: await authHeader() });
     return res.ok ? await res.json() : [];
   } catch { return []; }
 }
 
 // Live EDA namespace list — the picker updates as namespaces are created/deleted.
 export function streamNamespaces(onList: (names: string[]) => void, onError?: (msg: string) => void): () => void {
-  const es = new EventSource(`${BASE}api/namespaces/stream`);
+  const es = new EventSource(withToken(`${BASE}api/namespaces/stream`));
   es.addEventListener('message', (ev) => {
     try { onList(JSON.parse(ev.data) as string[]); } catch { /* ignore malformed frame */ }
   });
@@ -40,7 +49,7 @@ export function streamTopology(namespace: string, onTopo: (t: Topology) => void,
     .then((t) => { if (!closed) onTopo(t); })
     .catch((e) => { if (!closed) onError(String((e as Error).message || e)); });
 
-  const es = new EventSource(`${BASE}api/topology/stream?ns=${encodeURIComponent(namespace)}`);
+  const es = new EventSource(withToken(`${BASE}api/topology/stream?ns=${encodeURIComponent(namespace)}`));
   es.addEventListener('message', (ev) => {
     if (closed || !ev.data) return;
     try { onTopo(JSON.parse(ev.data) as Topology); } catch (e) { onError(String((e as Error).message || e)); }

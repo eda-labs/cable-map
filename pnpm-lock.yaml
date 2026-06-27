@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      keycloak-js:
-        specifier: ^26.2.4
-        version: 26.2.4
     devDependencies:
       '@emotion/react':
         specifier: ^11.14.0
@@ -48,6 +44,9 @@ importers:
       js-yaml:
         specifier: ^5.1.0
         version: 5.1.0
+      keycloak-js:
+        specifier: ^26.2.4
+        version: 26.2.4
       monaco-editor:
         specifier: ^0.55.1
         version: 0.55.1

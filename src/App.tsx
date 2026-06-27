@@ -19,6 +19,7 @@ import SvgGlyph from './icons/SvgGlyph';
 import pdfIcon from './icons/pdf.svg?raw';
 import excelIcon from './icons/excel.svg?raw';
 import { streamTopology, streamNamespaces, BASE, type Topology } from './api';
+import { currentToken } from './auth';
 import { buildGraph, CABLE_COLOR, LLDP_COLOR, findSwitchPort, isLargeTopology, switchPortCenter, type SwitchData } from './graph';
 import { trace, setAdjacency, useTrace, type Adjacency } from './trace';
 import { lldp as lldpStore, useLldp } from './lldp';
@@ -682,6 +683,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
     if (namespace) params.set('ns', namespace);
     const sub = edgeRemote.subset(targets);
     if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
+    const tok = currentToken();
+    if (tok) params.set('access_token', tok); // /pdf is a navigation (window.open) — can't set a header
     const qs = params.toString();
     window.open(`${BASE}pdf${qs ? `?${qs}` : ''}`, '_blank');
   };
