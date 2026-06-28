@@ -12,11 +12,11 @@ const FP_META: Record<string, FpMeta> = frontpanelMeta;
 
 // port count + physical cage-row count per platform, derived from the stencils' data-port cages
 // so the canvas panel matches the real box.
-export const rowsOf = (platform: string) => FP_META[platform]?.rows ?? 2;
-export const portCountOf = (platform: string) => FP_META[platform]?.ports ?? 32;
+const rowsOf = (platform: string) => FP_META[platform]?.rows ?? 2;
+const portCountOf = (platform: string) => FP_META[platform]?.ports ?? 32;
 
 // role tier: smaller = closer to the fabric core (drawn higher up).
-export const TIER: Record<string, number> = { superspine: 0, spine: 1, borderleaf: 2, leaf: 3 };
+const TIER: Record<string, number> = { superspine: 0, spine: 1, borderleaf: 2, leaf: 3 };
 const tierOf = (role: string) => TIER[role] ?? 3;
 
 // edge = plain server cable, lag = local port-channel (all members one box),
@@ -50,7 +50,7 @@ export type PortInfo = {
 // attaches to its own sliver rather than all converging on the cage.
 export const portHandle = (port: string, channel?: number) => (channel ? `p${port}_${channel}` : `p${port}`);
 
-export type PortPos = { p: string; x: number; y: number; w: number; h: number };
+type PortPos = { p: string; x: number; y: number; w: number; h: number };
 export type SwitchData = {
   name: string; role: string; platform: string;
   portCount: number;
@@ -76,23 +76,23 @@ export type EndpointData = {
 
 // ---- layout constants ---------------------------------------------------
 const CELL = 13, CELL_GAP = 3, HEAD_H = 32, STRIP_PAD = 8;
-export const LARGE_TOPOLOGY_NODE_THRESHOLD = 300;
-export const LARGE_TOPOLOGY_ROW_THRESHOLD = 5000;
+const LARGE_TOPOLOGY_NODE_THRESHOLD = 300;
+const LARGE_TOPOLOGY_ROW_THRESHOLD = 5000;
 export const COMPACT_SWITCH_W = 132;
 export const COMPACT_SWITCH_H = 46;
 export const compactSwitchHandle = (side: 'top' | 'bottom', target = false) => `compact-${side}${target ? 't' : ''}`;
-export const colsOf = (portCount: number, rows: number) => Math.max(1, Math.ceil(portCount / rows));
-export const switchW = (portCount: number, rows: number) =>
+const colsOf = (portCount: number, rows: number) => Math.max(1, Math.ceil(portCount / rows));
+const switchW = (portCount: number, rows: number) =>
   Math.max(196, colsOf(portCount, rows) * (CELL + CELL_GAP) + STRIP_PAD * 2);
-export const switchH = (rows: number) => HEAD_H + rows * CELL + (rows - 1) * CELL_GAP + STRIP_PAD * 2;
-export const layoutOf = (platform: string) => { const l = FP_META[platform]?.layout; return l && l.length ? l : undefined; };
-export const aspectOf = (platform: string) => FP_META[platform]?.aspect ?? 4;
+const switchH = (rows: number) => HEAD_H + rows * CELL + (rows - 1) * CELL_GAP + STRIP_PAD * 2;
+const layoutOf = (platform: string) => { const l = FP_META[platform]?.layout; return l && l.length ? l : undefined; };
+const aspectOf = (platform: string) => FP_META[platform]?.aspect ?? 4;
 // modular chassis whose cages are addressed per slot ("<slot>-<port>"); drives cageKey() parsing.
 export const slottedOf = (platform: string) => FP_META[platform]?.slotted ?? false;
 // real-layout panel: sized by cage rows (so port numbers stay legible), width from the cage-box aspect.
 const LAYOUT_ROW = 19;
 export const panelDims = (rows: number, aspect: number) => ({ w: rows * LAYOUT_ROW * aspect, h: rows * LAYOUT_ROW });
-export const switchHOf = (platform: string) =>
+const switchHOf = (platform: string) =>
   layoutOf(platform)
     ? HEAD_H + panelDims(rowsOf(platform), aspectOf(platform)).h + STRIP_PAD * 2
     : switchH(rowsOf(platform));
@@ -145,7 +145,7 @@ function breakoutsWithInferredChannels(explicit: Record<string, Breakout> | unde
   return Object.keys(out).length ? out : undefined;
 }
 
-export function switchCages(d: SwitchData): string[] {
+function switchCages(d: SwitchData): string[] {
   return d.layout ? d.layout.map((p) => p.p) : Array.from({ length: d.portCount }, (_, i) => String(i + 1));
 }
 
@@ -654,6 +654,6 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
 }
 
 // ethernet-1-12 -> "1-12" (matches the on-panel cage labelling)
-export function shortPortLabel(iface: string): string {
+function shortPortLabel(iface: string): string {
   return iface.replace(/^ethernet-/, '').replace(/^et-/, '');
 }

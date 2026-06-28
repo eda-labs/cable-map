@@ -39,7 +39,6 @@ import WebGLEdgeLayer from './WebGLEdgeLayer';
 import WebGLNodeLayer from './WebGLNodeLayer';
 import { exportXlsx } from './xlsx';
 import { edgeRemote } from './edge-remote';
-import './app.css';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
 // cables render on the WebGL layer (GLEdges); React Flow gets an empty edge list. Stable ref so the

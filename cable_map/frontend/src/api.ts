@@ -2,7 +2,7 @@
 // `src/topology.gen.ts` by tygo (`make ts-contract`); re-exported here so the app imports them from `./api`.
 import type { Topology } from './topology.gen';
 import { authHeader, currentToken } from './auth';
-export type { Node, Edge, Row, LagInfo, LagMember, Breakout, Topology, LldpStatus } from './topology.gen';
+export type { Node, Row, LagInfo, Breakout, Topology, LldpStatus } from './topology.gen';
 
 // Vite base (trailing slash) — prefix all same-origin URLs so they resolve under
 // the EDA HttpProxy sub-path as well as at the root.
@@ -21,16 +21,6 @@ export async function fetchTopology(namespace = ''): Promise<Topology> {
   const res = await fetch(withToken(`${BASE}api/topology${qs}`), { headers: await authHeader() });
   if (!res.ok) throw new Error(`topology ${res.status}: ${(await res.json()).error || ''}`);
   return res.json();
-}
-
-// Live topology over Server-Sent Events. The server pushes the current snapshot on connect
-// and a fresh payload on every change; EventSource auto-reconnects (honouring the server's
-// `retry:` hint). Returns an unsubscribe that closes the stream.
-export async function fetchNamespaces(): Promise<string[]> {
-  try {
-    const res = await fetch(withToken(`${BASE}api/namespaces`), { headers: await authHeader() });
-    return res.ok ? await res.json() : [];
-  } catch { return []; }
 }
 
 // Live EDA namespace list — the picker updates as namespaces are created/deleted.

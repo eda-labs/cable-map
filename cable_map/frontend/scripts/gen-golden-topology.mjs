@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-const OUT = new URL('../cable_map/operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url);
+const OUT = new URL('../../operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url);
 
 const LEAF_COUNT = 80;
 const SPINE_COUNT = 16;
