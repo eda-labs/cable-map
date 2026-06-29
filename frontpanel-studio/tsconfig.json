@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "types": ["vite/client", "node"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    // The inspector previews stencils with the app's real renderer; @app is the single source of truth.
+    // (paths resolve relative to this tsconfig since TS 4.1 — no baseUrl needed.)
+    "paths": { "@app/*": ["../cable_map/frontend/src/*"] }
+  },
+  "include": ["src", "vite.config.ts"]
+}

@@ -1,5 +1,5 @@
-// DEV-ONLY stencil inspector — its own dev entry (stencil-editor/index.html), never built into prod.
-// Inlines a stencil SVG and works directly on its paths. Port numbers are baked into the SVGs (cN
+// Stencil inspector. Inlines a stencil SVG and works directly on its paths. Port numbers are baked
+// into the SVGs (cN
 // <text>), so this just renders them; it adds:
 //   - "fill cages": fills every path[data-port] green (coverage: no missing / decoy cages)
 //   - hover any path -> red outline;  click any path -> blue + its info (data-port, fill, centre in
@@ -11,10 +11,10 @@ import {
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { ReactFlow, type Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import frontpanelMeta from '../src/frontpanel-meta.json';
-import { BASE } from '../src/api';
-import SwitchNode from '../src/SwitchNode';
-import type { SwitchData } from '../src/graph';
+import frontpanelMeta from '@app/frontpanel-meta.json';
+import { BASE } from '@app/api';
+import SwitchNode from '@app/SwitchNode';
+import type { SwitchData } from '@app/graph';
 
 const ALL = Object.keys(frontpanelMeta).toSorted();
 const BASE_SUB = '— base —';

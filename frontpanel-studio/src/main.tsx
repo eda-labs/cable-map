@@ -1,10 +1,10 @@
-// DEV-ONLY entry for the stencil inspector (stencil-editor/index.html). Never in the prod rollup
-// input (vite build only builds index.html) — so this and StencilViewer ship nowhere.
+// Entry for the stencil inspector. `@app/*` resolves to the cable-map frontend source (vite alias),
+// so the inspector previews stencils with the app's real renderer + canvas CSS vars.
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import '../src/nokia-fonts.css';
-import '../src/index.css'; // canvas CSS vars (--panel/--line/--cell-*) the SwitchNode preview needs
+import '@app/nokia-fonts.css';
+import '@app/index.css'; // canvas CSS vars (--panel/--line/--cell-*) the SwitchNode preview needs
 import StencilViewer from './StencilViewer.tsx';
 
 document.documentElement.dataset.theme = 'dark';
