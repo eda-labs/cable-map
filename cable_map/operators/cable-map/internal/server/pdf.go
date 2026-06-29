@@ -71,8 +71,10 @@ func (e *pdfEngine) close() {
 	}
 }
 
-// render produces the multi-page PDF (one page per node) from the topology nodes.
-func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDir string, remote map[string]string) ([]byte, error) {
+// render produces the multi-page PDF (one page per node) from the topology nodes. stencils maps a
+// node name to its resolved front-panel filename (modular chassis render a card-derived composite,
+// not <platform>.svg); a node absent from the map falls back to its platform.
+func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDir string, remote, stencils map[string]string) ([]byte, error) {
 	fontsDir, err := e.fonts()
 	if err != nil {
 		return nil, fmt.Errorf("font setup: %w", err)
@@ -105,7 +107,11 @@ func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDi
 
 	for i, n := range nodes {
 		panel := ""
-		if svgBytes, err := os.ReadFile(filepath.Join(stencilDir, n.Platform+".svg")); err == nil {
+		svgName := n.Platform
+		if s := stencils[n.Name]; s != "" {
+			svgName = s
+		}
+		if svgBytes, err := os.ReadFile(filepath.Join(stencilDir, svgName+".svg")); err == nil {
 			slotted := svgSlotted(svgBytes)
 			occupied := map[string]bool{}
 			for _, r := range n.Table {
@@ -277,8 +283,12 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 	if rp := r.URL.Query().Get("remote"); rp != "" {
 		_ = json.Unmarshal([]byte(rp), &remote)
 	}
+	stencils := map[string]string{}
+	if sp := r.URL.Query().Get("stencils"); sp != "" {
+		_ = json.Unmarshal([]byte(sp), &stencils)
+	}
 
-	pdf, err := s.engine.render(r.Context(), nodes, stencilDir(), remote)
+	pdf, err := s.engine.render(r.Context(), nodes, stencilDir(), remote, stencils)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

@@ -3,15 +3,19 @@
 
 #let current = state("node", "")
 
+// EDA logo + wordmark — the header stamp shared by the contents page and every node page.
+#let stamp = grid(columns: (auto, auto), column-gutter: 6pt, align: horizon,
+  image("eda.svg", height: 21pt),
+  text(size: 9.75pt, fill: rgb("#333333"), tracking: 0.225pt)[Cable Map],
+)
+
 // one node per page: header, front panel, cable table
 #let node-page(node) = {
   current.update(node.name)
+  [#metadata((name: node.name, platform: node.platform)) <cm-toc>]
   grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
     [#text(size: 15pt, weight: 700)[#node.name]#h(4.5pt)#text(size: 9.75pt, weight: 400, fill: rgb("#666666"))[#node.platform]],
-    grid(columns: (auto, auto), column-gutter: 6pt, align: horizon,
-      image("eda.svg", height: 21pt),
-      text(size: 9.75pt, fill: rgb("#333333"), tracking: 0.225pt)[Cable Map],
-    ),
+    stamp,
   )
   v(8pt)
   if node.panel != "" {
@@ -27,6 +31,30 @@
   )
 }
 
+#let toc-page() = {
+  current.update("Contents")
+  grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
+    text(size: 15pt, weight: 700)[Contents],
+    stamp,
+  )
+  v(10pt)
+  context {
+    let items = query(<cm-toc>)
+    table(
+      columns: (1fr, auto, auto),
+      inset: 5pt, align: (left + horizon, left + horizon, right + horizon),
+      stroke: 0.4pt + rgb("#dddddd"),
+      fill: (_, row) => if row == 0 { rgb("#e9edf2") } else if calc.odd(row) { rgb("#f6f8fa") } else { white },
+      table.header([*Node*], [*Model*], [*Page*]),
+      ..items.map(it => (
+        link(it.location())[#it.value.name],
+        text(fill: rgb("#666666"))[#it.value.platform],
+        [#counter(page).at(it.location()).first()],
+      )).flatten(),
+    )
+  }
+}
+
 #set page(paper: "a4", flipped: true, margin: (x: 1.3cm, top: 1.1cm, bottom: 1.2cm),
   footer: context {
     set text(size: 8pt, fill: rgb("#888888"))
@@ -37,6 +65,11 @@
     )
   })
 #set text(size: 9.5pt, font: "NokiaPureText")
+
+#if data.nodes.len() > 1 {
+  toc-page()
+  pagebreak()
+}
 
 #for (i, node) in data.nodes.enumerate() {
   node-page(node)

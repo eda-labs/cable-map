@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { authenticatedFetch } from '../api/client';
 import type { Topology } from '../domain/topology/contract';
 import { edgeRemote } from '../edge-remote';
+import { stencilFor, componentsOf } from '../stencil';
 
 type PdfState = { status: 'idle' | 'loading' | 'error'; message?: string };
 
@@ -26,6 +27,15 @@ export function usePdfExport({ topo, namespace }: { topo: Topology | null; names
     if (ns) params.set('ns', ns);
     const sub = edgeRemote.subset(targets);
     if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
+    const byName = new Map(currentTopo?.nodes.map((n) => [n.name, n]) ?? []);
+    const stencils: Record<string, string> = {};
+    for (const name of targets) {
+      const n = byName.get(name);
+      if (!n) continue;
+      const resolved = stencilFor(n.platform, componentsOf(n.raw));
+      if (resolved !== n.platform) stencils[name] = resolved;
+    }
+    if (Object.keys(stencils).length) params.set('stencils', JSON.stringify(stencils));
     const qs = params.toString();
     loadingRef.current = true;
     setPdfState({ status: 'loading' });
