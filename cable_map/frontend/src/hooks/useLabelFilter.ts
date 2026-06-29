@@ -89,5 +89,5 @@ export function useLabelFilter(
     return () => window.clearTimeout(handle);
   }, [selectedLabels, ready, fitNodes, largeTopology]);
 
-  return { nodeLabelOptions, selectedLabels, setSelectedLabels, shown, filterActive };
+  return { nodeLabelOptions, selectedLabels, setSelectedLabels, shown };
 }

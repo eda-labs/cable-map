@@ -31,8 +31,7 @@ interface FlowCanvasProps {
   displayNodes: RFNode[];
   displayEdges: RFEdge[];
   switchIds: Set<string>;
-  usePolishGlEdges: boolean;
-  useWebglEdges: boolean;
+  webglEdges: boolean;
   useWebglNodeOverview: boolean;
   hasEdgeLinks: boolean;
   edgeLinkMode: EdgeLinkMode;
@@ -51,7 +50,7 @@ interface FlowCanvasProps {
 // (grouped/lldp) still re-render it when those toggle.
 function FlowCanvas({
   mode, largeTopology, flowNodes, flowEdges, displayNodes, displayEdges, switchIds,
-  usePolishGlEdges, useWebglEdges, useWebglNodeOverview,
+  webglEdges, useWebglNodeOverview,
   hasEdgeLinks, edgeLinkMode, onCycleEdgeLinkMode,
   onNodesChange, onInit, onSelectionChange, onOpenNode, onClearSelection,
   onViewportChange, onWebglUnavailable,
@@ -88,8 +87,8 @@ function FlowCanvas({
     >
       <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
       <TraceHud />
-      {(usePolishGlEdges || useWebglEdges) && (
-        <GLEdges nodes={displayNodes} edges={displayEdges} dark={mode === 'dark'} lite={useWebglEdges} onUnavailable={onWebglUnavailable} />
+      {webglEdges && (
+        <GLEdges nodes={displayNodes} edges={displayEdges} dark={mode === 'dark'} onUnavailable={onWebglUnavailable} />
       )}
       {largeTopology && (
         <WebGLNodeLayer nodes={displayNodes} lldp={lldpOn} mode={mode} visible={useWebglNodeOverview} onUnavailable={onWebglUnavailable} />

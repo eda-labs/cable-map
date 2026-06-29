@@ -81,8 +81,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             flowNodes={flowModel.flowNodes} flowEdges={flowModel.flowEdges}
             displayNodes={flowModel.displayNodes} displayEdges={flowModel.displayEdges}
             switchIds={graph.switchIds}
-            usePolishGlEdges={flowModel.usePolishGlEdges} useWebglEdges={flowModel.useWebglEdges}
-            useWebglNodeOverview={flowModel.useWebglNodeOverview}
+            webglEdges={flowModel.webglEdges} useWebglNodeOverview={flowModel.useWebglNodeOverview}
             hasEdgeLinks={links.hasEdgeLinks} edgeLinkMode={links.edgeLinkMode}
             onCycleEdgeLinkMode={links.cycleMode}
             onNodesChange={graph.onNodesChange} onInit={setFlow}

@@ -7,8 +7,8 @@ import { useLldp } from '../lldp';
 import { useGroupedEdges } from './edgeRoute';
 import { cablePolyline, pointAtFraction, distToPolyline, type XY } from './edgeGeometry';
 
-// Experimental WebGL edge layer (drop-in, like CanvasEdges but GPU). Nodes/store/interaction stay
-// React Flow; only the cables move to GL. Each cable is tessellated into a thick-line triangle strip
+// WebGL cable layer: nodes/store/interaction stay React Flow; only the cables render on the GPU.
+// Each cable is tessellated into a thick-line triangle strip
 // in FLOW coordinates and uploaded once to a GPU buffer — pan/zoom is then just a uniform update +
 // one draw call (no per-frame CPU work). Geometry rebuilds only on data / drag / trace / route / theme.
 // Thick lines are expanded in the vertex shader (screen-space offset) so width is constant in px and
@@ -61,9 +61,7 @@ function handlePoint(node: InternalNode<RFNode> | undefined, handleId: string | 
   return { x: abs.x + h.x + h.width / 2, y: abs.y + h.y + h.height / 2, pos: h.position };
 }
 
-// Endpoint computed from node DATA (not measured handles) — for nodes the live store lacks because
-// they're culled or hidden behind the node overview on a large fabric. The cell centre equals the
-// rendered handle centre, so this matches `handlePoint` for nodes that are measured.
+// parse a switch handle id (`pN`, `pN_C`, `pNt`) into its port + optional breakout channel
 function parseSwitchHandle(handle: string | null | undefined): { port: string; channel?: number } | null {
   if (!handle?.startsWith('p')) return null;
   const [port, channelText] = handle.slice(1).replace(/t$/, '').split('_');
@@ -79,6 +77,9 @@ function sideOf(handle: string | null | undefined): Position {
   return Position.Top;
 }
 
+// Endpoint computed from node DATA (not measured handles) — for nodes the live store lacks because
+// they're culled or hidden behind the node overview on a large fabric. The cell centre equals the
+// rendered handle centre, so this matches `handlePoint` for measured nodes.
 function computedPoint(node: RFNode | undefined, handle: string | null | undefined): Pt | null {
   if (!node) return null;
   if (node.type === 'switch') {
@@ -161,11 +162,11 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   return sh;
 }
 
-// One WebGL cable layer for both regimes. Normal fabrics resolve endpoints from React Flow's measured
-// handles (exact, interactive). `lite` (large fabrics) computes endpoints from node data instead — so
-// it works for culled / overview nodes the store doesn't hold — and drops hover/click + labels.
-export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailable }: {
-  edges: RFEdge[]; dark: boolean; nodes: RFNode[]; lite?: boolean; onUnavailable?: () => void;
+// The WebGL cable layer. Endpoints resolve from React Flow's measured handles when available and fall
+// back to node data otherwise — so cables draw correctly even for culled / overview nodes a large
+// fabric doesn't keep mounted. Hover/click hit-testing and the ×N / traced-port labels are always on.
+export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
+  edges: RFEdge[]; dark: boolean; nodes: RFNode[]; onUnavailable?: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
@@ -241,9 +242,6 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
   const rebuild = useCallback(() => {
     const context = gl.current;
     if (!context) return;
-    // normal mode draws from measured handles, so wait for measurement (an EDA update can't draw
-    // garbage); lite mode computes endpoints from node data, so it doesn't need to wait.
-    if (!nodesReady && !lite) return;
     const { nodeLookup } = store.getState();
 
     // --- GEOMETRY pass (cached) -----------------------------------------------------------------
@@ -287,7 +285,7 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
         }
         geom.push({ id: e.id, pts, n, mnx, mny, ml, kind: d?.kind, lldp: d?.lldp, cnt: d?.count ?? 1, forceOn: !!d?.forceOn, a: d?.a, b: d?.b });
       }
-      hitRef.current = lite ? [] : geom.map((g) => ({ id: g.id, pts: g.pts }));
+      hitRef.current = geom.map((g) => ({ id: g.id, pts: g.pts }));
       geomCache.current = { edges, nodes, posHash, grouped, geom };
     }
     const geom = geomCache.current!.geom;
@@ -319,13 +317,11 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
         push(p.x, p.y, mnx[i], mny[i], col, alpha, mi); push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
         push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, -mnx[i + 1], -mny[i + 1], col, alpha, mj); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
       }
-      if (!lite) {
-        if (g.cnt > 1) { const m = pointAtFraction(pts, 0.5); labelOut.push({ key: `${g.id}:n`, x: m.x, y: m.y, text: `×${g.cnt}`, color: css, badge: true }); }
-        if (on && smallTrace) {
-          const pa = pointAtFraction(pts, 0.18), pb = pointAtFraction(pts, 0.82);
-          if (g.a) labelOut.push({ key: `${g.id}:a`, x: pa.x, y: pa.y, text: g.a, color: css, badge: false });
-          if (g.b) labelOut.push({ key: `${g.id}:b`, x: pb.x, y: pb.y, text: g.b, color: css, badge: false });
-        }
+      if (g.cnt > 1) { const m = pointAtFraction(pts, 0.5); labelOut.push({ key: `${g.id}:n`, x: m.x, y: m.y, text: `×${g.cnt}`, color: css, badge: true }); }
+      if (on && smallTrace) {
+        const pa = pointAtFraction(pts, 0.18), pb = pointAtFraction(pts, 0.82);
+        if (g.a) labelOut.push({ key: `${g.id}:a`, x: pa.x, y: pa.y, text: g.a, color: css, badge: false });
+        if (g.b) labelOut.push({ key: `${g.id}:b`, x: pb.x, y: pb.y, text: g.b, color: css, badge: false });
       }
     }
     setLabels((prev) => sameLabels(prev, labelOut) ? prev : labelOut);
@@ -334,7 +330,7 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     context.bufferData(context.ARRAY_BUFFER, data.subarray(0, o), context.DYNAMIC_DRAW);
     // posHash isn't read directly (positions come from the live store) but retriggers rebuild on node move
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store, nodes, nodesById, lite]);
+  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store, nodes, nodesById]);
 
   const draw = useCallback(() => {
     const context = gl.current, p = prog.current, l = loc.current;
@@ -372,7 +368,6 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
   // cable hover/click: the canvas is pointerEvents:none, so hit-test the pointer against the polylines
   // on React Flow's pane (which receives events over empty space — exactly where cables live).
   useEffect(() => {
-    if (lite) return; // large fabrics: cables aren't interactive
     const pane = ref.current?.closest('.react-flow')?.querySelector<HTMLElement>('.react-flow__pane');
     if (!pane) return;
     const pick = (clientX: number, clientY: number): string | null => {
@@ -443,7 +438,7 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
       pane.removeEventListener('pointerleave', onLeave);
       pane.removeEventListener('click', onClick, true);
     };
-  }, [store, rf, lite]);
+  }, [store, rf]);
 
   const [vtx, vty, vzoom] = transform;
   return (

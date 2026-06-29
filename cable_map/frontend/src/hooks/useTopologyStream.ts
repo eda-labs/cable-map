@@ -40,5 +40,5 @@ export function useTopologyStream() {
     }
   }, [topo]);
 
-  return { topo, err, namespace, setNamespace, namespaces, namespacesReady };
+  return { topo, err, namespace, setNamespace, namespaces };
 }

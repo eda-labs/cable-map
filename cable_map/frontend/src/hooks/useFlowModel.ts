@@ -53,8 +53,6 @@ export function useFlowModel({
     return out;
   }, [edgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds]);
 
-  const traceKey = useTrace((s) => s.key);
-  const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
   const displayEdges = useMemo(() => {
     let base = edges;
     if (edgeLinkMode === 'stub') {
@@ -67,12 +65,12 @@ export function useFlowModel({
       base = edges.filter((e) => !isStubEdge(e.id));
     }
     if (shown) base = base.filter((e) => edgeVisibleForShown(e.id, shown, adjacency));
-    return elevatedEdge ? base.map((e) => (e.id === elevatedEdge ? { ...e, zIndex: 1 } : e)) : base;
-  }, [edgeLinkMode, edges, activeStubEdges, elevatedEdge, shown, adjacency]);
+    return base;
+  }, [edgeLinkMode, edges, activeStubEdges, shown, adjacency]);
 
-  const useWebglEdges = largeTopology && WEBGL_OK && !webglEdgesUnavailable;
-  const usePolishGlEdges = !largeTopology && WEBGL_OK;
-  const useWebglNodeOverview = largeTopology && WEBGL_OK && !webglEdgesUnavailable && largeViewport.zoom < LARGE_WEBGL_NODE_ZOOM;
+  // GL draws the cables whenever WebGL is usable; otherwise React Flow's SVG edges take over.
+  const webglEdges = WEBGL_OK && !webglEdgesUnavailable;
+  const useWebglNodeOverview = webglEdges && largeTopology && largeViewport.zoom < LARGE_WEBGL_NODE_ZOOM;
 
   const flowNodes = useMemo(
     () => useWebglNodeOverview
@@ -83,14 +81,21 @@ export function useFlowModel({
     [useWebglNodeOverview, largeTopology, displayNodes, largeViewport, windowSize],
   );
   const flowNodeIds = useMemo(() => new Set(flowNodes.map((node) => node.id)), [flowNodes]);
+  // the hovered cable rides above its neighbours — only meaningful for React Flow's SVG edges (the GL
+  // layer orders traced cables on top itself). Applied here, not in displayEdges, so GL's `edges` prop
+  // stays referentially stable across hovers and its geometry cache holds.
+  const traceKey = useTrace((s) => s.key);
+  const elevatedEdge = traceKey?.startsWith('cable:') ? traceKey.slice(6) : null;
   const flowEdges = useMemo(() => {
-    if (useWebglEdges || usePolishGlEdges) return NO_EDGES;
-    if (!largeTopology) return displayEdges;
-    return displayEdges.filter((edge) => flowNodeIds.has(String(edge.source)) && flowNodeIds.has(String(edge.target)));
-  }, [useWebglEdges, usePolishGlEdges, largeTopology, displayEdges, flowNodeIds]);
+    if (webglEdges) return NO_EDGES; // GL draws the cables; React Flow draws none
+    const base = largeTopology
+      ? displayEdges.filter((edge) => flowNodeIds.has(String(edge.source)) && flowNodeIds.has(String(edge.target)))
+      : displayEdges;
+    return elevatedEdge ? base.map((e) => (e.id === elevatedEdge ? { ...e, zIndex: 1 } : e)) : base;
+  }, [webglEdges, largeTopology, displayEdges, flowNodeIds, elevatedEdge]);
 
   return {
     displayNodes, displayEdges, flowNodes, flowEdges,
-    useWebglEdges, usePolishGlEdges, useWebglNodeOverview, markWebglEdgesUnavailable,
+    webglEdges, useWebglNodeOverview, markWebglEdgesUnavailable,
   };
 }
