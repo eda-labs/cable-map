@@ -1,5 +1,5 @@
-import { cageKey } from '../api';
-import { aspectOf, layoutOf, rowsOf } from './meta';
+import { cageKey } from '../domain/ports/interfaceNames';
+import { aspectOf, layoutOf, rowsOf } from '../domain/ports/frontPanelMeta';
 import type { SwitchData } from './types';
 
 // ---- node sizing --------------------------------------------------------

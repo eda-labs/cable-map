@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { type Edge as RFEdge } from '@xyflow/react';
-import { useTrace, type Adjacency } from '../trace';
+import type { Adjacency } from '../graph/adjacency';
+import { useTrace } from '../trace';
 import {
   activeStubPorts, edgeVisibleForShown, expandActiveStubEdges, isStubEdge, nextEdgeLinkMode,
   type EdgeLinkMode,

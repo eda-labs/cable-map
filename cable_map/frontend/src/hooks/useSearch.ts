@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { type Node as RFNode, type ReactFlowInstance, type Viewport } from '@xyflow/react';
-import { trace, type Adjacency } from '../trace';
+import type { Adjacency } from '../graph/adjacency';
+import { trace } from '../trace';
 import { SEARCH_PORT_ZOOM, buildSearchMatcher, portSearchTarget, searchHighlight } from '../lib/search';
 import { type FitNodesOptions } from '../lib/viewport';
 

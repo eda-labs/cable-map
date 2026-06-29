@@ -1,11 +1,9 @@
 // Resolves the front-panel stencil a node renders. Most platforms already match a stencil name
 // 1:1 (fixed chassis, SR Linux); modular chassis report a bare platform (e.g. "7750 SR-1") whose
 // panel is determined by the fitted line/MDA card, so we bridge those to one of the pre-generated
-// stencil names in frontpanel-meta.json. The stencils/meta are the source of truth — this only maps
+// stencil names in generated front-panel metadata. The stencils/meta are the source of truth — this only maps
 // onto them, it doesn't generate them.
-import frontpanelMeta from './frontpanel-meta.json';
-
-const KNOWN = new Set(Object.keys(frontpanelMeta));
+import { hasFrontPanelMeta } from './domain/ports/frontPanelMeta';
 
 type Component = { kind?: string; type?: string; slot?: string };
 
@@ -49,7 +47,7 @@ export function stencilFor(platform: string, components?: Component[]): string {
     const xma = mdaTypes(components).find((t) => t.startsWith('s18') || t.startsWith('s36'));
     if (xma) {
       const v = `7750 SR-1s ${xma.startsWith('s18') ? 's18-100gb-qsfp28' : 's36-400gb-qsfpdd'}`;
-      if (KNOWN.has(v)) return v;
+      if (hasFrontPanelMeta(v)) return v;
     }
   }
   // Two-bay chassis (SR-1, modular SR-1s): place each MDA in its bay; an empty bay -> a blank plate
@@ -63,7 +61,7 @@ export function stencilFor(platform: string, components?: Component[]): string {
     }
     if (bay.size) {
       const pair = `${platform} ${bay.get('1') ?? 'blank'}_${bay.get('2') ?? 'blank'}`;
-      if (KNOWN.has(pair)) return pair;
+      if (hasFrontPanelMeta(pair)) return pair;
     }
   }
   // 7750 SR-2se: two stacked XCM slots, each a 36-port XMA or an IOM with 2 MDAs -> "<c1>_<c2>"
@@ -79,7 +77,7 @@ export function stencilFor(platform: string, components?: Component[]): string {
     }
     if (bySlot.size) {
       const pair = `7750 SR-2se ${bySlot.get('1') ?? 'blank'}_${bySlot.get('2') ?? 'blank'}`;
-      if (KNOWN.has(pair)) return pair;
+      if (hasFrontPanelMeta(pair)) return pair;
     }
   }
   // 7750 SR-2s: same 2-XCM structure as SR-2se -> "<c1>_<c2>" (10×10). Each XCM = a full XMA-s
@@ -99,7 +97,7 @@ export function stencilFor(platform: string, components?: Component[]): string {
     }
     if (bySlot.size) {
       const pair = `7750 SR-2s ${bySlot.get('1') ?? 'blank'}_${bySlot.get('2') ?? 'blank'}`;
-      if (KNOWN.has(pair)) return pair;
+      if (hasFrontPanelMeta(pair)) return pair;
     }
   }
   // 7750 SR-1: integrated line-card variants report the bare modular platform -> fixed-variant stencil.
@@ -110,11 +108,11 @@ export function stencilFor(platform: string, components?: Component[]): string {
   if (SINGLE_MDA_CHASSIS.has(platform)) {
     const mda = mdaTypes(components)[0];
     const variant = mda && `${platform} ${mda}`;
-    if (variant && KNOWN.has(variant)) return variant;
+    if (variant && hasFrontPanelMeta(variant)) return variant;
   }
   // Component-driven only: no card-derived composite matched, so don't fall back to a base panel.
   if (MODULAR_CHASSIS.has(platform)) return platform;
-  if (KNOWN.has(platform)) return platform;
+  if (hasFrontPanelMeta(platform)) return platform;
   return platform;
 }
 

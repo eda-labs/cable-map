@@ -6,6 +6,7 @@
   "description": "Dev-only tooling for the cable-map front-panel stencils: a visual inspector (previews a stencil with the app's real SwitchNode renderer) plus the generation/minify scripts.",
   "scripts": {
     "dev": "vite",
+    "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

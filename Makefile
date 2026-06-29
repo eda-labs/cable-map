@@ -60,14 +60,14 @@ lint:
 TYGO ?= github.com/gzuidhof/tygo@v0.2.21
 
 .PHONY: ts-contract
-HELP_ts-contract := Generate frontend/src/topology.gen.ts from the Go output contract (internal/topology/contract.go)
+HELP_ts-contract := Generate frontend/src/generated/topology.gen.ts from the Go output contract (internal/topology/contract.go)
 ts-contract:
 	go -C "$(APP_DIR)" run $(TYGO) generate
 
 .PHONY: ts-contract-check
-HELP_ts-contract-check := Fail if frontend/src/topology.gen.ts is stale vs the Go contract (CI drift guard)
+HELP_ts-contract-check := Fail if frontend/src/generated/topology.gen.ts is stale vs the Go contract (CI drift guard)
 ts-contract-check: ts-contract
-	git diff --exit-code $(FRONTEND_DIR)/src/topology.gen.ts
+	git diff --exit-code $(FRONTEND_DIR)/src/generated/topology.gen.ts
 
 .PHONY: ui-build
 HELP_ui-build := Build the React SPA into frontend/dist/

@@ -22,7 +22,8 @@ import SensorsIcon from '@mui/icons-material/SensorsOutlined';
 import SvgGlyph from './SvgGlyph';
 import pdfIcon from '../assets/icons/pdf.svg?raw';
 import excelIcon from '../assets/icons/excel.svg?raw';
-import { BASE, type Topology } from '../api';
+import { appPath } from '../api/base';
+import type { Topology } from '../domain/topology/contract';
 import { lldp as lldpStore, useLldp } from '../lldp';
 import { exportXlsx } from '../xlsx';
 import NamespacePicker from '../NamespacePicker';
@@ -59,7 +60,7 @@ function AppToolbar({
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
       <Toolbar variant="dense" sx={{ gap: 1.5, position: 'relative' }}>
-        <img src={`${BASE}eda.svg`} alt="EDA" style={{ height: 26 }} />
+        <img src={appPath('eda.svg')} alt="EDA" style={{ height: 26 }} />
         <Typography variant="h6" sx={{ fontWeight: 200, color: 'text.primary' }}>EDA Cable Map</Typography>
         <Box sx={{ flex: 1 }} />
         {ready && (

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNodesState, type Node as RFNode } from '@xyflow/react';
-import { type Topology } from '../api';
+import type { Topology } from '../domain/topology/contract';
+import { emptyAdjacency, type Adjacency } from '../graph/adjacency';
 import { buildGraph } from '../graph';
-import { setAdjacency, type Adjacency } from '../trace';
+import { setAdjacency } from '../trace';
 
 // Builds the React Flow graph from a topology and owns the node state. The `setAdjacency` call
 // inside the memo pushes adjacency into the trace store — every highlight depends on it. A live
@@ -12,7 +13,7 @@ export function useGraphModel(topo: Topology | null, largeTopology: boolean) {
   const [selected, setSelected] = useState<string[]>([]);
 
   const { nodes: builtNodes, edges, switchIds, adjacency } = useMemo(() => {
-    const empty: Adjacency = { nodeEdges: new Map(), edgeEnds: new Map(), edgePorts: new Map(), search: new Map(), nodeLabels: new Map() };
+    const empty: Adjacency = emptyAdjacency();
     if (!topo) return { nodes: [] as RFNode[], edges: [], switchIds: new Set<string>(), adjacency: empty };
     const g = buildGraph(topo, { compact: false, tiered: largeTopology });
     setAdjacency(g.adjacency);

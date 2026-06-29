@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { BASE } from './api';
+import { appPath } from './api/base';
 
 // The stencil SVGs are self-describing: each cage <path> carries data-port="N". We read that
 // mapping straight from the inlined SVG and colour the cages directly — there is no separate
@@ -14,7 +14,7 @@ type StencilCache =
 
 const stencilCache = new Map<string, StencilCache>();
 
-const stencilUrl = (platform: string) => `${BASE}frontpanel/${encodeURIComponent(platform)}.svg`;
+const stencilUrl = (platform: string) => appPath(`frontpanel/${encodeURIComponent(platform)}.svg`);
 
 function loadStencil(platform: string): Promise<string | null> {
   const cached = stencilCache.get(platform);
@@ -152,7 +152,7 @@ export default function FrontPanel({ platform, occupied, hovered = null, onHover
   // colour the cages from their embedded data-port on state/hover change
   useEffect(() => {
     if (state !== 'ready' || !ref.current) return;
-    const cages = [...ref.current.querySelectorAll('svg path[data-port]')] as SVGPathElement[];
+    const cages = Array.from(ref.current.querySelectorAll<SVGPathElement>('svg path[data-port]'));
     const occ = new Set(occupied);
     const cleanups: Array<() => void> = [];
     for (const el of cages) {

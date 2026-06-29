@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type Node as RFNode } from '@xyflow/react';
-import { type Adjacency } from '../trace';
+import type { Adjacency } from '../graph/adjacency';
 import { type FitNodesOptions } from '../lib/viewport';
 
 type LabelFilterDeps = {

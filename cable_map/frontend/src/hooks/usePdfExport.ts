@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { BASE, type Topology } from '../api';
-import { authHeader, currentToken } from '../auth';
+import { authenticatedFetch } from '../api/client';
+import type { Topology } from '../domain/topology/contract';
 import { edgeRemote } from '../edge-remote';
 
 type PdfState = { status: 'idle' | 'loading' | 'error'; message?: string };
@@ -26,13 +26,11 @@ export function usePdfExport({ topo, namespace }: { topo: Topology | null; names
     if (ns) params.set('ns', ns);
     const sub = edgeRemote.subset(targets);
     if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
-    const tok = currentToken();
-    if (tok) params.set('access_token', tok); // header gets stripped by the proxy; query param survives
     const qs = params.toString();
     loadingRef.current = true;
     setPdfState({ status: 'loading' });
     try {
-      const res = await fetch(`${BASE}pdf${qs ? `?${qs}` : ''}`, { headers: await authHeader() });
+      const res = await authenticatedFetch(`pdf${qs ? `?${qs}` : ''}`);
       if (!res.ok) {
         const detail = await res.json().then((b) => b?.error).catch(() => '');
         throw new Error(detail ? `PDF export failed: ${detail}` : `PDF export failed (HTTP ${res.status})`);

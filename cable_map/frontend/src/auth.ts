@@ -1,7 +1,7 @@
 // keycloak-js token plumbing. Behind EDA's HttpProxy (atDestination) the SPA document loads
 // unauthenticated; this then runs keycloak-js' hidden-iframe check-sso against the EDA Keycloak SSO
-// session and obtains a per-tab, in-memory JWT (never persisted). api.ts attaches it as a bearer on
-// fetches and as ?access_token= on SSE (EventSource can't set headers).
+// session and obtains a per-tab, in-memory JWT (never persisted). The API client attaches it as a
+// bearer on fetches and as ?access_token= on SSE (EventSource can't set headers).
 import Keycloak from 'keycloak-js';
 
 const BASE = import.meta.env.BASE_URL;

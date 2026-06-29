@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useStore, useStoreApi, useReactFlow, useNodesInitialized, Position, type Edge as RFEdge, type InternalNode, type Node as RFNode } from '@xyflow/react';
-import { CABLE_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W, LLDP_COLOR, switchPortCenter, type CableKind, type SwitchData } from '../graph';
-import type { LldpStatus } from '../api';
+import { COMPACT_SWITCH_H, COMPACT_SWITCH_W, switchPortCenter, type CableKind, type SwitchData } from '../graph';
+import type { LldpStatus } from '../domain/topology/contract';
 import { trace, useTrace } from '../trace';
 import { useLldp } from '../lldp';
 import { useGroupedEdges } from './edgeRoute';
-import { cablePolyline, pointAtFraction, distToPolyline, type XY } from './edgeGeometry';
+import { cablePolyline, distToPolyline, type XY } from './edgeGeometry';
+import { resizeCanvasToDisplaySize } from '../webgl/canvas';
+import {
+  buildEdgeVertices, EDGE_VERTEX_STRIDE, sameEdgeLabels,
+  type EdgeDrawGeometry, type EdgeDrawLabel,
+} from '../webgl/edgeVertices';
+import { linkProgram } from '../webgl/program';
 
 // WebGL cable layer: nodes/store/interaction stay React Flow; only the cables render on the GPU.
 // Each cable is tessellated into a thick-line triangle strip
@@ -19,12 +25,7 @@ import { cablePolyline, pointAtFraction, distToPolyline, type XY } from './edgeG
 type Data = { kind: CableKind; a?: string; b?: string; count?: number; lldp?: LldpStatus; forceOn?: boolean };
 type Pt = { x: number; y: number; pos: Position };
 type Hit = { id: string; pts: XY[] };
-type Label = { key: string; x: number; y: number; text: string; color: string; badge: boolean };
-// cached per-cable geometry — trace-independent (polyline + per-vertex miter normals/length factor)
-type Geom = { id: string; pts: XY[]; n: number; mnx: Float64Array; mny: Float64Array; ml: Float64Array; kind?: CableKind; lldp?: LldpStatus; cnt: number; forceOn: boolean; a?: string; b?: string };
 type PointerState = { active: boolean; x: number; y: number; overNode: boolean; lastHover: string | null };
-
-const FLOATS = 9;       // a_pos(2) a_norm(2) a_color(4) a_half(1)
 
 const VERT = `
 precision highp float;
@@ -123,50 +124,11 @@ function buildStemOffsets(handles: { id?: string | null; x: number; y: number; w
   return m;
 }
 
-// resolve a CSS color (incl. var(--x), theme-dependent) to [r,g,b] 0..1 via a 1px 2d probe
-const colorCache = new Map<string, [number, number, number]>();
-let probe: CanvasRenderingContext2D | null = null;
-function resolveColor(css: string, themeKey: string): [number, number, number] {
-  const key = `${themeKey}|${css}`;
-  const hit = colorCache.get(key);
-  if (hit) return hit;
-  let s = css;
-  const m = /var\((--[^)]+)\)/.exec(css);
-  if (m) s = getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() || '#888888';
-  probe ??= document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-  let rgb: [number, number, number] = [0.5, 0.5, 0.5];
-  if (probe) {
-    probe.fillStyle = '#000000';
-    probe.fillStyle = s;
-    probe.fillRect(0, 0, 1, 1);
-    const d = probe.getImageData(0, 0, 1, 1).data;
-    rgb = [d[0] / 255, d[1] / 255, d[2] / 255];
-  }
-  colorCache.set(key, rgb);
-  return rgb;
-}
-
-function sameLabels(left: Label[], right: Label[]): boolean {
-  if (left.length !== right.length) return false;
-  for (let i = 0; i < left.length; i++) {
-    const a = left[i], b = right[i];
-    if (a.key !== b.key || a.x !== b.x || a.y !== b.y || a.text !== b.text || a.color !== b.color || a.badge !== b.badge) return false;
-  }
-  return true;
-}
-
-function compile(gl: WebGLRenderingContext, type: number, src: string) {
-  const sh = gl.createShader(type)!;
-  gl.shaderSource(sh, src);
-  gl.compileShader(sh);
-  return sh;
-}
-
-// The WebGL cable layer. Endpoints resolve from React Flow's measured handles when available and fall
-// back to node data otherwise — so cables draw correctly even for culled / overview nodes a large
-// fabric doesn't keep mounted. Hover/click hit-testing and the ×N / traced-port labels are always on.
-export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
-  edges: RFEdge[]; dark: boolean; nodes: RFNode[]; onUnavailable?: () => void;
+// One WebGL cable layer for both regimes. Normal fabrics resolve endpoints from React Flow's measured
+// handles (exact, interactive). `lite` (large fabrics) computes endpoints from node data instead — so
+// it works for culled / overview nodes the store doesn't hold — and drops hover/click + labels.
+export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailable }: {
+  edges: RFEdge[]; dark: boolean; nodes: RFNode[]; lite?: boolean; onUnavailable?: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
@@ -203,10 +165,10 @@ export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
   const count = useRef(0);
   const hitRef = useRef<Hit[]>([]);            // per-cable polylines for hover/click hit-testing
   // cached geometry: recomputed only when edges/positions/routing change (NOT on hover/trace)
-  const geomCache = useRef<{ edges: RFEdge[]; nodes: RFNode[]; posHash: number; grouped: boolean; geom: Geom[] } | null>(null);
+  const geomCache = useRef<{ edges: RFEdge[]; nodes: RFNode[]; posHash: number; grouped: boolean; geom: EdgeDrawGeometry[] } | null>(null);
   const pointerRef = useRef<PointerState>({ active: false, x: 0, y: 0, overNode: false, lastHover: null });
   const repickRef = useRef<(() => void) | null>(null);
-  const [labels, setLabels] = useState<Label[]>([]);  // ×N + traced-endpoint labels (HTML overlay)
+  const [labels, setLabels] = useState<EdgeDrawLabel[]>([]);  // ×N + traced-endpoint labels (HTML overlay)
 
   // one-time GL init
   useLayoutEffect(() => {
@@ -214,13 +176,13 @@ export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
     const context = canvas?.getContext('webgl', { antialias: true, premultipliedAlpha: true, alpha: true });
     if (!canvas || !context) { onUnavailable?.(); return; }
     gl.current = context;
-    const p = context.createProgram()!;
-    const vs = compile(context, context.VERTEX_SHADER, VERT), fs = compile(context, context.FRAGMENT_SHADER, FRAG);
-    context.attachShader(p, vs); context.attachShader(p, fs);
-    context.linkProgram(p);
-    if (!context.getProgramParameter(p, context.LINK_STATUS)) {
-      console.warn('[GLEdges] program link failed:', context.getProgramInfoLog(p), context.getShaderInfoLog(vs), context.getShaderInfoLog(fs));
+    let p: WebGLProgram;
+    try {
+      p = linkProgram(context, VERT, FRAG);
+    } catch (error) {
+      console.warn('[GLEdges] program link failed:', error);
       onUnavailable?.();
+      return;
     }
     prog.current = p;
     buf.current = context.createBuffer();
@@ -242,6 +204,9 @@ export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
   const rebuild = useCallback(() => {
     const context = gl.current;
     if (!context) return;
+    // Normal mode draws from measured handles, so wait for measurement; lite mode computes endpoints
+    // from node data, so it does not need to wait for React Flow handle bounds.
+    if (!nodesReady && !lite) return;
     const { nodeLookup } = store.getState();
 
     // --- GEOMETRY pass (cached) -----------------------------------------------------------------
@@ -256,7 +221,7 @@ export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
         if (!m) { m = buildStemOffsets(nodeLookup.get(nodeId)?.internals.handleBounds?.source ?? []); offsetCache.set(nodeId, m); }
         return m;
       };
-      const geom: Geom[] = [];
+      const geom: EdgeDrawGeometry[] = [];
       for (const e of edges) {
         const s = handlePoint(nodeLookup.get(e.source), e.sourceHandle, 'source') ?? computedPoint(nodesById.get(String(e.source)), e.sourceHandle);
         const t = handlePoint(nodeLookup.get(e.target), e.targetHandle, 'target') ?? computedPoint(nodesById.get(String(e.target)), e.targetHandle);
@@ -285,60 +250,34 @@ export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
         }
         geom.push({ id: e.id, pts, n, mnx, mny, ml, kind: d?.kind, lldp: d?.lldp, cnt: d?.count ?? 1, forceOn: !!d?.forceOn, a: d?.a, b: d?.b });
       }
-      hitRef.current = geom.map((g) => ({ id: g.id, pts: g.pts }));
+      hitRef.current = lite ? [] : geom.map((g) => ({ id: g.id, pts: g.pts }));
       geomCache.current = { edges, nodes, posHash, grouped, geom };
     }
     const geom = geomCache.current!.geom;
 
     // --- APPEARANCE pass (runs on every hover — cheap: colour/alpha/width + buffer write only) ---
-    const theme = dark ? 'd' : 'l';
-    const ordered = geom.toSorted((a, b) => Number(tracedEdges.has(a.id)) - Number(tracedEdges.has(b.id))); // traced last (on top)
-    const smallTrace = tracedEdges.size <= 4;   // matches the SVG edge: only label a small trace
-    let totalVerts = 0;
-    for (const g of ordered) totalVerts += (g.n - 1) * 6;
-    const data = new Float32Array(totalVerts * FLOATS);
-    let o = 0;
-    const push = (x: number, y: number, nx: number, ny: number, col: [number, number, number], a: number, half: number) => {
-      data[o++] = x; data[o++] = y; data[o++] = nx; data[o++] = ny;
-      data[o++] = col[0]; data[o++] = col[1]; data[o++] = col[2]; data[o++] = a; data[o++] = half;
-    };
-    const labelOut: Label[] = [];
-    for (const g of ordered) {
-      const on = tracedEdges.has(g.id) || g.forceOn;
-      const dim = traceAny && !on;
-      const css = lldpOn ? LLDP_COLOR[g.lldp ?? 'none'] : CABLE_COLOR[g.kind ?? 'isl'];
-      const col = resolveColor(css, theme);
-      const alpha = dim ? 0.12 : on ? 1 : 0.55;
-      const half = ((on ? 2.6 : 1.1) + (g.cnt > 1 ? 1 : 0)) / 2;
-      const { pts, mnx, mny, ml, n } = g;
-      for (let i = 0; i < n - 1; i++) {
-        const p = pts[i], q = pts[i + 1];
-        const mi = half * ml[i], mj = half * ml[i + 1];
-        push(p.x, p.y, mnx[i], mny[i], col, alpha, mi); push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
-        push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, -mnx[i + 1], -mny[i + 1], col, alpha, mj); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
-      }
-      if (g.cnt > 1) { const m = pointAtFraction(pts, 0.5); labelOut.push({ key: `${g.id}:n`, x: m.x, y: m.y, text: `×${g.cnt}`, color: css, badge: true }); }
-      if (on && smallTrace) {
-        const pa = pointAtFraction(pts, 0.18), pb = pointAtFraction(pts, 0.82);
-        if (g.a) labelOut.push({ key: `${g.id}:a`, x: pa.x, y: pa.y, text: g.a, color: css, badge: false });
-        if (g.b) labelOut.push({ key: `${g.id}:b`, x: pb.x, y: pb.y, text: g.b, color: css, badge: false });
-      }
-    }
-    setLabels((prev) => sameLabels(prev, labelOut) ? prev : labelOut);
-    count.current = o / FLOATS;
+    const { vertices, vertexCount, labels: labelOut } = buildEdgeVertices({
+      geometry: geom,
+      tracedEdges,
+      traceAny,
+      lldpOn,
+      dark,
+      lite,
+    });
+    setLabels((prev) => sameEdgeLabels(prev, labelOut) ? prev : labelOut);
+    count.current = vertexCount;
     context.bindBuffer(context.ARRAY_BUFFER, buf.current);
-    context.bufferData(context.ARRAY_BUFFER, data.subarray(0, o), context.DYNAMIC_DRAW);
+    context.bufferData(context.ARRAY_BUFFER, vertices, context.DYNAMIC_DRAW);
     // posHash isn't read directly (positions come from the live store) but retriggers rebuild on node move
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store, nodes, nodesById]);
+  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store, nodes, nodesById, lite]);
 
   const draw = useCallback(() => {
     const context = gl.current, p = prog.current, l = loc.current;
     if (!context || !p) return;
-    const dpr = window.devicePixelRatio || 1;
-    const bw = Math.round(width * dpr), bh = Math.round(height * dpr);
-    const canvas = ref.current!;
-    if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+    const canvas = ref.current;
+    if (!canvas) return;
+    const { width: bw, height: bh, dpr } = resizeCanvasToDisplaySize(canvas, width, height);
     const [tx, ty, zoom] = store.getState().transform;
     context.viewport(0, 0, bw, bh);
     context.clearColor(0, 0, 0, 0);
@@ -346,7 +285,7 @@ export default function GLEdges({ edges, dark, nodes, onUnavailable }: {
     if (!count.current) return;
     context.useProgram(p);
     context.bindBuffer(context.ARRAY_BUFFER, buf.current);
-    const stride = FLOATS * 4;
+    const stride = EDGE_VERTEX_STRIDE * Float32Array.BYTES_PER_ELEMENT;
     const a = l as Record<string, number>;
     context.enableVertexAttribArray(a.a_pos); context.vertexAttribPointer(a.a_pos, 2, context.FLOAT, false, stride, 0);
     context.enableVertexAttribArray(a.a_norm); context.vertexAttribPointer(a.a_norm, 2, context.FLOAT, false, stride, 8);

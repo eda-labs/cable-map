@@ -10,8 +10,9 @@ import TableCell from '@mui/material/TableCell';
 import Link from '@mui/material/Link';
 import FrontPanel from './FrontPanel';
 import RemoteCell from './RemoteCell';
-import { portIdx, cageKey, type Node, type Row } from './api';
-import { slottedOf } from './graph';
+import { cageKey, portIdx } from './domain/ports/interfaceNames';
+import { slottedOf } from './domain/ports/frontPanelMeta';
+import type { Node, Row } from './domain/topology/contract';
 import { stencilFor, componentsOf } from './stencil';
 
 type Props = {

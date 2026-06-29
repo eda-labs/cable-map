@@ -4,7 +4,7 @@ import {
   CABLE_COLOR, LLDP_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W,
   breakoutGrid, compactSwitchHandle, panelDims, portHandle, type PortInfo, type SwitchData,
 } from './graph';
-import type { Breakout } from './api';
+import type { Breakout } from './domain/topology/contract';
 import { trace, useTrace, modeFor } from './trace';
 import { useLldp } from './lldp';
 import spineIcon from './assets/icons/spine.svg?raw';

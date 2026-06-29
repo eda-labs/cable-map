@@ -1,6 +1,6 @@
 import { type Node as RFNode } from '@xyflow/react';
 import { findSwitchPort, switchPortCenter, type SwitchData } from '../graph';
-import { type Adjacency } from '../trace';
+import type { Adjacency } from '../graph/adjacency';
 
 export const SEARCH_PORT_ZOOM = 3.2;
 

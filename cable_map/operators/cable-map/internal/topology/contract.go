@@ -3,7 +3,7 @@ package topology
 // ---- output contract -------------------------------------------------------------
 //
 // This file is the SINGLE SOURCE OF TRUTH for the JSON contract the React frontend consumes.
-// `src/topology.gen.ts` is generated from these structs by tygo (`make ts-contract`); never edit
+// `src/generated/topology.gen.ts` is generated from these structs by tygo (`make ts-contract`); never edit
 // the generated TS by hand. Field names + the load-bearing string literals ("interSwitch"/"edge",
 // "ok"/"mismatch"/"none", the "lag-" prefix, role values) must stay stable.
 

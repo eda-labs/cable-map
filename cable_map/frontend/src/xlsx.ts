@@ -1,6 +1,6 @@
 import type { Cell } from 'write-excel-file/browser';
-import type { Topology, LagInfo } from './api';
-import { portIdx } from './api';
+import type { LagInfo, Topology } from './domain/topology/contract';
+import { portIdx } from './domain/ports/interfaceNames';
 import { edgeRemote } from './edge-remote';
 
 // readable LAG classification for the spreadsheet's LAG column

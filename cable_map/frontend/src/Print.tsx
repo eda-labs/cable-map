@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchTopology, BASE, type Topology } from './api';
+import { appPath } from './api/base';
+import { fetchTopology } from './api/topology';
+import type { Topology } from './domain/topology/contract';
 import NodeView from './NodeView';
 import { edgeRemote } from './edge-remote';
 import './print.css';
@@ -50,7 +52,7 @@ export default function Print() {
           <div className="page-head">
             <div className="title">{n.name} <span>{n.platform}</span></div>
             <div className="page-brand">
-              <img src={`${BASE}eda.svg`} alt="EDA" />
+              <img src={appPath('eda.svg')} alt="EDA" />
               <span className="cap">Cable Map</span>
             </div>
           </div>

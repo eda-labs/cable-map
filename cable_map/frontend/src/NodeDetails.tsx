@@ -5,7 +5,7 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import { dump } from 'js-yaml';
 import type { editor } from 'monaco-editor';
-import type { Node } from './api';
+import type { Node } from './domain/topology/contract';
 
 const NodeRawEditor = lazy(() => import('./NodeRawEditor'));
 

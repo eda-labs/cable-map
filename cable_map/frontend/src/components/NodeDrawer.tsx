@@ -15,7 +15,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SvgGlyph from './SvgGlyph';
 import pdfIcon from '../assets/icons/pdf.svg?raw';
 import excelIcon from '../assets/icons/excel.svg?raw';
-import { type Node, type Topology } from '../api';
+import type { Node, Topology } from '../domain/topology/contract';
 import { exportXlsx } from '../xlsx';
 import NodeView from '../NodeView';
 import NodeDetails from '../NodeDetails';

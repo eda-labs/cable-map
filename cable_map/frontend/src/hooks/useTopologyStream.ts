@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { streamNamespaces, streamTopology, type Topology } from '../api';
+import { streamNamespaces } from '../api/namespaces';
+import { streamTopology } from '../api/topology';
+import type { Topology } from '../domain/topology/contract';
 import { preloadFrontPanel } from '../FrontPanel';
 
 // Owns the live EDA connection: the namespace list, the selected namespace, and the topology

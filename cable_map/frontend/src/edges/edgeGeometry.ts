@@ -1,11 +1,28 @@
 // Faithful port of React Flow's edge path math (@xyflow/system: bezier-edge + smoothstep-edge),
-// adapted to emit a sampled POLYLINE (XY points) instead of an SVG path string — so the WebGL layer
-// tessellates the *exact* same curves React Flow's SVG edges draw. The SVG edges keep using React
-// Flow's native getBezierPath/getSmoothStepPath (smooth C/Q commands); sampling that same geometry
-// here makes the GL cables visually identical. Keep this in sync with the upstream source.
-import { Position } from '@xyflow/react';
+// adapted to expose one route model for both SVG paths and sampled WebGL polylines.
+import { getBezierPath, getSmoothStepPath, Position } from '@xyflow/react';
 
 export type XY = { x: number; y: number };
+export type CableRoute = {
+  path: string;
+  points: XY[];
+  midpoint: XY;
+  sourceLabel: XY;
+  targetLabel: XY;
+};
+export type CableRouteInput = {
+  sourceX: number;
+  sourceY: number;
+  sourcePosition: Position;
+  targetX: number;
+  targetY: number;
+  targetPosition: Position;
+  grouped: boolean;
+  peerArch?: boolean;
+  sourceDx?: number;
+  targetDx?: number;
+  borderRadius?: number;
+};
 
 // ---- shared ---------------------------------------------------------------
 const distance = (a: XY, b: XY) => Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
@@ -163,9 +180,13 @@ function smoothStepPolyline(s: XY, sp: Position, t: XY, tp: Position, borderRadi
 
 // peer-arch: same-tier ISL (both ports on Top) arched up over the open gap, instead of a flat bezier
 // buried under the panels. Matches CableEdge's control points + lift formula.
-function archPolyline(s: XY, t: XY): XY[] {
+function archControls(s: XY, t: XY): { c1: XY; c2: XY } {
   const lift = Math.min(Math.max(Math.abs(t.x - s.x) * 0.35, 60), 200);
-  const c1: XY = { x: s.x, y: s.y - lift }, c2: XY = { x: t.x, y: t.y - lift };
+  return { c1: { x: s.x, y: s.y - lift }, c2: { x: t.x, y: t.y - lift } };
+}
+
+function archPolyline(s: XY, t: XY): XY[] {
+  const { c1, c2 } = archControls(s, t);
   const span = distance(s, c1) + distance(c1, c2) + distance(c2, t);
   const segs = bezierSegments(span);
   const out: XY[] = [{ x: s.x, y: s.y }];
@@ -176,11 +197,49 @@ function archPolyline(s: XY, t: XY): XY[] {
   return out;
 }
 
+function routeAnchors(points: XY[], midpoint?: XY): Pick<CableRoute, 'midpoint' | 'sourceLabel' | 'targetLabel'> {
+  return {
+    midpoint: midpoint ?? pointAtFraction(points, 0.5),
+    sourceLabel: pointAtFraction(points, 0.18),
+    targetLabel: pointAtFraction(points, 0.82),
+  };
+}
+
+export function cableRoute({
+  sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
+  grouped, peerArch = false, sourceDx = 0, targetDx = 0, borderRadius = 16,
+}: CableRouteInput): CableRoute {
+  const source = { x: sourceX, y: sourceY };
+  const target = { x: targetX, y: targetY };
+  if (peerArch) {
+    const { c1, c2 } = archControls(source, target);
+    const points = archPolyline(source, target);
+    return {
+      path: `M${sourceX},${sourceY} C${c1.x},${c1.y} ${c2.x},${c2.y} ${targetX},${targetY}`,
+      points,
+      ...routeAnchors(points),
+    };
+  }
+  if (grouped) {
+    const points = smoothStepPolyline(source, sourcePosition, target, targetPosition, borderRadius, sourceDx, targetDx);
+    const [path, labelX, labelY] = getSmoothStepPath({
+      sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius,
+    });
+    return { path, points, ...routeAnchors(points, { x: labelX, y: labelY }) };
+  }
+  const points = bezierPolyline(source, sourcePosition, target, targetPosition);
+  const [path, labelX, labelY] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
+  return { path, points, ...routeAnchors(points, { x: labelX, y: labelY }) };
+}
+
 // Public: the polyline for one cable, matching the SVG edge's routing. Precedence mirrors CableEdge:
 // peer-arch first, then grouped (smoothstep), else bezier.
 export function cablePolyline(s: XY, sp: Position, t: XY, tp: Position, grouped: boolean, peerArch = false, sDx = 0, tDx = 0, borderRadius = 16): XY[] {
-  if (peerArch) return archPolyline(s, t);
-  return grouped ? smoothStepPolyline(s, sp, t, tp, borderRadius, sDx, tDx) : bezierPolyline(s, sp, t, tp);
+  return cableRoute({
+    sourceX: s.x, sourceY: s.y, sourcePosition: sp,
+    targetX: t.x, targetY: t.y, targetPosition: tp,
+    grouped, peerArch, sourceDx: sDx, targetDx: tDx, borderRadius,
+  }).points;
 }
 
 // point at arc-length fraction f along a polyline (for label anchoring: 0.5 = midpoint, 0.18/0.82 = ends)

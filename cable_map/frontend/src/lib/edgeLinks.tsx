@@ -2,7 +2,7 @@ import { type Edge as RFEdge } from '@xyflow/react';
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOffOutlined';
 import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernetOutlined';
-import { type Adjacency } from '../trace';
+import type { Adjacency } from '../graph/adjacency';
 
 export type EdgeLinkMode = 'enabled' | 'stub' | 'hidden';
 export const EDGE_LINK_MODE_ORDER: EdgeLinkMode[] = ['enabled', 'stub', 'hidden'];

@@ -1,21 +1,8 @@
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
-import type { Breakout, LldpStatus } from '../api';
-import type { Adjacency } from '../trace';
+import type { Breakout, LldpStatus } from '../domain/topology/contract';
+import type { Adjacency } from './adjacency';
 
-// edge = plain server cable, lag = local port-channel (all members one box),
-// mlag = multihomed/ESI bond (members span two leaves), isl = fabric uplink.
 export type CableKind = 'isl' | 'edge' | 'lag' | 'mlag';
-export const CABLE_COLOR: Record<CableKind, string> = {
-  isl: 'var(--eda-blue-400)', edge: 'var(--eda-teal-500)', lag: 'var(--eda-yellow-500)', mlag: 'var(--eda-purple-400)',
-};
-
-// LLDP overlay palette (used in place of CABLE_COLOR while the overlay is on).
-export const LLDP_COLOR: Record<LldpStatus, string> = {
-  ok: 'var(--eda-green-500)', mismatch: 'var(--eda-red-500)', none: 'var(--eda-gray-600)',
-};
-const LLDP_RANK: Record<LldpStatus, number> = { ok: 0, none: 1, mismatch: 2 };
-// a bundle/bond takes its worst member status — a mismatch anywhere wins.
-export const worseLldp = (a: LldpStatus, b: LldpStatus): LldpStatus => (LLDP_RANK[a] >= LLDP_RANK[b] ? a : b);
 
 export type PortPos = { p: string; x: number; y: number; w: number; h: number };
 
@@ -53,6 +40,8 @@ export type EndpointData = {
   mode?: string;          // multihoming mode, e.g. AllActive (ESI only)
   lldp?: LldpStatus;      // worst LLDP status across the bond's member ports
 };
+
+export type GraphEndpoint = { id: string; leaves: string[]; data: EndpointData };
 
 export type BuiltGraph = { nodes: RFNode[]; edges: RFEdge[]; adjacency: Adjacency };
 export type BuildGraphOptions = { compact?: boolean; tiered?: boolean };

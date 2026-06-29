@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type Edge as RFEdge, type Node as RFNode, type Viewport } from '@xyflow/react';
-import { useTrace, type Adjacency } from '../trace';
+import type { Adjacency } from '../graph/adjacency';
+import { useTrace } from '../trace';
 import { edgeVisibleForShown, isStubEdge, type EdgeLinkMode } from '../lib/edgeLinks';
 import { LARGE_WEBGL_NODE_ZOOM, nodeIntersectsViewport } from '../lib/viewport';
 

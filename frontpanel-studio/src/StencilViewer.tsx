@@ -11,12 +11,12 @@ import {
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { ReactFlow, type Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import frontpanelMeta from '@app/frontpanel-meta.json';
-import { BASE } from '@app/api';
+import { appPath } from '@app/api/base';
+import { frontPanelMetaOf, frontPanelPlatforms, type FrontPanelMeta } from '@app/domain/ports/frontPanelMeta';
 import SwitchNode from '@app/SwitchNode';
 import type { SwitchData } from '@app/graph';
 
-const ALL = Object.keys(frontpanelMeta).toSorted();
+const ALL = frontPanelPlatforms().toSorted();
 const BASE_SUB = '— base —';
 
 // split a stencil name into [platform group, variant subtype]. Only the modular chassis fan out into
@@ -43,14 +43,12 @@ const GROUPS = (() => {
 })();
 const GROUP_NAMES = [...GROUPS.keys()].toSorted();
 
-type Meta = { ports: number; rows: number; aspect: number; slotted: boolean; layout: { p: string; x: number; y: number; w: number; h: number }[] };
-const META = frontpanelMeta as Record<string, Meta>;
 const nodeTypes = { switch: SwitchNode };
 
 // the real canvas node: render the actual SwitchNode inside a minimal ReactFlow so it looks exactly as
 // it would on the topology canvas (all ports free / uncabled, since this is just the stencil preview).
 function CanvasNode({ name }: { name: string }) {
-  const m = META[name];
+  const m = frontPanelMetaOf(name) as FrontPanelMeta;
   // the canvas header shows the chassis family, not the full composite/permutation name
   const data: SwitchData = {
     name: classify(name)[0], role: 'leaf', platform: '',
@@ -124,7 +122,7 @@ function Inspector({ name, fillCages, rev, onPick }: { name: string; fillCages: 
     onPick(null);
     el.innerHTML = '<div style="padding:24px;color:#888;font:13px system-ui">loading…</div>';
     // rev bumps on a frontpanel-hmr ping; the query busts the browser cache so the edited SVG reloads
-    fetch(`${BASE}frontpanel/${encodeURIComponent(name)}.svg${rev ? `?v=${rev}` : ''}`)
+    fetch(`${appPath(`frontpanel/${encodeURIComponent(name)}.svg`)}${rev ? `?v=${rev}` : ''}`)
       .then((r) => r.text())
       .then((txt) => {
         if (cancelled) return;
