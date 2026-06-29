@@ -43,6 +43,7 @@ const defaultDrawerHeight = () => Math.round(window.innerHeight * 0.6);
 function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenNode, mode, topo, pdfLoading, onExportPdf }: NodeDrawerProps) {
   const [drawerTab, setDrawerTab] = useState(0);            // 0 = Ports, 1 = Details
   const [drawerH, setDrawerH] = useState(defaultDrawerHeight);
+  const [dragging, setDragging] = useState(false);          // suppresses the slide transition mid-drag
   const nodeName = node?.name;
 
   useEffect(() => {
@@ -59,6 +60,7 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
   const startDrag = (e: React.PointerEvent) => {
     e.preventDefault();
     trace.suspendHover(true);
+    setDragging(true);
     let moved = false;
     let collapseOnRelease = false;
     const cleanup = () => {
@@ -66,6 +68,7 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', cancel);
       trace.suspendHover(false);
+      setDragging(false);
     };
     const move = (ev: PointerEvent) => {
       moved = true;
@@ -90,28 +93,32 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
   // sheet + Monaco editor stay flat like EDA.
   const surface = mode === 'dark' ? '#1A222E' : '#FFFFFF';
 
-  // Collapsed: a small centered handle that invites pulling up. Centered so it sits
-  // between the bottom-left legend and bottom-right HUD and occludes neither.
-  if (!expanded) {
-    return (
-      <Box onPointerDown={startDrag} title="Open node panel"
-        sx={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-          zIndex: (t) => t.zIndex.drawer, cursor: 'ns-resize',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25,
-          px: 2.5, pt: 0.75, pb: 0.5, bgcolor: surface, backgroundImage: 'none',
-          borderTopLeftRadius: 12, borderTopRightRadius: 12, boxShadow: 6,
-          '&:hover .puller': { bgcolor: 'text.secondary' } }}>
-        <Box className="puller" sx={{ width: 40, height: 4, bgcolor: 'divider', borderRadius: 2 }} />
-        <KeyboardArrowUpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: (t) => t.zIndex.drawer,
-      height: drawerH, borderTopLeftRadius: 12, borderTopRightRadius: 12,
-      bgcolor: surface, backgroundImage: 'none', boxShadow: 6,
-      display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <>
+      {/* Collapsed: a small centered handle inviting a pull-up. Centered so it sits between the
+          bottom-left legend and bottom-right HUD and occludes neither; hidden once the sheet is up. */}
+      {!expanded && (
+        <Box onPointerDown={startDrag} title="Open node panel"
+          sx={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+            zIndex: (t) => t.zIndex.drawer, cursor: 'ns-resize',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25,
+            px: 2.5, pt: 0.75, pb: 0.5, bgcolor: surface, backgroundImage: 'none',
+            borderTopLeftRadius: 12, borderTopRightRadius: 12, boxShadow: 6,
+            '&:hover .puller': { bgcolor: 'text.secondary' } }}>
+          <Box className="puller" sx={{ width: 40, height: 4, bgcolor: 'divider', borderRadius: 2 }} />
+          <KeyboardArrowUpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+        </Box>
+      )}
+
+      {/* The sheet stays mounted and slides on the `expanded` toggle; while dragging the transition is
+          off so it tracks the pointer 1:1. `inert` parks it out of tab/pointer reach while collapsed. */}
+      <Box inert={!expanded}
+        sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: (t) => t.zIndex.drawer,
+          height: drawerH, borderTopLeftRadius: 12, borderTopRightRadius: 12,
+          bgcolor: surface, backgroundImage: 'none', boxShadow: 6,
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          transform: expanded ? 'translateY(0)' : 'translateY(calc(100% + 24px))', // +24px clears the box-shadow off-screen
+          transition: dragging ? 'none' : 'transform 260ms cubic-bezier(0.32, 0.72, 0, 1)' }}>
       <Box onPointerDown={startDrag} title="Drag to resize"
         sx={{ cursor: 'ns-resize', py: 0.75, display: 'flex', justifyContent: 'center',
           '&:hover .puller': { bgcolor: 'text.secondary' } }}>
@@ -173,7 +180,8 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
           <Typography variant="body2">Select a node on the map to view its ports and details</Typography>
         </Box>
       )}
-    </Box>
+      </Box>
+    </>
   );
 }
 
