@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import {
   ReactFlow, Background, BackgroundVariant, Controls, ControlButton,
   type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes,
@@ -19,6 +19,7 @@ import { useLldp } from '../lldp';
 import { edgeLinkModeIcon, edgeLinkModeTitle, type EdgeLinkMode } from '../lib/edgeLinks';
 import { LARGE_DEFAULT_VIEWPORT, LARGE_MAX_ZOOM, LARGE_MIN_ZOOM } from '../lib/viewport';
 import { type Mode } from '../theme';
+import { NodeActionsProvider } from './NodeActionsContext';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
 const edgeTypes: EdgeTypes = { cable: CableEdge };
@@ -57,15 +58,11 @@ function FlowCanvas({
 }: FlowCanvasProps) {
   const grouped = useGroupedEdges();
   const lldpOn = useLldp();
-  const interactiveFlowNodes = useMemo(() => flowNodes.map((n) => (
-    n.type === 'switch'
-      ? { ...n, data: { ...n.data, onSelectNode: onOpenNode } }
-      : n
-  )), [flowNodes, onOpenNode]);
 
   return (
+    <NodeActionsProvider value={onOpenNode}>
     <ReactFlow
-      nodes={interactiveFlowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+      nodes={flowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
       onNodesChange={onNodesChange}
       onInit={onInit}
       colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
@@ -130,6 +127,7 @@ function FlowCanvas({
       </Controls>
       <CanvasLegend />
     </ReactFlow>
+    </NodeActionsProvider>
   );
 }
 

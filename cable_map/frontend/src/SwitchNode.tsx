@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, type ReactNode } from 'react';
+import { memo, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
   CABLE_COLOR, LLDP_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W,
@@ -10,6 +10,7 @@ import { useLldp } from './lldp';
 import spineIcon from './assets/icons/spine.svg?raw';
 import leafIcon from './assets/icons/leaf.svg?raw';
 import superspineIcon from './assets/icons/superspine.svg?raw';
+import { useOpenNode } from './components/NodeActionsContext';
 
 const RoleIcons: Record<string, string> = {
   spine: spineIcon, superspine: superspineIcon, leaf: leafIcon, borderleaf: leafIcon,
@@ -107,9 +108,20 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
 function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs, box, onSelectNode }:
   { cage: string; infos: PortInfo[]; bo: Breakout; hot: boolean; selected: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box; onSelectNode?: (expand?: boolean) => void }) {
   const [hovered, setHovered] = useState(false);
-  // per-channel trace state: each channel highlights/dims on its OWN cable, not the whole cage
-  const tracedEdges = useTrace((s) => s.edges);
-  const traceAny = useTrace((s) => s.any);
+  // Per-channel trace state: subscribe to a primitive derived from this cage's cables, so unrelated
+  // trace updates don't re-render every breakout cage.
+  const activeCableStr = useTrace((s) => {
+    if (!s.any) return '';
+    let out = '';
+    for (const info of infos) {
+      if (info.cableId && s.edges.has(info.cableId)) out += `${info.cableId}\n`;
+    }
+    return out;
+  });
+  const activeCableIds = useMemo(
+    () => new Set(activeCableStr ? activeCableStr.trimEnd().split('\n') : []),
+    [activeCableStr],
+  );
   const n = Math.max(1, bo.channels);
   const W = box?.width ?? CELL, H = box?.height ?? CELL;
   const { cols, rows } = breakoutGrid(n);
@@ -117,9 +129,9 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
   const rowGap = rows > 1 ? 0.5 : 0;
   const sw = (W - colGap * (cols - 1)) / cols;
   const sh = (H - rowGap * (rows - 1)) / rows;
-  const byCh = new Map(infos.map((i) => [i.channel ?? 1, i]));
+  const byCh = useMemo(() => new Map(infos.map((i) => [i.channel ?? 1, i])), [infos]);
   // any channel of this cage in the active trace -> the whole cage rings white (one ring, like a port)
-  const anyHot = hot || infos.some((i) => !!i.cableId && tracedEdges.has(i.cableId));
+  const anyHot = hot || activeCableStr.length > 0;
   const label = bo.speed ? `${n}×${bo.speed} breakout` : `${n}-channel breakout`;
   const digits = Math.max(1, cage.length);
   const fontSize = box ? Math.max(4, Math.min(13, H * 0.9, W / (digits * 0.62))) : 7;
@@ -159,8 +171,8 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
         const row = Math.floor(i / cols);
         // this channel is hot when its own cable is traced; dim when the cage is dimmed (cage not in
         // the trace) or a trace is active and this channel's cable isn't part of it.
-        const chHot = !!info.cableId && tracedEdges.has(info.cableId);
-        const chDim = dim || (traceAny && !chHot);
+        const chHot = !!info.cableId && activeCableIds.has(info.cableId);
+        const chDim = dim || (activeCableStr.length > 0 && !chHot);
         return (
           <PortCell key={ch} info={info} hot={chHot} lldp={lldp} channel label={String(ch)} box={{ left: col * (sw + colGap), top: row * (sh + rowGap), width: sw, height: sh }}
             dim={chDim}
@@ -242,7 +254,6 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
       data-mode={mode}
       onMouseEnter={() => trace.hover(`node:${id}`)}
       onMouseLeave={() => trace.hover(null)}
-      onClick={() => d.onSelectNode?.(id)}
       style={{
         position: 'relative',
         width: COMPACT_SWITCH_W,
@@ -283,6 +294,8 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
 
 function DetailedSwitchNode({ id, data, selected }: NodeProps) {
   const d = data as SwitchData;
+  const openNode = useOpenNode();
+  const openThisNode = useCallback((expand?: boolean) => openNode(id, expand), [id, openNode]);
   const rows = Math.max(1, d.rows);
   const cols = Math.ceil(d.portCount / rows);
   const icon = RoleIcons[d.role];
@@ -335,7 +348,6 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
       data-mode={mode}
       onMouseEnter={() => { if (!d.showEdgeStubs) trace.hover(`node:${id}`); }}
       onMouseLeave={() => trace.hover(null)}
-      onClick={() => d.onSelectNode?.(id)}
       style={{
         background: 'var(--panel)', borderRadius: 8, padding: 8,
         border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
@@ -361,14 +373,14 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
             const cw = Math.max(3, p.w * panel.W), ch = Math.max(3, p.h * panel.H);
             const box = { left: p.x * panel.W - cw / 2, top: p.y * panel.H - ch / 2, width: cw, height: ch };
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box, (expand) => d.onSelectNode?.(id, expand));
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box, openThisNode);
           })}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${CELL}px)`, gridTemplateRows: `repeat(${rows}, ${CELL}px)`, gridAutoFlow: 'column', gap: CELL_GAP }}>
           {cages.map((cage) => {
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, undefined, (expand) => d.onSelectNode?.(id, expand));
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, undefined, openThisNode);
           })}
         </div>
       )}

@@ -5,6 +5,12 @@ import { emptyAdjacency, type Adjacency } from '../graph/adjacency';
 import { buildGraph } from '../graph';
 import { setAdjacency } from '../trace';
 
+function sameSelection(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 // Builds the React Flow graph from a topology and owns the node state. The `setAdjacency` call
 // inside the memo pushes adjacency into the trace store — every highlight depends on it. A live
 // stream tick rebuilds node data but keeps each node's current position so a dragged node never
@@ -28,9 +34,11 @@ export function useGraphModel(topo: Topology | null, largeTopology: boolean) {
     });
   }, [builtNodes, setNodes]);
 
-  const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) =>
-    setSelected(sel.filter((n) => n.type === 'switch').map((n) => n.id)), []);
-  const clearSelection = useCallback(() => setSelected([]), []);
+  const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => {
+    const next = sel.filter((n) => n.type === 'switch').map((n) => n.id);
+    setSelected((prev) => sameSelection(prev, next) ? prev : next);
+  }, []);
+  const clearSelection = useCallback(() => setSelected((prev) => prev.length ? [] : prev), []);
 
   // Ctrl/Cmd+A selects all switches (ignored while typing in an input)
   useEffect(() => {

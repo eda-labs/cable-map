@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
 import { type ReactFlowInstance } from '@xyflow/react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -51,14 +51,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [open, setOpen] = useState<string | null>(null);
   const [drawerExpanded, setDrawerExpanded] = useState(false);
   const [drawerResetSizeSignal, setDrawerResetSizeSignal] = useState(0);
-  const openNode = topo?.nodes.find((n) => n.name === open);
+  const nodeByName = useMemo(() => new Map(topo?.nodes.map((n) => [n.name, n]) ?? []), [topo]);
+  const openNode = open ? nodeByName.get(open) : undefined;
   const selectDrawerNode = useCallback((name: string | null, expand = false) => {
-    setOpen(name);
-    if (expand) {
-      setDrawerExpanded(!!name);
-      setDrawerResetSizeSignal((v) => v + 1);
-    }
-    else if (!name) setDrawerExpanded(false);
+    startTransition(() => {
+      setOpen((current) => current === name ? current : name);
+      if (expand) {
+        setDrawerExpanded(!!name);
+        setDrawerResetSizeSignal((v) => v + 1);
+      }
+      else if (!name) setDrawerExpanded(false);
+    });
   }, []);
   const pdf = usePdfExport({ topo, namespace });
   const pdfLoading = pdf.pdfState.status === 'loading';
