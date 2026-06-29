@@ -1,242 +1,284 @@
 package server
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
+	"embed"
+	"encoding/json"
 	"fmt"
-	"html"
-	"io"
-	"io/fs"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
+	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/cdproto/runtime"
-	"github.com/chromedp/chromedp"
-	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"cable-map.eda.labs/cable-map/operators/cable-map/internal/topology"
 )
 
-const (
-	pdfRenderTimeout      = 30 * time.Second
-	defaultPDFConcurrency = 4
-)
+// Render assets: the Typst template, the logo, and the fonts.
+//
+//go:embed pdfassets
+var pdfAssets embed.FS
 
-// Chrome renders the PDF footer in an isolated context with none of the page's fonts/CSS, so the
-// NokiaPureText woff2 is inlined as a data-URI @font-face (read once from the embedded dist).
-var pdfFooterFontFace = sync.OnceValue(func() string {
-	b, err := readDistFont("NokiaPureText_Lt")
-	if err != nil || len(b) == 0 {
-		return "" // fall back to the template's sans-serif
-	}
-	return `<style>@font-face{font-family:'NokiaPureText';src:url(data:font/woff2;base64,` +
-		base64.StdEncoding.EncodeToString(b) + `) format('woff2');}</style>`
-})
+const occupiedColour = "#00A87E" // fill for a cabled cage
 
-func readDistFont(prefix string) ([]byte, error) {
-	d := distRoot()
-	entries, err := fs.ReadDir(d, "assets")
-	if err != nil {
-		return nil, err
+// ---- engine ---------------------------------------------------------------------
+
+// pdfEngine shells out to `typst`. Fonts are extracted once to a temp dir (--font-path); the
+// template + per-request data are written per render.
+type pdfEngine struct {
+	bin      string
+	once     sync.Once
+	fontsDir string
+	initErr  error
+}
+
+func newPDFEngine() *pdfEngine {
+	bin := os.Getenv("TYPST_BIN")
+	if bin == "" {
+		bin = "typst"
 	}
-	for _, e := range entries {
-		if strings.HasPrefix(e.Name(), prefix) && strings.HasSuffix(e.Name(), ".woff2") {
-			return fs.ReadFile(d, "assets/"+e.Name())
+	return &pdfEngine{bin: bin}
+}
+
+func (e *pdfEngine) fonts() (string, error) {
+	e.once.Do(func() {
+		dir, err := os.MkdirTemp("", "cable-map-fonts-")
+		if err != nil {
+			e.initErr = err
+			return
 		}
-	}
-	return nil, fmt.Errorf("font %s*.woff2 not found in dist", prefix)
-}
-
-// pdfFooter is Chrome's per-page footer for one node's PDF: node name (left), page number (right), one
-// line in the bottom margin, in NokiaPureText at the table's text size. The PDF is rendered one node
-// at a time (name baked in here) and the per-node PDFs merged — Chrome can't vary the name per page.
-func pdfFooter(node string) string {
-	return pdfFooterFontFace() +
-		`<div style="width:100%;font-size:13px;color:#888;font-family:'NokiaPureText',sans-serif;padding:0 10mm;">` +
-		`<span style="float:left;">` + html.EscapeString(node) + `</span>` +
-		`<span style="float:right;"><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>`
-}
-
-// pdfRenderer keeps one warm headless-Chrome process and renders each request in its own tab, so
-// requests skip Chrome's ~1-2s cold start and several PDFs render concurrently in parallel tabs. A
-// semaphore bounds concurrent renders so memory stays in check (override with PDF_CONCURRENCY).
-type pdfRenderer struct {
-	sem chan struct{}
-
-	mu         sync.Mutex
-	browserCtx context.Context
-	stop       context.CancelFunc // tears down the browser + its allocator
-}
-
-func newPDFRenderer() *pdfRenderer {
-	n := defaultPDFConcurrency
-	if v, err := strconv.Atoi(os.Getenv("PDF_CONCURRENCY")); err == nil && v > 0 {
-		n = v
-	}
-	if n > 8 {
-		n = 8
-	}
-	return &pdfRenderer{sem: make(chan struct{}, n)}
-}
-
-// browser returns a live shared browser context, launching (or relaunching after a crash) Chrome on
-// demand. It's tied to context.Background() so the browser outlives individual requests.
-func (p *pdfRenderer) browser() (context.Context, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.browserCtx != nil && p.browserCtx.Err() == nil {
-		return p.browserCtx, nil
-	}
-	if p.stop != nil {
-		p.stop()
-	}
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.NoSandbox,
-		chromedp.DisableGPU,
-		chromedp.Flag("disable-dev-shm-usage", true), // tiny /dev/shm crashes Chromium in containers
-	)
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
-	browserCtx, cancelBrowser := chromedp.NewContext(allocCtx)
-	if err := chromedp.Run(browserCtx); err != nil { // start Chrome now so a launch failure surfaces here
-		cancelBrowser()
-		cancelAlloc()
-		return nil, err
-	}
-	p.browserCtx = browserCtx
-	p.stop = func() { cancelBrowser(); cancelAlloc() }
-	return browserCtx, nil
-}
-
-func (p *pdfRenderer) reset() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.stop != nil {
-		p.stop()
-		p.stop = nil
-	}
-	p.browserCtx = nil
-}
-
-func (p *pdfRenderer) close() { p.reset() }
-
-// render loads target in a fresh tab off the shared browser and returns the printed PDF. Concurrency
-// is bounded by the semaphore; the tab is aborted if the client disconnects or the render times out.
-func (p *pdfRenderer) render(reqCtx context.Context, target, footer string) ([]byte, error) {
-	select {
-	case p.sem <- struct{}{}:
-		defer func() { <-p.sem }()
-	case <-reqCtx.Done():
-		return nil, reqCtx.Err()
-	}
-
-	browserCtx, err := p.browser()
-	if err != nil {
-		return nil, err
-	}
-	tabCtx, cancelTab := chromedp.NewContext(browserCtx)
-	defer cancelTab()
-	stopOnDisconnect := context.AfterFunc(reqCtx, cancelTab)
-	defer stopOnDisconnect()
-	tabCtx, cancelTimeout := context.WithTimeout(tabCtx, pdfRenderTimeout)
-	defer cancelTimeout()
-
-	// The loopback /print render hits this same server directly (127.0.0.1, no proxy), so it needs
-	// no auth — EDA already authorised the /pdf request that triggered it.
-	var buf []byte
-	err = chromedp.Run(tabCtx,
-		chromedp.Navigate(target),
-		// Print.tsx sets data-print-ready="1" once /api/topology has loaded.
-		chromedp.WaitReady(`[data-print-ready="1"]`, chromedp.ByQuery),
-		// Embed NokiaPureText rather than the fallback font.
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			var ready bool
-			return chromedp.Evaluate(`document.fonts.ready.then(() => true)`, &ready,
-				func(ep *runtime.EvaluateParams) *runtime.EvaluateParams { return ep.WithAwaitPromise(true) },
-			).Do(ctx)
-		}),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			var e error
-			buf, _, e = page.PrintToPDF().
-				WithPrintBackground(true).
-				WithPreferCSSPageSize(true). // honour print.css `@page { size: A4 landscape }`
-				WithDisplayHeaderFooter(true).
-				WithHeaderTemplate("<span></span>"). // suppress Chrome's default title/date header
-				WithFooterTemplate(footer).
-				WithMarginTop(0.4).WithMarginBottom(0.4). // default A4 print margins (~1cm), print-safe
-				WithMarginLeft(0.4).WithMarginRight(0.4).
-				Do(ctx)
-			return e
-		}),
-	)
-	if err != nil {
-		if browserCtx.Err() != nil { // shared browser died → drop it so the next render relaunches
-			p.reset()
-		}
-		return nil, err
-	}
-	return buf, nil
-}
-
-// pdf renders the SPA's /print page to a PDF with the pooled headless Chrome. It drives the app's own
-// loopback /print route, so it depends on this server serving /print + /api/topology + the
-// front-panel SVGs/fonts. Requires Chromium in the runtime image.
-func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
-	ns := strings.TrimSpace(r.URL.Query().Get("ns"))
-	remote := r.URL.Query().Get("remote")
-	nodesParam := strings.TrimSpace(r.URL.Query().Get("nodes"))
-
-	var nodeList []string
-	if nodesParam != "" {
-		for _, n := range strings.Split(nodesParam, ",") {
-			if n = strings.TrimSpace(n); n != "" {
-				nodeList = append(nodeList, n)
+		for _, f := range []string{"NokiaPureText_Lt.ttf", "NokiaPureText_Bd.ttf"} {
+			b, err := pdfAssets.ReadFile("pdfassets/" + f)
+			if err != nil {
+				e.initErr = err
+				return
+			}
+			if err := os.WriteFile(filepath.Join(dir, f), b, 0o644); err != nil {
+				e.initErr = err
+				return
 			}
 		}
-	} else if topo, ok, _ := s.store.Snapshot(nsFilter(r)); ok {
-		for _, n := range topo.Nodes {
-			nodeList = append(nodeList, n.Name)
+		e.fontsDir = dir
+	})
+	return e.fontsDir, e.initErr
+}
+
+func (e *pdfEngine) close() {
+	if e.fontsDir != "" {
+		_ = os.RemoveAll(e.fontsDir)
+	}
+}
+
+// render produces the multi-page PDF (one page per node) from the topology nodes.
+func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDir string, remote map[string]string) ([]byte, error) {
+	fontsDir, err := e.fonts()
+	if err != nil {
+		return nil, fmt.Errorf("font setup: %w", err)
+	}
+	work, err := os.MkdirTemp("", "cable-map-pdf-")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(work)
+
+	for _, f := range []string{"template.typ", "eda.svg"} {
+		b, err := pdfAssets.ReadFile("pdfassets/" + f)
+		if err != nil {
+			return nil, err
+		}
+		if err := os.WriteFile(filepath.Join(work, f), b, 0o644); err != nil {
+			return nil, err
 		}
 	}
-	if len(nodeList) == 0 {
+
+	type pdfNode struct {
+		Name     string     `json:"name"`
+		Platform string     `json:"platform"`
+		Panel    string     `json:"panel"` // SVG filename in `work`, or "" if no stencil
+		Rows     [][]string `json:"rows"`
+	}
+	data := struct {
+		Nodes []pdfNode `json:"nodes"`
+	}{}
+
+	for i, n := range nodes {
+		panel := ""
+		if svgBytes, err := os.ReadFile(filepath.Join(stencilDir, n.Platform+".svg")); err == nil {
+			slotted := svgSlotted(svgBytes)
+			occupied := map[string]bool{}
+			for _, r := range n.Table {
+				if c := cageKey(r.Label, slotted); c != "" {
+					occupied[c] = true
+				}
+			}
+			panel = fmt.Sprintf("panel-%d.svg", i)
+			if err := os.WriteFile(filepath.Join(work, panel), colourPanel(svgBytes, occupied), 0o644); err != nil {
+				return nil, err
+			}
+		}
+		data.Nodes = append(data.Nodes, pdfNode{Name: n.Name, Platform: n.Platform, Panel: panel, Rows: tableRows(n, remote)})
+	}
+
+	jb, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(filepath.Join(work, "data.json"), jb, 0o644); err != nil {
+		return nil, err
+	}
+
+	out := filepath.Join(work, "out.pdf")
+	cmd := exec.CommandContext(ctx, e.bin, "compile",
+		filepath.Join(work, "template.typ"), out, "--font-path", fontsDir, "--root", work)
+	if outp, err := cmd.CombinedOutput(); err != nil {
+		return nil, fmt.Errorf("typst compile failed: %w: %s", err, strings.TrimSpace(string(outp)))
+	}
+	return os.ReadFile(out)
+}
+
+// ---- data shaping ---------------------------------------------------------------
+
+// tableRows builds the cable-matrix cells: type label + LAG suffix, edge-remote overrides, peer
+// fallback, em dash for empty.
+func tableRows(n topology.Node, remote map[string]string) [][]string {
+	rows := make([][]string, 0, len(n.Table))
+	for _, r := range n.Table {
+		typ := r.Type
+		if typ == "interSwitch" {
+			typ = "ISL"
+		}
+		if r.Lag != "" {
+			typ += " (LAG)"
+		}
+		rn, rp := r.RemoteNode, r.RemotePort
+		if r.Type == "edge" {
+			if v := remote[n.Name+" "+r.Label+" node"]; v != "" {
+				rn = v
+			}
+			if v := remote[n.Name+" "+r.Label+" port"]; v != "" {
+				rp = v
+			}
+		}
+		if rn == "" && r.Peer != "" {
+			rn = r.Peer
+		}
+		rows = append(rows, []string{r.Label, dash(r.Desc), typ, dash(rn), dash(rp), dash(r.LldpPeer)})
+	}
+	return rows
+}
+
+func dash(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
+}
+
+// ---- stencil / cage logic ----
+
+var (
+	reNum       = regexp.MustCompile(`\d+`)
+	reSrosConn  = regexp.MustCompile(`(?i)(?:^|[/_-])c(\d+)(?:[/_-]|$)`)
+	reDataPort  = regexp.MustCompile(`data-port="([^"]*)"`)
+	rePathCage  = regexp.MustCompile(`<path\b[^>]*\bdata-port="([^"]+)"[^>]*>`)
+	reFillAttr  = regexp.MustCompile(`\s+fill="[^"]*"`)
+	reFillStyle = regexp.MustCompile(`fill\s*:[^;"]*;?`)
+)
+
+// cageKey maps an EDA/SROS interface name to its front-panel cage id (port "12" or slotted "1-12").
+func cageKey(label string, slotted bool) string {
+	ns := reNum.FindAllString(label, -1)
+	if len(ns) == 0 {
+		return ""
+	}
+	port := ""
+	if m := reSrosConn.FindStringSubmatch(label); m != nil {
+		port = m[1]
+	}
+	if port == "" {
+		if len(ns) >= 2 {
+			port = ns[1]
+		} else {
+			port = ns[0]
+		}
+	}
+	if slotted {
+		if len(ns) >= 2 {
+			return ns[0] + "-" + port
+		}
+		return port
+	}
+	return port
+}
+
+// svgSlotted reports whether cage ids are per-slot ("<slot>-<port>").
+func svgSlotted(svg []byte) bool {
+	for _, m := range reDataPort.FindAllSubmatch(svg, -1) {
+		if strings.Contains(string(m[1]), "-") {
+			return true
+		}
+	}
+	return false
+}
+
+// colourPanel fills the occupied cages.
+func colourPanel(svg []byte, occupied map[string]bool) []byte {
+	return rePathCage.ReplaceAllFunc(svg, func(tag []byte) []byte {
+		m := rePathCage.FindSubmatch(tag)
+		if m == nil || !occupied[string(m[1])] {
+			return tag
+		}
+		t := reFillAttr.ReplaceAll(tag, nil)
+		t = reFillStyle.ReplaceAll(t, nil)
+		fill := "fill:" + occupiedColour + ";fill-opacity:1"
+		if strings.Contains(string(t), `style="`) {
+			return []byte(strings.Replace(string(t), `style="`, `style="`+fill+`;`, 1))
+		}
+		return []byte(strings.Replace(string(t), "<path", `<path style="`+fill+`"`, 1))
+	})
+}
+
+// ---- handler --------------------------------------------------------------------
+
+// pdf renders the selected nodes (or all) to one PDF.
+func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
+	topo, ok, errMsg := s.store.Snapshot(nsFilter(r))
+	if !ok {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": errMsg})
+		return
+	}
+
+	byName := make(map[string]topology.Node, len(topo.Nodes))
+	for _, n := range topo.Nodes {
+		byName[n.Name] = n
+	}
+
+	nodesParam := strings.TrimSpace(r.URL.Query().Get("nodes"))
+	var nodes []topology.Node
+	if nodesParam != "" {
+		for _, name := range strings.Split(nodesParam, ",") {
+			if name = strings.TrimSpace(name); name != "" {
+				if n, ok := byName[name]; ok {
+					nodes = append(nodes, n)
+				}
+			}
+		}
+	} else {
+		nodes = topo.Nodes
+	}
+	if len(nodes) == 0 {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no nodes to render"})
 		return
 	}
 
-	// One node per PDF (its name baked into the footer), rendered concurrently within the renderer's
-	// semaphore, then merged in order — Chrome's footer can't vary the node name per page in one render.
-	pdfs := make([][]byte, len(nodeList))
-	errs := make([]error, len(nodeList))
-	var wg sync.WaitGroup
-	for i, node := range nodeList {
-		wg.Add(1)
-		go func(i int, node string) {
-			defer wg.Done()
-			params := url.Values{}
-			params.Set("nodes", node)
-			if ns != "" {
-				params.Set("ns", ns)
-			}
-			if remote != "" {
-				params.Set("remote", remote)
-			}
-			target := fmt.Sprintf("http://127.0.0.1:%s/print?%s", s.port, params.Encode())
-			pdfs[i], errs[i] = s.renderer.render(r.Context(), target, pdfFooter(node))
-		}(i, node)
-	}
-	wg.Wait()
-	for _, e := range errs {
-		if e != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": e.Error()})
-			return
-		}
+	remote := map[string]string{}
+	if rp := r.URL.Query().Get("remote"); rp != "" {
+		_ = json.Unmarshal([]byte(rp), &remote)
 	}
 
-	merged, err := mergePDFs(pdfs)
+	pdf, err := s.engine.render(r.Context(), nodes, stencilDir(), remote)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -248,21 +290,5 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s.pdf"`, name))
-	w.Write(merged)
-}
-
-// mergePDFs concatenates the per-node PDFs into one document (a single node is returned as-is).
-func mergePDFs(pdfs [][]byte) ([]byte, error) {
-	if len(pdfs) == 1 {
-		return pdfs[0], nil
-	}
-	rs := make([]io.ReadSeeker, len(pdfs))
-	for i, b := range pdfs {
-		rs[i] = bytes.NewReader(b)
-	}
-	var out bytes.Buffer
-	if err := api.MergeRaw(rs, &out, false, nil); err != nil {
-		return nil, err
-	}
-	return out.Bytes(), nil
+	_, _ = w.Write(pdf)
 }

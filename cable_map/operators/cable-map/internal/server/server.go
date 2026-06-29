@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -21,15 +22,16 @@ import (
 )
 
 type Server struct {
-	store    *eda.Store
-	port     string
-	spa      http.Handler
-	auth     *authManager
-	renderer *pdfRenderer
+	store   *eda.Store
+	port    string
+	spa     http.Handler
+	stencil http.Handler
+	auth    *authManager
+	engine  *pdfEngine
 }
 
 func New(store *eda.Store, port string) *Server {
-	return &Server{store: store, port: port, spa: spaHandler(distRoot()), auth: newAuthManager(), renderer: newPDFRenderer()}
+	return &Server{store: store, port: port, spa: spaHandler(distRoot()), stencil: stencilHandler(stencilDir()), auth: newAuthManager(), engine: newPDFEngine()}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -41,7 +43,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/topology", s.topology)
 	mux.HandleFunc("/api/topology/stream", s.topologyStream)
 	mux.HandleFunc("/pdf", s.pdf)
-	mux.Handle("/", s.spa) // SPA + client routes (/, /print)
+	mux.Handle("/frontpanel/", s.stencil) // front-panel SVGs from STENCIL_DIR (served, not embedded)
+	mux.Handle("/", s.spa)                // SPA + client routes (/, /print)
 	return withCSP(s.auth.wrap(mux))
 }
 
@@ -61,7 +64,7 @@ func (s *Server) Run(ctx context.Context) error {
 	srv := &http.Server{Addr: ":" + s.port, Handler: s.Handler()}
 	go func() {
 		<-ctx.Done()
-		s.renderer.close() // tear down the pooled headless Chrome
+		s.engine.close() // remove the extracted font cache
 		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(shutCtx)
@@ -222,4 +225,30 @@ func spaHandler(fsys fs.FS) http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(index)
 	})
+}
+
+// stencilDir is where the front-panel SVGs live at runtime; the runtime image COPYs them to
+// /stencils. Override with STENCIL_DIR — e.g. to run the built binary outside the image:
+// STENCIL_DIR=cable_map/frontend/dist/frontpanel.
+func stencilDir() string {
+	if d := strings.TrimSpace(os.Getenv("STENCIL_DIR")); d != "" {
+		return d
+	}
+	return "/stencils"
+}
+
+// stencilHandler serves the front-panel SVGs (/frontpanel/<platform>.svg) from a plain directory
+// instead of the embedded SPA, so the ~350MB stencil set never lands in the operator binary. Both the
+// browser and the /pdf headless render fetch them over HTTP; a missing file 404s (the frontend treats
+// that as "no stencil for this platform"). Only .svg is served — no directory listing of the set.
+func stencilHandler(dir string) http.Handler {
+	files := http.FileServer(http.Dir(dir))
+	return http.StripPrefix("/frontpanel/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, ".svg") {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		files.ServeHTTP(w, r)
+	}))
 }
