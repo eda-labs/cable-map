@@ -22,6 +22,14 @@ const fillFor = (info: PortInfo, lldp: boolean) =>
   info.kind === 'free' ? 'transparent' : lldp ? LLDP_COLOR[info.lldp ?? 'none'] : CABLE_COLOR[info.kind];
 const showsEdgeStub = (info: PortInfo, enabled: boolean) => enabled && info.kind !== 'free' && info.kind !== 'isl';
 
+function occupiedCages(ports: PortInfo[]): PortInfo[] {
+  const byCage = new Map<string, PortInfo>();
+  for (const port of ports) {
+    if (!byCage.has(port.port)) byCage.set(port.port, port);
+  }
+  return [...byCage.values()];
+}
+
 type Box = { left: number; top: number; width: number; height: number };
 // A single front-panel cage (or one breakout channel sliver). Occupied ports carry the handles
 // cables attach to, and gain a highlight ring when their cable is being traced. `box`
@@ -226,13 +234,13 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
   const lldp = useLldp();
   const counts = useMemo(() => {
     const out = new Map<string, number>();
-    for (const p of d.ports) {
+    for (const p of occupiedCages(d.ports)) {
       const key = lldp ? p.lldp ?? 'none' : p.kind;
       out.set(key, (out.get(key) ?? 0) + 1);
     }
     return [...out.entries()];
   }, [d.ports, lldp]);
-  const used = d.ports.length;
+  const used = useMemo(() => occupiedCages(d.ports).length, [d.ports]);
   const colorOf = (key: string) => {
     if (lldp && (key === 'ok' || key === 'mismatch' || key === 'none')) return LLDP_COLOR[key];
     return key in CABLE_COLOR ? CABLE_COLOR[key as keyof typeof CABLE_COLOR] : CABLE_COLOR.edge;
@@ -333,7 +341,7 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
   }, [d.ports]);
   // cage ids in panel order: the real layout's ids ("<slot>-<port>" on composites) else a 1..N range
   const cages = useMemo(() => d.layout ? d.layout.map((l) => l.p) : Array.from({ length: d.portCount }, (_, i) => String(i + 1)), [d.layout, d.portCount]);
-  const used = d.ports.length;
+  const used = useMemo(() => occupiedCages(d.ports).length, [d.ports]);
   // real-layout mode: place each cell at its on-panel position from the stencil
   const panel = useMemo(() => {
     if (!d.layout) return null;
