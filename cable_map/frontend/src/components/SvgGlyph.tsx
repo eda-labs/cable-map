@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import Box from '@mui/material/Box';
 
 // Renders a raw (`?raw`) SVG inline so its `fill="currentColor"` inherits the surrounding text
 // colour, mirroring how MUI's own icons theme. The inner <svg> is sized to 1em off `fontSize`.

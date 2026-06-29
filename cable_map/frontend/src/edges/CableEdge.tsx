@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSmoothStepPath, Position, type EdgeProps } from '@xyflow/react';
-import { CABLE_COLOR, LLDP_COLOR, type CableKind } from './graph';
-import { useTrace, type Mode } from './trace';
-import { useLldp } from './lldp';
+import { CABLE_COLOR, LLDP_COLOR, type CableKind } from '../graph';
+import { useTrace, type Mode } from '../trace';
+import { useLldp } from '../lldp';
 import { useGroupedEdges } from './edgeRoute';
-import type { LldpStatus } from './api';
+import type { LldpStatus } from '../api';
 
 type Data = { kind: CableKind; a: string; b: string; count?: number; lldp?: LldpStatus; forceOn?: boolean; fast?: boolean };
 

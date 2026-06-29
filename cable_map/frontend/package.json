@@ -9,7 +9,6 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint .",
     "preview": "vite preview",
-    "gen:frontpanel-meta": "node scripts/gen-frontpanel-meta.mjs",
     "gen:golden-topology": "node scripts/gen-golden-topology.mjs"
   },
   "devDependencies": {

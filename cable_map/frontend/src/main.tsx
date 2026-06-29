@@ -1,13 +1,13 @@
-import { StrictMode, useEffect, useMemo, useState } from 'react'
+import { StrictMode, useCallback, useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
+import CssBaseline from '@mui/material/CssBaseline'
 import './nokia-fonts.css'
 import './index.css'
 import App from './App.tsx'
 import Print from './Print.tsx'
 import { AuthGate } from './AuthGate.tsx'
-
-export type Mode = 'light' | 'dark';
+import { type Mode } from './theme'
 
 // EDA brand palette ramps (raw --color-* tokens from the EDA cluster), used to build the MUI
 // theme so it matches EDA's actual UI rather than the marketing brand-hub ramp.
@@ -79,6 +79,7 @@ const initialMode = (): Mode => {
 function Root() {
   const [mode, setMode] = useState<Mode>(initialMode);
   const theme = useMemo(() => makeTheme(mode), [mode]);
+  const toggleMode = useCallback(() => setMode((m) => (m === 'dark' ? 'light' : 'dark')), []);
   useEffect(() => {
     document.documentElement.dataset.theme = mode;
     localStorage.setItem(THEME_KEY, mode);
@@ -86,7 +87,7 @@ function Root() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <App mode={mode} onToggleMode={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))} />
+      <App mode={mode} onToggleMode={toggleMode} />
     </ThemeProvider>
   );
 }

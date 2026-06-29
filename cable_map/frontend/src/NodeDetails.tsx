@@ -1,5 +1,8 @@
 import { lazy, Suspense, useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { Box, Typography, Chip, CircularProgress } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import { dump } from 'js-yaml';
 import type { editor } from 'monaco-editor';
 import type { Node } from './api';

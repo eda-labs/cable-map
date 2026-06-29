@@ -1,4 +1,4 @@
-import { InputBase } from '@mui/material';
+import InputBase from '@mui/material/InputBase';
 import { edgeRemote, useEdgeRemote } from './edge-remote';
 
 // Edge-link freetext (remote node / remote port) — editable in the drawer, plain text in print.

@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Button, Menu, MenuItem, ListItemIcon, Typography } from '@mui/material';
+import Button from '@mui/material/Button';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Typography from '@mui/material/Typography';
 import CheckIcon from '@mui/icons-material/CheckOutlined';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDownOutlined';
 

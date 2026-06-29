@@ -7,9 +7,9 @@ import {
 import type { Breakout } from './api';
 import { trace, useTrace, modeFor } from './trace';
 import { useLldp } from './lldp';
-import spineIcon from './icons/spine.svg?raw';
-import leafIcon from './icons/leaf.svg?raw';
-import superspineIcon from './icons/superspine.svg?raw';
+import spineIcon from './assets/icons/spine.svg?raw';
+import leafIcon from './assets/icons/leaf.svg?raw';
+import superspineIcon from './assets/icons/superspine.svg?raw';
 
 const RoleIcons: Record<string, string> = {
   spine: spineIcon, superspine: superspineIcon, leaf: leafIcon, borderleaf: leafIcon,

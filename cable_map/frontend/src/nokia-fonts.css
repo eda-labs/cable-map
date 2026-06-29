@@ -1,15 +1,15 @@
 @font-face {
   font-family: 'NokiaPureText';
-  src: url('./fonts/NokiaPureText_Lt.woff2') format('woff2'),
-       url('./fonts/NokiaPureText_Lt.woff') format('woff');
+  src: url('./assets/fonts/NokiaPureText_Lt.woff2') format('woff2'),
+       url('./assets/fonts/NokiaPureText_Lt.woff') format('woff');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'NokiaPureText';
-  src: url('./fonts/NokiaPureText_Bd.woff2') format('woff2'),
-       url('./fonts/NokiaPureText_Bd.woff') format('woff');
+  src: url('./assets/fonts/NokiaPureText_Bd.woff2') format('woff2'),
+       url('./assets/fonts/NokiaPureText_Bd.woff') format('woff');
   font-weight: bold;
   font-style: normal;
   font-display: swap;

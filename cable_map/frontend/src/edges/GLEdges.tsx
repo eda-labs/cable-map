@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useStore, useStoreApi, useReactFlow, useNodesInitialized, Position, type Edge as RFEdge, type InternalNode, type Node as RFNode } from '@xyflow/react';
-import { CABLE_COLOR, LLDP_COLOR, type CableKind } from './graph';
-import type { LldpStatus } from './api';
-import { trace, useTrace } from './trace';
-import { useLldp } from './lldp';
+import { CABLE_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W, LLDP_COLOR, switchPortCenter, type CableKind, type SwitchData } from '../graph';
+import type { LldpStatus } from '../api';
+import { trace, useTrace } from '../trace';
+import { useLldp } from '../lldp';
 import { useGroupedEdges } from './edgeRoute';
 import { cablePolyline, pointAtFraction, distToPolyline, type XY } from './edgeGeometry';
 
@@ -59,6 +59,48 @@ function handlePoint(node: InternalNode<RFNode> | undefined, handleId: string | 
   if (!h) return null;
   const abs = node.internals.positionAbsolute;
   return { x: abs.x + h.x + h.width / 2, y: abs.y + h.y + h.height / 2, pos: h.position };
+}
+
+// Endpoint computed from node DATA (not measured handles) — for nodes the live store lacks because
+// they're culled or hidden behind the node overview on a large fabric. The cell centre equals the
+// rendered handle centre, so this matches `handlePoint` for nodes that are measured.
+function parseSwitchHandle(handle: string | null | undefined): { port: string; channel?: number } | null {
+  if (!handle?.startsWith('p')) return null;
+  const [port, channelText] = handle.slice(1).replace(/t$/, '').split('_');
+  if (!port) return null;
+  const channel = Number(channelText);
+  return { port, channel: Number.isInteger(channel) ? channel : undefined };
+}
+
+function sideOf(handle: string | null | undefined): Position {
+  if (handle?.includes('bottom')) return Position.Bottom;
+  if (handle?.includes('left')) return Position.Left;
+  if (handle?.includes('right')) return Position.Right;
+  return Position.Top;
+}
+
+function computedPoint(node: RFNode | undefined, handle: string | null | undefined): Pt | null {
+  if (!node) return null;
+  if (node.type === 'switch') {
+    const data = node.data as SwitchData;
+    if (data.compact) {
+      const bottom = handle?.includes('bottom');
+      return { x: node.position.x + COMPACT_SWITCH_W / 2, y: node.position.y + (bottom ? COMPACT_SWITCH_H : 0), pos: bottom ? Position.Bottom : Position.Top };
+    }
+    const parsed = parseSwitchHandle(handle);
+    if (parsed) {
+      const center = switchPortCenter(data, parsed.port, parsed.channel);
+      if (center) {
+        const info = data.ports.find((p) => p.port === parsed.port && (parsed.channel == null || p.channel === parsed.channel));
+        return { x: node.position.x + center.x, y: node.position.y + center.y, pos: info?.side === 'bottom' ? Position.Bottom : Position.Top };
+      }
+    }
+  }
+  const w = node.measured?.width ?? node.width ?? 112;
+  const h = node.measured?.height ?? node.height ?? 22;
+  if (handle === 'in' || node.type === 'endpoint') return { x: node.position.x + w / 2, y: node.position.y + 1, pos: Position.Top };
+  const pos = sideOf(handle);
+  return { x: node.position.x + w / 2, y: node.position.y + (pos === Position.Bottom ? h : 0), pos };
 }
 
 // Per-port elbow-stem offset: ports stacked in the same column are spread across the port width so
@@ -119,8 +161,14 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
   return sh;
 }
 
-export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolean }) {
+// One WebGL cable layer for both regimes. Normal fabrics resolve endpoints from React Flow's measured
+// handles (exact, interactive). `lite` (large fabrics) computes endpoints from node data instead — so
+// it works for culled / overview nodes the store doesn't hold — and drops hover/click + labels.
+export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailable }: {
+  edges: RFEdge[]; dark: boolean; nodes: RFNode[]; lite?: boolean; onUnavailable?: () => void;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const store = useStoreApi();
   const rf = useReactFlow();
   const transform = useStore((s) => s.transform);
@@ -154,7 +202,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   const count = useRef(0);
   const hitRef = useRef<Hit[]>([]);            // per-cable polylines for hover/click hit-testing
   // cached geometry: recomputed only when edges/positions/routing change (NOT on hover/trace)
-  const geomCache = useRef<{ edges: RFEdge[]; posHash: number; grouped: boolean; geom: Geom[] } | null>(null);
+  const geomCache = useRef<{ edges: RFEdge[]; nodes: RFNode[]; posHash: number; grouped: boolean; geom: Geom[] } | null>(null);
   const pointerRef = useRef<PointerState>({ active: false, x: 0, y: 0, overNode: false, lastHover: null });
   const repickRef = useRef<(() => void) | null>(null);
   const [labels, setLabels] = useState<Label[]>([]);  // ×N + traced-endpoint labels (HTML overlay)
@@ -163,7 +211,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   useLayoutEffect(() => {
     const canvas = ref.current;
     const context = canvas?.getContext('webgl', { antialias: true, premultipliedAlpha: true, alpha: true });
-    if (!canvas || !context) return;
+    if (!canvas || !context) { onUnavailable?.(); return; }
     gl.current = context;
     const p = context.createProgram()!;
     const vs = compile(context, context.VERTEX_SHADER, VERT), fs = compile(context, context.FRAGMENT_SHADER, FRAG);
@@ -171,6 +219,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     context.linkProgram(p);
     if (!context.getProgramParameter(p, context.LINK_STATUS)) {
       console.warn('[GLEdges] program link failed:', context.getProgramInfoLog(p), context.getShaderInfoLog(vs), context.getShaderInfoLog(fs));
+      onUnavailable?.();
     }
     prog.current = p;
     buf.current = context.createBuffer();
@@ -187,14 +236,14 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     context.enable(context.BLEND);
     context.blendFunc(context.ONE, context.ONE_MINUS_SRC_ALPHA); // premultiplied
     return () => { context.deleteProgram(p); if (buf.current) context.deleteBuffer(buf.current); };
-  }, []);
+  }, [onUnavailable]);
 
   const rebuild = useCallback(() => {
     const context = gl.current;
     if (!context) return;
-    // don't rebuild against un-measured nodes (handles missing) — keep the last good buffer; the
-    // nodesReady dep re-runs this once measurement settles, so an EDA update can't draw garbage.
-    if (!nodesReady) return;
+    // normal mode draws from measured handles, so wait for measurement (an EDA update can't draw
+    // garbage); lite mode computes endpoints from node data, so it doesn't need to wait.
+    if (!nodesReady && !lite) return;
     const { nodeLookup } = store.getState();
 
     // --- GEOMETRY pass (cached) -----------------------------------------------------------------
@@ -202,7 +251,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     // normals is the expensive work — and none of it depends on the trace/hover state. Recompute it
     // only when the edge set, node positions/handles, or routing change; a hover reuses the cache.
     const c = geomCache.current;
-    if (!c || c.edges !== edges || c.posHash !== posHash || c.grouped !== grouped) {
+    if (!c || c.edges !== edges || c.nodes !== nodes || c.posHash !== posHash || c.grouped !== grouped) {
       const offsetCache = new Map<string, Map<string, number>>();
       const stemOffsets = (nodeId: string) => {
         let m = offsetCache.get(nodeId);
@@ -211,8 +260,8 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
       };
       const geom: Geom[] = [];
       for (const e of edges) {
-        const s = handlePoint(nodeLookup.get(e.source), e.sourceHandle, 'source');
-        const t = handlePoint(nodeLookup.get(e.target), e.targetHandle, 'target');
+        const s = handlePoint(nodeLookup.get(e.source), e.sourceHandle, 'source') ?? computedPoint(nodesById.get(String(e.source)), e.sourceHandle);
+        const t = handlePoint(nodeLookup.get(e.target), e.targetHandle, 'target') ?? computedPoint(nodesById.get(String(e.target)), e.targetHandle);
         if (!s || !t) continue;
         const d = e.data as Data | undefined;
         const peerArch = d?.kind === 'isl' && s.pos === Position.Top && t.pos === Position.Top;
@@ -238,8 +287,8 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
         }
         geom.push({ id: e.id, pts, n, mnx, mny, ml, kind: d?.kind, lldp: d?.lldp, cnt: d?.count ?? 1, forceOn: !!d?.forceOn, a: d?.a, b: d?.b });
       }
-      hitRef.current = geom.map((g) => ({ id: g.id, pts: g.pts }));
-      geomCache.current = { edges, posHash, grouped, geom };
+      hitRef.current = lite ? [] : geom.map((g) => ({ id: g.id, pts: g.pts }));
+      geomCache.current = { edges, nodes, posHash, grouped, geom };
     }
     const geom = geomCache.current!.geom;
 
@@ -270,11 +319,13 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
         push(p.x, p.y, mnx[i], mny[i], col, alpha, mi); push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
         push(p.x, p.y, -mnx[i], -mny[i], col, alpha, mi); push(q.x, q.y, -mnx[i + 1], -mny[i + 1], col, alpha, mj); push(q.x, q.y, mnx[i + 1], mny[i + 1], col, alpha, mj);
       }
-      if (g.cnt > 1) { const m = pointAtFraction(pts, 0.5); labelOut.push({ key: `${g.id}:n`, x: m.x, y: m.y, text: `×${g.cnt}`, color: css, badge: true }); }
-      if (on && smallTrace) {
-        const pa = pointAtFraction(pts, 0.18), pb = pointAtFraction(pts, 0.82);
-        if (g.a) labelOut.push({ key: `${g.id}:a`, x: pa.x, y: pa.y, text: g.a, color: css, badge: false });
-        if (g.b) labelOut.push({ key: `${g.id}:b`, x: pb.x, y: pb.y, text: g.b, color: css, badge: false });
+      if (!lite) {
+        if (g.cnt > 1) { const m = pointAtFraction(pts, 0.5); labelOut.push({ key: `${g.id}:n`, x: m.x, y: m.y, text: `×${g.cnt}`, color: css, badge: true }); }
+        if (on && smallTrace) {
+          const pa = pointAtFraction(pts, 0.18), pb = pointAtFraction(pts, 0.82);
+          if (g.a) labelOut.push({ key: `${g.id}:a`, x: pa.x, y: pa.y, text: g.a, color: css, badge: false });
+          if (g.b) labelOut.push({ key: `${g.id}:b`, x: pb.x, y: pb.y, text: g.b, color: css, badge: false });
+        }
       }
     }
     setLabels((prev) => sameLabels(prev, labelOut) ? prev : labelOut);
@@ -283,7 +334,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
     context.bufferData(context.ARRAY_BUFFER, data.subarray(0, o), context.DYNAMIC_DRAW);
     // posHash isn't read directly (positions come from the live store) but retriggers rebuild on node move
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store]);
+  }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store, nodes, nodesById, lite]);
 
   const draw = useCallback(() => {
     const context = gl.current, p = prog.current, l = loc.current;
@@ -321,6 +372,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
   // cable hover/click: the canvas is pointerEvents:none, so hit-test the pointer against the polylines
   // on React Flow's pane (which receives events over empty space — exactly where cables live).
   useEffect(() => {
+    if (lite) return; // large fabrics: cables aren't interactive
     const pane = ref.current?.closest('.react-flow')?.querySelector<HTMLElement>('.react-flow__pane');
     if (!pane) return;
     const pick = (clientX: number, clientY: number): string | null => {
@@ -391,7 +443,7 @@ export default function GLEdges({ edges, dark }: { edges: RFEdge[]; dark: boolea
       pane.removeEventListener('pointerleave', onLeave);
       pane.removeEventListener('click', onClick, true);
     };
-  }, [store, rf]);
+  }, [store, rf, lite]);
 
   const [vtx, vty, vzoom] = transform;
   return (

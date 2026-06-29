@@ -1,103 +1,23 @@
-// Builds the React Flow graph (positioned nodes + edges) and the trace adjacency
-// straight from the topology tables — which carry the full per-port truth,
-// including the edge/server interfaces the old switch-only view hid.
+// Builds the React Flow graph (positioned nodes + edges) and the trace adjacency straight from the
+// topology tables — which carry the full per-port truth, including the edge/server interfaces.
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
-import frontpanelMeta from './frontpanel-meta.json';
-import { cageKey, breakoutChannel, type Topology, type LagInfo, type LldpStatus, type Breakout } from './api';
-import { stencilFor, componentsOf } from './stencil';
-import type { Adjacency } from './trace';
-
-type FpMeta = { ports: number; rows: number; aspect: number; slotted: boolean; layout: PortPos[] };
-const FP_META: Record<string, FpMeta> = frontpanelMeta;
-
-// port count + physical cage-row count per platform, derived from the stencils' data-port cages
-// so the canvas panel matches the real box.
-const rowsOf = (platform: string) => FP_META[platform]?.rows ?? 2;
-const portCountOf = (platform: string) => FP_META[platform]?.ports ?? 32;
+import { cageKey, breakoutChannel, type Topology, type LagInfo, type LldpStatus, type Breakout } from '../api';
+import { stencilFor, componentsOf } from '../stencil';
+import { aspectOf, layoutOf, portCountOf, rowsOf, slottedOf } from './meta';
+import {
+  COMPACT_SWITCH_H, COMPACT_SWITCH_W, STRIP_PAD, compactSwitchHandle, panelDims, portHandle, switchHOf, switchW,
+} from './geometry';
+import {
+  worseLldp,
+  type BuildGraphOptions, type BuiltGraph, type CableKind, type EndpointData, type PortInfo, type SwitchData,
+} from './types';
 
 // role tier: smaller = closer to the fabric core (drawn higher up).
 const TIER: Record<string, number> = { superspine: 0, spine: 1, borderleaf: 2, leaf: 3 };
 const tierOf = (role: string) => TIER[role] ?? 3;
 
-// edge = plain server cable, lag = local port-channel (all members one box),
-// mlag = multihomed/ESI bond (members span two leaves), isl = fabric uplink.
-export type CableKind = 'isl' | 'edge' | 'lag' | 'mlag';
-export const CABLE_COLOR: Record<CableKind, string> = {
-  isl: 'var(--eda-blue-400)', edge: 'var(--eda-teal-500)', lag: 'var(--eda-yellow-500)', mlag: 'var(--eda-purple-400)',
-};
-
-// LLDP overlay palette (used in place of CABLE_COLOR while the overlay is on).
-export const LLDP_COLOR: Record<LldpStatus, string> = {
-  ok: 'var(--eda-green-500)', mismatch: 'var(--eda-red-500)', none: 'var(--eda-gray-600)',
-};
-// Aggregating a bundle / bond to its worst member status — a mismatch anywhere wins.
-const LLDP_RANK: Record<LldpStatus, number> = { ok: 0, none: 1, mismatch: 2 };
-const worseLldp = (a: LldpStatus, b: LldpStatus): LldpStatus => (LLDP_RANK[a] >= LLDP_RANK[b] ? a : b);
-
-export type PortInfo = {
-  port: string;         // cage id matching the stencil's data-port ("<port>" or "<slot>-<port>")
-  channel?: number;     // breakout channel (1-based) when this cable lands on a broken-out sub-port
-  kind: CableKind | 'free';
-  side: 'top' | 'bottom';
-  remote: string;       // short remote label e.g. "spine1" / "srv03" / "lag-a"
-  remotePort: string;
-  desc: string;
-  cableId: string;      // edge id this port terminates, for hover-to-trace
-  lldp?: LldpStatus;    // LLDP cross-check vs the configured remote
-};
-
-// React Flow handle id for a port (and breakout channel) — channelised so each sub-port's cable
-// attaches to its own sliver rather than all converging on the cage.
-export const portHandle = (port: string, channel?: number) => (channel ? `p${port}_${channel}` : `p${port}`);
-
-type PortPos = { p: string; x: number; y: number; w: number; h: number };
-export type SwitchData = {
-  name: string; role: string; platform: string;
-  portCount: number;
-  rows: number;                      // physical cage rows, mirrored on the canvas
-  ports: PortInfo[];                 // occupied ports only (free cells inferred)
-  layout?: PortPos[];                // real on-panel port positions (from the stencil); else grid
-  aspect?: number;                   // cage-box w/h, to size the layout panel
-  breakouts?: Record<string, Breakout>;  // cage id -> breakout split (channels + speed)
-  compact?: boolean;                 // large-topology mode: draw a cheap aggregate switch node
-  showEdgeStubs?: boolean;           // draw short local downlink stubs instead of remote endpoint chips
-  activeEdgeStubPorts?: string[];     // "node:port" ids whose stubs are expanded to full cables
-};
-
-export type EndpointData = {
-  label: string; full: string; remotePort: string;
-  kind: 'edge' | 'lag' | 'mlag';
-  members: number;        // member ports summed across every leaf it homes to
-  leaves: string[];       // leaves this endpoint attaches to (>1 == multihomed)
-  lacp?: boolean;         // LACP vs static (LAGs only)
-  mode?: string;          // multihoming mode, e.g. AllActive (ESI only)
-  lldp?: LldpStatus;      // worst LLDP status across the bond's member ports
-};
-
-// ---- layout constants ---------------------------------------------------
-const CELL = 13, CELL_GAP = 3, HEAD_H = 32, STRIP_PAD = 8;
 const LARGE_TOPOLOGY_NODE_THRESHOLD = 300;
 const LARGE_TOPOLOGY_ROW_THRESHOLD = 5000;
-export const COMPACT_SWITCH_W = 132;
-export const COMPACT_SWITCH_H = 46;
-export const compactSwitchHandle = (side: 'top' | 'bottom', target = false) => `compact-${side}${target ? 't' : ''}`;
-const colsOf = (portCount: number, rows: number) => Math.max(1, Math.ceil(portCount / rows));
-const switchW = (portCount: number, rows: number) =>
-  Math.max(196, colsOf(portCount, rows) * (CELL + CELL_GAP) + STRIP_PAD * 2);
-const switchH = (rows: number) => HEAD_H + rows * CELL + (rows - 1) * CELL_GAP + STRIP_PAD * 2;
-const layoutOf = (platform: string) => { const l = FP_META[platform]?.layout; return l && l.length ? l : undefined; };
-const aspectOf = (platform: string) => FP_META[platform]?.aspect ?? 4;
-// modular chassis whose cages are addressed per slot ("<slot>-<port>"); drives cageKey() parsing.
-export const slottedOf = (platform: string) => FP_META[platform]?.slotted ?? false;
-// real-layout panel: sized by cage rows (so port numbers stay legible), width from the cage-box aspect.
-const LAYOUT_ROW = 19;
-export const panelDims = (rows: number, aspect: number) => ({ w: rows * LAYOUT_ROW * aspect, h: rows * LAYOUT_ROW });
-const switchHOf = (platform: string) =>
-  layoutOf(platform)
-    ? HEAD_H + panelDims(rowsOf(platform), aspectOf(platform)).h + STRIP_PAD * 2
-    : switchH(rowsOf(platform));
-const SWITCH_HEADER_H = 20, SWITCH_HEADER_MB = 6;
-const SWITCH_PANEL_X = STRIP_PAD, SWITCH_PANEL_Y = STRIP_PAD + SWITCH_HEADER_H + SWITCH_HEADER_MB;
 const EP_W = 112, EP_H = 22, EP_VGAP = 6, EP_HGAP = 10, EP_COLS = 2;
 const SPINE_Y = 0, LEAF_Y = 320, EP_TOP_GAP = 34;
 
@@ -113,8 +33,10 @@ function shortEndpoint(leafId: string, remote: string): string {
   return s;
 }
 
-export type BuiltGraph = { nodes: RFNode[]; edges: RFEdge[]; adjacency: Adjacency };
-export type BuildGraphOptions = { compact?: boolean; tiered?: boolean };
+// ethernet-1-12 -> "1-12" (matches the on-panel cage labelling)
+function shortPortLabel(iface: string): string {
+  return iface.replace(/^ethernet-/, '').replace(/^et-/, '');
+}
 
 function labelOf(n: Topology['nodes'][number], key: string): string | undefined {
   return n.labels?.[key] ?? n.raw?.metadata?.labels?.[key];
@@ -122,12 +44,6 @@ function labelOf(n: Topology['nodes'][number], key: string): string | undefined 
 
 function naturalName(left: string, right: string): number {
   return left.localeCompare(right, undefined, { numeric: true });
-}
-
-export function breakoutGrid(channels: number): { cols: number; rows: number } {
-  const n = Math.max(1, channels);
-  const rows = n > 4 ? 2 : 1;
-  return { cols: Math.ceil(n / rows), rows };
 }
 
 function breakoutsWithInferredChannels(explicit: Record<string, Breakout> | undefined, ports: PortInfo[]): Record<string, Breakout> | undefined {
@@ -143,93 +59,6 @@ function breakoutsWithInferredChannels(explicit: Record<string, Breakout> | unde
     if (channels > 1) out[port] = { channels, speed: '' };
   }
   return Object.keys(out).length ? out : undefined;
-}
-
-function switchCages(d: SwitchData): string[] {
-  return d.layout ? d.layout.map((p) => p.p) : Array.from({ length: d.portCount }, (_, i) => String(i + 1));
-}
-
-export function findSwitchPort(d: SwitchData, text: string): string | null {
-  const cages = switchCages(d);
-  const cageSet = new Set(cages);
-  const slotted = cages.some((cage) => cage.includes('-'));
-  const tokens = text.toLowerCase().split(/\s+/).filter(Boolean);
-  const candidates = new Set<string>();
-
-  for (const token of [text.toLowerCase(), ...tokens]) {
-    const key = cageKey(token, slotted);
-    if (key) candidates.add(key);
-
-    const normalized = token
-      .replace(/^ethernet-/, '')
-      .replace(/^et-/, '')
-      .replace(/\//g, '-')
-      .replace(/[^a-z0-9-]+/g, '');
-    if (normalized) candidates.add(normalized);
-
-    const numbers = token.match(/\d+/g) ?? [];
-    if (numbers.length >= 2) candidates.add(`${numbers[0]}-${numbers[1]}`);
-    if (numbers.length >= 1) candidates.add(numbers.at(-1)!);
-  }
-
-  for (const candidate of candidates) {
-    if (cageSet.has(candidate)) return candidate;
-  }
-  for (const candidate of candidates) {
-    if (!/^\d+$/.test(candidate)) continue;
-    const match = cages.find((cage) => cage === candidate || cage.endsWith(`-${candidate}`));
-    if (match) return match;
-  }
-  return null;
-}
-
-export function switchPortCenter(d: SwitchData, port: string, channel?: number): { x: number; y: number } | null {
-  const channelOffset = (width: number, height: number) => {
-    const bo = d.breakouts?.[port];
-    if (!bo || !channel) return { x: 0, y: 0 };
-    const n = Math.max(1, bo.channels);
-    const ch = Math.max(1, Math.min(n, channel));
-    const { cols, rows } = breakoutGrid(n);
-    const col = (ch - 1) % cols;
-    const row = Math.floor((ch - 1) / cols);
-    const colGap = cols > 2 ? 0.5 : 1;
-    const rowGap = rows > 1 ? 0.5 : 0;
-    const sw = (width - colGap * (cols - 1)) / cols;
-    const sh = (height - rowGap * (rows - 1)) / rows;
-    return {
-      x: -width / 2 + col * (sw + colGap) + sw / 2,
-      y: -height / 2 + row * (sh + rowGap) + sh / 2,
-    };
-  };
-
-  if (d.compact) {
-    const numbered = Number(port.split('-').at(-1));
-    const index = Number.isFinite(numbered) ? Math.max(0, Math.min(d.portCount - 1, numbered - 1)) : 0;
-    const used = d.ports.find((p) => p.port === port);
-    return {
-      x: 10 + ((index + 0.5) / Math.max(1, d.portCount)) * (COMPACT_SWITCH_W - 20),
-      y: used?.side === 'bottom' ? COMPACT_SWITCH_H - 2 : 2,
-    };
-  }
-
-  const rows = Math.max(1, d.rows);
-  if (d.layout) {
-    const p = d.layout.find((pos) => pos.p === port);
-    if (!p) return null;
-    const { w: W, h: H } = panelDims(rows, d.aspect ?? 4);
-    const offset = channelOffset(Math.max(3, p.w * W), Math.max(3, p.h * H));
-    return { x: SWITCH_PANEL_X + p.x * W + offset.x, y: SWITCH_PANEL_Y + p.y * H + offset.y };
-  }
-
-  const index = Number(port) - 1;
-  if (!Number.isInteger(index) || index < 0 || index >= d.portCount) return null;
-  const row = index % rows;
-  const col = Math.floor(index / rows);
-  const offset = channelOffset(CELL, CELL);
-  return {
-    x: SWITCH_PANEL_X + col * (CELL + CELL_GAP) + CELL / 2 + offset.x,
-    y: SWITCH_PANEL_Y + row * (CELL + CELL_GAP) + CELL / 2 + offset.y,
-  };
 }
 
 function nodeLabelPairs(n: Topology['nodes'][number]): string[] {
@@ -651,9 +480,4 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   }
 
   return { nodes: rfNodes, edges: rfEdges, adjacency: { nodeEdges, edgeEnds, edgePorts, search, nodeLabels } };
-}
-
-// ethernet-1-12 -> "1-12" (matches the on-panel cage labelling)
-function shortPortLabel(iface: string): string {
-  return iface.replace(/^ethernet-/, '').replace(/^et-/, '');
 }

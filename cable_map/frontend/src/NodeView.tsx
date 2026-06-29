@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Box, Paper, Typography, Table, TableHead, TableBody, TableRow, TableCell, Link,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableBody from '@mui/material/TableBody';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import Link from '@mui/material/Link';
 import FrontPanel from './FrontPanel';
 import RemoteCell from './RemoteCell';
 import { portIdx, cageKey, type Node, type Row } from './api';
