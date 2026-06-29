@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { type ReactFlowInstance } from '@xyflow/react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -49,7 +49,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   });
 
   const [open, setOpen] = useState<string | null>(null);
+  const [drawerExpanded, setDrawerExpanded] = useState(false);
+  const [drawerResetSizeSignal, setDrawerResetSizeSignal] = useState(0);
   const openNode = topo?.nodes.find((n) => n.name === open);
+  const selectDrawerNode = useCallback((name: string | null, expand = false) => {
+    setOpen(name);
+    if (expand) {
+      setDrawerExpanded(!!name);
+      setDrawerResetSizeSignal((v) => v + 1);
+    }
+    else if (!name) setDrawerExpanded(false);
+  }, []);
   const pdf = usePdfExport({ topo, namespace });
   const pdfLoading = pdf.pdfState.status === 'loading';
 
@@ -86,7 +96,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             onCycleEdgeLinkMode={links.cycleMode}
             onNodesChange={graph.onNodesChange} onInit={setFlow}
             onSelectionChange={graph.onSelectionChange}
-            onOpenNode={setOpen} onClearSelection={graph.clearSelection}
+            onOpenNode={selectDrawerNode} onClearSelection={graph.clearSelection}
             onViewportChange={viewport.setLargeViewport}
             onWebglUnavailable={flowModel.markWebglEdgesUnavailable}
           />
@@ -105,7 +115,9 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       </Box>
 
       <NodeDrawer
-        node={openNode} onOpenNode={setOpen} mode={mode} topo={topo}
+        node={openNode} expanded={drawerExpanded} onExpandedChange={setDrawerExpanded}
+        resetSizeSignal={drawerResetSizeSignal}
+        onOpenNode={selectDrawerNode} mode={mode} topo={topo}
         pdfLoading={pdfLoading} onExportPdf={pdf.openPdf}
       />
     </Box>

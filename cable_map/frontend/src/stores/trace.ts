@@ -18,6 +18,7 @@ const EMPTY: TraceState = { edges: new Set(), nodes: new Set(), ports: new Set()
 let adj: Adjacency = emptyAdjacency();
 let base: TraceState = EMPTY;
 let hoverKey: string | null = null;
+let hoverSuspended = false;
 let pinnedKey: string | null = null;
 // active free-text + label filter (kept off the key string so labels with ':' etc. don't collide)
 let fTerm = '';
@@ -94,7 +95,18 @@ function refresh() {
 }
 
 export const trace = {
-  hover(key: string | null) { hoverKey = key; if (!pinnedKey) refresh(); },
+  hover(key: string | null) {
+    if (hoverSuspended) return;
+    hoverKey = key;
+    if (!pinnedKey) refresh();
+  },
+  suspendHover(suspended: boolean) {
+    hoverSuspended = suspended;
+    if (suspended && hoverKey) {
+      hoverKey = null;
+      if (!pinnedKey) refresh();
+    }
+  },
   pin(key: string) { pinnedKey = pinnedKey === key ? null : key; refresh(); },
   // combined search box + label-chip filter: a node must match the free-text term AND carry every label
   filter(term: string, labels: string[]) {
@@ -114,10 +126,11 @@ export const trace = {
     refresh();
   },
   clear() {
-    fTerm = ''; fLabels = []; hoverKey = null; pinnedKey = null; base = EMPTY; store.setSnapshot(EMPTY);
+    fTerm = ''; fLabels = []; hoverKey = null; hoverSuspended = false; pinnedKey = null; base = EMPTY; store.setSnapshot(EMPTY);
   },
   isPinned: () => !!pinnedKey,
   getPinned: () => pinnedKey,
+  isHoverSuspended: () => hoverSuspended,
 };
 
 export function useTrace<T>(selector: (s: TraceState) => T): T {

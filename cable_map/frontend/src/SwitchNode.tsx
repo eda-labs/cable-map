@@ -25,8 +25,8 @@ type Box = { left: number; top: number; width: number; height: number };
 // A single front-panel cage (or one breakout channel sliver). Occupied ports carry the handles
 // cables attach to, and gain a highlight ring when their cable is being traced. `box`
 // absolutely-positions it (real-layout mode); `label`/`title` override the default cage number/tooltip.
-function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visualHidden = false, channel = false }:
-  { info: PortInfo; hot: boolean; dim: boolean; lldp: boolean; showEdgeStub: boolean; box?: Box; label?: ReactNode; title?: string; visualHidden?: boolean; channel?: boolean }) {
+function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visualHidden = false, channel = false, onSelectNode }:
+  { info: PortInfo; hot: boolean; dim: boolean; lldp: boolean; showEdgeStub: boolean; box?: Box; label?: ReactNode; title?: string; visualHidden?: boolean; channel?: boolean; onSelectNode?: (expand?: boolean) => void }) {
   const free = info.kind === 'free';
   const fill = fillFor(info, lldp);
   const side = info.side === 'top' ? Position.Top : Position.Bottom;
@@ -40,7 +40,13 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
     <div
       data-port={info.port}
       onMouseEnter={free ? undefined : (e) => { e.stopPropagation(); trace.hover(`cable:${info.cableId}`); }}
-      onClick={free ? undefined : (e) => { e.stopPropagation(); trace.pin(`cable:${info.cableId}`); }}
+      onClick={free ? undefined : (e) => {
+        e.stopPropagation();
+        if (e.detail > 1) return;
+        onSelectNode?.();
+        trace.pin(`cable:${info.cableId}`);
+      }}
+      onDoubleClick={free ? undefined : (e) => { e.stopPropagation(); onSelectNode?.(true); }}
       title={title ?? (free ? `port ${info.port} · free` : `${info.port} → ${info.remote} ${info.remotePort}`)}
       style={{
         ...(box ? { position: 'absolute', left: box.left, top: box.top, width: box.width, height: box.height }
@@ -98,8 +104,8 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
 // A broken-out cage: the cage box is split into `bo.channels` equal channel slivers (left→right),
 // each cabled channel slotting into its own sliver with its own handle. `box` is the cage's
 // absolute rect (real-layout) or undefined for a CELL-sized grid cage.
-function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs, box }:
-  { cage: string; infos: PortInfo[]; bo: Breakout; hot: boolean; selected: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box }) {
+function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs, box, onSelectNode }:
+  { cage: string; infos: PortInfo[]; bo: Breakout; hot: boolean; selected: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box; onSelectNode?: (expand?: boolean) => void }) {
   const [hovered, setHovered] = useState(false);
   // per-channel trace state: each channel highlights/dims on its OWN cable, not the whole cage
   const tracedEdges = useTrace((s) => s.edges);
@@ -159,6 +165,7 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
           <PortCell key={ch} info={info} hot={chHot} lldp={lldp} channel label={String(ch)} box={{ left: col * (sw + colGap), top: row * (sh + rowGap), width: sw, height: sh }}
             dim={chDim}
             showEdgeStub={showEdgeStubs}
+            onSelectNode={onSelectNode}
             visualHidden={!expanded}
             title={occ ? `${cage}/${ch} → ${info.remote} ${info.remotePort}` : `port ${cage}/${ch} · free${bo.speed ? ` · ${bo.speed}` : ''}`} />
         );
@@ -195,9 +202,9 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
 const freeCell = (port: string): PortInfo => ({ port, kind: 'free', side: 'bottom', remote: '', remotePort: '', desc: '', cableId: '' });
 
 // One cage: a breakout splits into channel slivers, otherwise it's a single cell (free if uncabled).
-function renderCage(cage: string, infos: PortInfo[] | undefined, bo: Breakout | undefined, hot: boolean, selected: boolean, dim: boolean, lldp: boolean, showEdgeStubs: boolean, box?: Box) {
-  if (bo) return <BreakoutCage key={cage} cage={cage} infos={infos ?? []} bo={bo} hot={hot} selected={selected} dim={dim} lldp={lldp} showEdgeStubs={showEdgeStubs} box={box} />;
-  return <PortCell key={cage} info={infos?.[0] ?? freeCell(cage)} hot={hot} dim={dim && !hot} lldp={lldp} showEdgeStub={showEdgeStubs} box={box} />;
+function renderCage(cage: string, infos: PortInfo[] | undefined, bo: Breakout | undefined, hot: boolean, selected: boolean, dim: boolean, lldp: boolean, showEdgeStubs: boolean, box?: Box, onSelectNode?: (expand?: boolean) => void) {
+  if (bo) return <BreakoutCage key={cage} cage={cage} infos={infos ?? []} bo={bo} hot={hot} selected={selected} dim={dim} lldp={lldp} showEdgeStubs={showEdgeStubs} box={box} onSelectNode={onSelectNode} />;
+  return <PortCell key={cage} info={infos?.[0] ?? freeCell(cage)} hot={hot} dim={dim && !hot} lldp={lldp} showEdgeStub={showEdgeStubs} box={box} onSelectNode={onSelectNode} />;
 }
 
 function CompactSwitchNode({ id, data, selected }: NodeProps) {
@@ -235,6 +242,7 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
       data-mode={mode}
       onMouseEnter={() => trace.hover(`node:${id}`)}
       onMouseLeave={() => trace.hover(null)}
+      onClick={() => d.onSelectNode?.(id)}
       style={{
         position: 'relative',
         width: COMPACT_SWITCH_W,
@@ -327,6 +335,7 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
       data-mode={mode}
       onMouseEnter={() => { if (!d.showEdgeStubs) trace.hover(`node:${id}`); }}
       onMouseLeave={() => trace.hover(null)}
+      onClick={() => d.onSelectNode?.(id)}
       style={{
         background: 'var(--panel)', borderRadius: 8, padding: 8,
         border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
@@ -352,14 +361,14 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
             const cw = Math.max(3, p.w * panel.W), ch = Math.max(3, p.h * panel.H);
             const box = { left: p.x * panel.W - cw / 2, top: p.y * panel.H - ch / 2, width: cw, height: ch };
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box);
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box, (expand) => d.onSelectNode?.(id, expand));
           })}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${CELL}px)`, gridTemplateRows: `repeat(${rows}, ${CELL}px)`, gridAutoFlow: 'column', gap: CELL_GAP }}>
           {cages.map((cage) => {
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs);
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, undefined, (expand) => d.onSelectNode?.(id, expand));
           })}
         </div>
       )}

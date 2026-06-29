@@ -39,8 +39,16 @@ PROJECT_TARGETS += clean
 
 .PHONY: dev
 HELP_dev := Start the Vite dev server (mock /api by default; set EDA_API to proxy a real backend)
+# The EDA make defaults (.mk/01-globals.mk) force `--output-sync=target`, which holds a
+# target's output until its recipe exits — so a long-running server prints nothing until you
+# Ctrl+C it. Re-exec into dev-run with those defaults disabled (cleared MAKEFLAGS +
+# DISABLE_MAKE_DEFAULTS) so Vite's banner and URLs stream live.
 dev:
-	$(FRONTEND) dev
+	@env MAKEFLAGS= MFLAGS= $(MAKE) DISABLE_MAKE_DEFAULTS=1 --no-print-directory dev-run
+
+.PHONY: dev-run
+dev-run:
+	@trap 'exit 0' INT TERM; $(FRONTEND) exec vite
 
 .PHONY: dev-cluster
 HELP_dev-cluster := DevSpace: hot-reload the operator in the deployed pod + run the frontend (HMR)

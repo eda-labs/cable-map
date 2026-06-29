@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   ReactFlow, Background, BackgroundVariant, Controls, ControlButton,
   type Edge as RFEdge, type Node as RFNode, type NodeTypes, type EdgeTypes,
@@ -39,7 +39,7 @@ interface FlowCanvasProps {
   onNodesChange: OnNodesChange<RFNode>;
   onInit: (flow: ReactFlowInstance) => void;
   onSelectionChange: (sel: { nodes: RFNode[] }) => void;
-  onOpenNode: (id: string) => void;
+  onOpenNode: (id: string | null, expand?: boolean) => void;
   onClearSelection: () => void;
   onViewportChange: (v: Viewport) => void;
   onWebglUnavailable: () => void;
@@ -57,9 +57,15 @@ function FlowCanvas({
 }: FlowCanvasProps) {
   const grouped = useGroupedEdges();
   const lldpOn = useLldp();
+  const interactiveFlowNodes = useMemo(() => flowNodes.map((n) => (
+    n.type === 'switch'
+      ? { ...n, data: { ...n.data, onSelectNode: onOpenNode } }
+      : n
+  )), [flowNodes, onOpenNode]);
+
   return (
     <ReactFlow
-      nodes={flowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+      nodes={interactiveFlowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
       onNodesChange={onNodesChange}
       onInit={onInit}
       colorMode={mode} elevateNodesOnSelect={false} nodesConnectable={false}
@@ -67,19 +73,26 @@ function FlowCanvas({
       onlyRenderVisibleElements={largeTopology}
       minZoom={largeTopology ? LARGE_MIN_ZOOM : 0.15}
       maxZoom={largeTopology ? LARGE_MAX_ZOOM : 4}
-      onNodeClick={(_, n) => {
+      onNodeClick={(event, n) => {
+        if (!switchIds.has(n.id)) return;
+        if (event.detail > 1) return;
+        const k = `node:${n.id}`;
+        // single click only toggles the node's trace highlight; opening the drawer is reserved
+        // for double-click so lightweight map inspection stays cheap.
+        trace.pin(k);
+        onOpenNode(n.id);
+      }}
+      onNodeDoubleClick={(_, n) => {
         if (!switchIds.has(n.id)) return;
         const k = `node:${n.id}`;
-        // first click pins the node's trace (highlight holds while you pan); a second click on
-        // the already-pinned node opens the drawer.
-        if (trace.getPinned() === k) onOpenNode(n.id); else trace.pin(k);
+        if (trace.getPinned() !== k) trace.pin(k);
+        onOpenNode(n.id, true);
       }}
-      onNodeDoubleClick={(_, n) => { if (switchIds.has(n.id)) onOpenNode(n.id); }}
       onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
       onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}
       onEdgeMouseLeave={() => trace.hover(null)}
       onSelectionChange={onSelectionChange}
-      onPaneClick={() => { onClearSelection(); trace.clear(); }}
+      onPaneClick={() => { onClearSelection(); trace.clear(); onOpenNode(null); }}
       onMove={largeTopology ? (_, nextViewport) => onViewportChange(nextViewport) : undefined}
       fitView={!largeTopology}
       defaultViewport={largeTopology ? LARGE_DEFAULT_VIEWPORT : undefined}

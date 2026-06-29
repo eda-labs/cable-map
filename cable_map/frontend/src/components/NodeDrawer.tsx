@@ -1,5 +1,4 @@
 import { memo, useEffect, useState } from 'react';
-import Drawer from '@mui/material/Drawer';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -9,7 +8,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import CloseIcon from '@mui/icons-material/CloseOutlined';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUpOutlined';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
 import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernetOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SvgGlyph from './SvgGlyph';
@@ -19,48 +19,106 @@ import type { Node, Topology } from '../domain/topology/contract';
 import { exportXlsx } from '../xlsx';
 import NodeView from '../NodeView';
 import NodeDetails from '../NodeDetails';
+import { trace } from '../trace';
 import { type Mode } from '../theme';
 
 interface NodeDrawerProps {
   node: Node | undefined;
-  onOpenNode: (name: string | null) => void;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  resetSizeSignal: number;
+  onOpenNode: (name: string | null, expand?: boolean) => void;
   mode: Mode;
   topo: Topology | null;
   pdfLoading: boolean;
   onExportPdf: (ids: string[]) => void;
 }
 
-// Memoized: with a stable onExportPdf, typing in the search box (an App state change) no longer
-// re-renders the open drawer + its Monaco panel; it still re-renders when `node` changes.
-function NodeDrawer({ node, onOpenNode, mode, topo, pdfLoading, onExportPdf }: NodeDrawerProps) {
-  const [drawerTab, setDrawerTab] = useState(0);            // 0 = Ports, 1 = Details
-  useEffect(() => { setDrawerTab(0); }, [node?.name]);      // reset to Ports when a new node opens
-  const [drawerH, setDrawerH] = useState(() => Math.round(window.innerHeight * 0.6));
+// A persistent bottom sheet: always present as a slim, draggable handle that pulls up to
+// reveal the selected node's ports + details (or an empty placeholder when nothing is
+// selected). Memoized so unrelated App state changes (e.g. typing in search) don't
+// re-render the open sheet + its Monaco panel; it still re-renders when `node` changes.
+const defaultDrawerHeight = () => Math.round(window.innerHeight * 0.6);
 
-  // drag the top edge of the drawer to resize its height
-  const startResize = (e: React.PointerEvent) => {
+function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenNode, mode, topo, pdfLoading, onExportPdf }: NodeDrawerProps) {
+  const [drawerTab, setDrawerTab] = useState(0);            // 0 = Ports, 1 = Details
+  const [drawerH, setDrawerH] = useState(defaultDrawerHeight);
+  const nodeName = node?.name;
+
+  useEffect(() => {
+    setDrawerTab(0);
+  }, [nodeName]);
+
+  useEffect(() => {
+    setDrawerH(defaultDrawerHeight());
+  }, [resetSizeSignal]);
+
+  // drag any handle: live-resize while dragging (collapsing if pulled near the bottom),
+  // or — when released without moving — toggle expanded/collapsed (so a plain click opens
+  // the sheet). Listeners live on window so the drag survives the collapsed→expanded swap.
+  const startDrag = (e: React.PointerEvent) => {
     e.preventDefault();
-    const move = (ev: PointerEvent) =>
-      setDrawerH(Math.max(180, Math.min(window.innerHeight - 56, window.innerHeight - ev.clientY)));
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    trace.suspendHover(true);
+    let moved = false;
+    let collapseOnRelease = false;
+    const cleanup = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+      trace.suspendHover(false);
+    };
+    const move = (ev: PointerEvent) => {
+      moved = true;
+      const h = window.innerHeight - ev.clientY;
+      collapseOnRelease = h < 120;
+      if (collapseOnRelease) onExpandedChange(false);
+      else { onExpandedChange(true); setDrawerH(Math.max(180, Math.min(window.innerHeight - 56, h))); }
+    };
+    const up = () => {
+      cleanup();
+      if (!moved) {
+        onExpandedChange(!expanded);
+      }
+    };
+    const cancel = () => cleanup();
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
   };
 
+  // EDA form-panel surface; backgroundImage:none kills MUI's dark elevation overlay so the
+  // sheet + Monaco editor stay flat like EDA.
+  const surface = mode === 'dark' ? '#1A222E' : '#FFFFFF';
+
+  // Collapsed: a small centered handle that invites pulling up. Centered so it sits
+  // between the bottom-left legend and bottom-right HUD and occludes neither.
+  if (!expanded) {
+    return (
+      <Box onPointerDown={startDrag} title="Open node panel"
+        sx={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          zIndex: (t) => t.zIndex.drawer, cursor: 'ns-resize',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25,
+          px: 2.5, pt: 0.75, pb: 0.5, bgcolor: surface, backgroundImage: 'none',
+          borderTopLeftRadius: 12, borderTopRightRadius: 12, boxShadow: 6,
+          '&:hover .puller': { bgcolor: 'text.secondary' } }}>
+        <Box className="puller" sx={{ width: 40, height: 4, bgcolor: 'divider', borderRadius: 2 }} />
+        <KeyboardArrowUpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+      </Box>
+    );
+  }
+
   return (
-    <Drawer anchor="bottom" open={!!node} onClose={() => onOpenNode(null)}
-      slotProps={{ paper: { sx: { height: drawerH, borderTopLeftRadius: 12, borderTopRightRadius: 12,
-        // EDA form-panel surface (formBody) so the drawer + Monaco editor blend like EDA;
-        // backgroundImage:none kills MUI's dark elevation overlay that lightens the paper
-        bgcolor: mode === 'dark' ? '#1A222E' : '#FFFFFF', backgroundImage: 'none',
-        display: 'flex', flexDirection: 'column' } } }}>
-      {node && (
+    <Box sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: (t) => t.zIndex.drawer,
+      height: drawerH, borderTopLeftRadius: 12, borderTopRightRadius: 12,
+      bgcolor: surface, backgroundImage: 'none', boxShadow: 6,
+      display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box onPointerDown={startDrag} title="Drag to resize"
+        sx={{ cursor: 'ns-resize', py: 0.75, display: 'flex', justifyContent: 'center',
+          '&:hover .puller': { bgcolor: 'text.secondary' } }}>
+        <Box className="puller" sx={{ width: 40, height: 4, bgcolor: 'divider', borderRadius: 2 }} />
+      </Box>
+      {node ? (
         <>
-          <Box onPointerDown={startResize} title="Drag to resize"
-            sx={{ cursor: 'ns-resize', py: 0.75, display: 'flex', justifyContent: 'center',
-              '&:hover .puller': { bgcolor: 'text.secondary' } }}>
-            <Box className="puller" sx={{ width: 40, height: 4, bgcolor: 'divider', borderRadius: 2 }} />
-          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 1.5 }}>
             <Typography variant="h6">{node.name}</Typography>
             <Chip size="small" label={node.platform} />
@@ -82,7 +140,9 @@ function NodeDrawer({ node, onOpenNode, mode, topo, pdfLoading, onExportPdf }: N
                 </IconButton>
               </Tooltip>
             )}
-            <IconButton onClick={() => onOpenNode(null)} size="small"><CloseIcon /></IconButton>
+            <Tooltip title="Collapse">
+              <IconButton onClick={() => onExpandedChange(false)} size="small"><KeyboardArrowDownIcon /></IconButton>
+            </Tooltip>
           </Box>
           <Divider />
           <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
@@ -106,8 +166,14 @@ function NodeDrawer({ node, onOpenNode, mode, topo, pdfLoading, onExportPdf }: N
             )}
           </Box>
         </>
+      ) : (
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 1, color: 'text.secondary' }}>
+          <SettingsEthernetIcon sx={{ fontSize: 32, color: 'text.disabled' }} />
+          <Typography variant="body2">Select a node on the map to view its ports and details</Typography>
+        </Box>
       )}
-    </Drawer>
+    </Box>
   );
 }
 

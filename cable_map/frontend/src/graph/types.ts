@@ -29,6 +29,7 @@ export type SwitchData = {
   compact?: boolean;                 // large-topology mode: draw a cheap aggregate switch node
   showEdgeStubs?: boolean;           // draw short local downlink stubs instead of remote endpoint chips
   activeEdgeStubPorts?: string[];     // "node:port" ids whose stubs are expanded to full cables
+  onSelectNode?: (id: string, expand?: boolean) => void;
 };
 
 export type EndpointData = {

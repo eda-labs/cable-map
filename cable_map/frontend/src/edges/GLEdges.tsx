@@ -331,9 +331,14 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     };
     // ports/nodes own the hover when the pointer is on them — never let a cable under a port win
     const overNode = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('.react-flow__node');
+    const clearLocalHover = () => {
+      pointerRef.current.lastHover = null;
+      pane.style.cursor = '';
+    };
     let raf = 0;
     const onMove = (e: PointerEvent) => {
       const p = pointerRef.current;
+      if (trace.isHoverSuspended()) { clearLocalHover(); return; }
       p.active = true;
       p.x = e.clientX;
       p.y = e.clientY;
@@ -343,6 +348,7 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
+        if (trace.isHoverSuspended()) { clearLocalHover(); return; }
         const latest = pointerRef.current;
         if (!latest.active || latest.overNode) return;
         const id = pick(latest.x, latest.y);
@@ -359,6 +365,7 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     const onClick = (e: MouseEvent) => { if (overNode(e.target)) return; const id = pick(e.clientX, e.clientY); if (id) { e.stopPropagation(); trace.pin(`cable:${id}`); } };
     repickRef.current = () => {
       const p = pointerRef.current;
+      if (trace.isHoverSuspended()) { clearLocalHover(); return; }
       if (!p.active || p.overNode) return;
       const id = pick(p.x, p.y);
       pane.style.cursor = id ? 'pointer' : '';
