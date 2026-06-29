@@ -255,15 +255,15 @@ a port number). It records `hasC` per label, which the bake step uses to emit `c
 
 ---
 
-## 9. Dev inspector — `/stencil-editor/`
+## 9. Dev inspector — `frontpanel-studio`
 
-A dev-only tool for building and reviewing stencils. **Its own Vite entry** in the
-`stencil-editor/` dir (`index.html` → `main.tsx` → `StencilViewer.tsx`), so it is **never in
-the prod build** (`vite build` only builds `index.html`; verified the inspector strings are
-absent from `dist/`). The dir is tracked but `stencil-editor` is added to `tsconfig.app.json`
-`include` so it still typechecks.
+A dev-only tool for building and reviewing stencils, in its **own Vite project** at the repo root
+(`frontpanel-studio/`, a sibling of `cable_map/`) — it's tooling, kept out of the app. It previews a
+stencil with the app's **real** `SwitchNode` renderer via a vite alias (`@app` →
+`cable_map/frontend/src`), so there's no duplicated renderer and nothing ships in the app build.
 
-Run the dev server and open `http://localhost:<port>/stencil-editor/`. Features:
+Run it: `pnpm -C frontpanel-studio install` (first time), then `pnpm -C frontpanel-studio dev` and
+open `http://localhost:5174/`. Features:
 
 - **platform group → subtype** cascading dropdowns. Only the modular chassis (SR-1, SR-1s,
   SR-2s, SR-2se) fan out into card-config subtypes; every fixed platform is its own group.
@@ -274,10 +274,10 @@ Run the dev server and open `http://localhost:<port>/stencil-editor/`. Features:
   `d` (copied to clipboard) — use this to position/retag a cage.
 - **canvas node** below the stencil renders the real `SwitchNode` in a minimal `<ReactFlow>`
   — exactly how it looks on the topology canvas.
-- **hot reload**: a dev Vite plugin (`frontpanelHmr` in `vite.config.ts`) watches
-  `public/frontpanel/**/*.svg` and pings `cable-map:frontpanel`; the viewer re-fetches the
-  current panel in place (cache-busted), preserving the group/subtype selection. Meta
-  changes still full-reload (static JSON import).
+- **hot reload**: the `frontpanel` Vite plugin (`frontpanel-studio/vite.config.ts`) serves the
+  stencils from `cable_map/operators/cable-map/frontpanel/` and pings `cable-map:frontpanel` on
+  edit; the viewer re-fetches the current panel in place (cache-busted), preserving the
+  group/subtype selection. Meta changes still full-reload (static JSON import).
 
 ---
 
@@ -290,35 +290,36 @@ Run the dev server and open `http://localhost:<port>/stencil-editor/`. Features:
    string, and a `code → cardFile` table. Reuse `compose-sr1.mjs` (it takes `--slots`).
    - Keep codes URL-safe: no `/` or `+` (the engine and resolver both sanitise to `-`, but
      name them cleanly).
-4. **Generate** + **regen meta**: `node scripts/<driver>.mjs && node scripts/gen-frontpanel-meta.mjs`.
+4. **Generate** + **regen meta**: `node cable_map/frontend/scripts/<driver>.mjs && pnpm -C frontpanel-studio gen:frontpanel-meta`.
 5. **Wire the resolver** in `src/stencil.ts` (add to `TWO_BAY_CHASSIS` / `SINGLE_MDA_CHASSIS`
    or a new branch). Make sure EDA's reported MDA `type` sanitises to your filename token.
 6. **Verify**:
    - every composite serves a real SVG, not the ~600-byte SPA fallback;
    - port counts == sum of the two cards;
    - two-row slots are odd-top/even-bottom;
-   - eyeball each in `/stencil-editor/` (fill cages on, arrow through subtypes), comparing the
+   - eyeball each in `frontpanel-studio` (fill cages on, arrow through subtypes), comparing the
      baked labels against the silkscreen and the canvas-node layout.
 
 ---
 
 ## 11. File map
 
+Paths are from the repo root. The **stencils + their tooling are separate from the app**: the SVGs
+live with the operator that serves them; the inspector + generation scripts live in `frontpanel-studio/`.
+
 | Path | Tracked | Role |
 |---|---|---|
 | `stencils/` | gitignored | raw vendor SVG library (source material) |
-| `public/frontpanel/<name>.svg` | committed | **the stencils** (data-port + baked labels) |
-| `src/frontpanel-meta.json` | committed | derived per-platform `{ports,rows,aspect,slotted,layout}` |
-| `src/stencil.ts` | committed | `stencilFor()` resolver (platform+components → name) |
-| `src/FrontPanel.tsx` | committed | drawer render (inline SVG, fill cages) |
-| `src/SwitchNode.tsx` | committed | canvas render (cells from meta layout) |
-| `scripts/gen-frontpanel-meta.mjs` | committed | meta generator |
-| `scripts/compose-modular.mjs` | dev-untracked | SR-2s/2se composer |
-| `scripts/compose-sr1.mjs` | dev-gitignored | SR-1/SR-1s compose engine (`--slots`) |
-| `scripts/compose-sr1-all.mjs`, `compose-sr1s-all.mjs` | dev-gitignored | drivers |
-| `scripts/derive-frontpanel.mjs` | dev-gitignored | fixed-chassis derive |
-| `stencil-editor/{index.html,main.tsx,StencilViewer.tsx}` | tracked (dev entry, not in prod build) | `/stencil-editor/` inspector |
-| `vite.config.ts` `frontpanelHmr` | committed | dev SVG hot-reload plugin |
+| `cable_map/operators/cable-map/frontpanel/<name>.svg` | committed | **the stencils** (data-port + baked labels); served by the operator at `/frontpanel/*` |
+| `cable_map/frontend/src/frontpanel-meta.json` | committed | derived per-platform `{ports,rows,aspect,slotted,layout}` (bundled by the app) |
+| `cable_map/frontend/src/stencil.ts` | committed | `stencilFor()` resolver (platform+components → name) |
+| `cable_map/frontend/src/FrontPanel.tsx` | committed | drawer render (inline SVG, fill cages) |
+| `cable_map/frontend/src/SwitchNode.tsx` | committed | canvas render (cells from meta layout) |
+| `frontpanel-studio/scripts/gen-frontpanel-meta.mjs` | committed | meta generator |
+| `frontpanel-studio/scripts/minify-frontpanel.mjs` | committed | lossless SVG minifier |
+| `cable_map/frontend/scripts/compose-*.mjs`, `derive-frontpanel.mjs` | dev-gitignored | composers / derive (one-time generators) |
+| `frontpanel-studio/{index.html,src/main.tsx,src/StencilViewer.tsx}` | committed | the inspector (its own Vite project; aliases `@app` → the frontend) |
+| `frontpanel-studio/vite.config.ts` `frontpanel` plugin | committed | dev stencil serve + hot-reload |
 
 Dev-gitignored files are excluded via `.git/info/exclude` (local-only; do **not** add them
 to the tracked `.gitignore`).
