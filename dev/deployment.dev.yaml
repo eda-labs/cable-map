@@ -1,6 +1,3 @@
-# Dev pod for `devspace dev` — a plain Go container that DevSpace develops: it syncs the host-built
-# operator binary in and runs it. Its own ServiceAccount + cert-manager mTLS certs let it reach the
-# State Aggregator (cert-based auth). No app image to build/push; the binary comes from the host.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -27,8 +24,12 @@ spec:
       serviceAccountName: cable-map-dev
       containers:
         - name: cable-map
-          image: golang:1.24-alpine
-          command: ["sleep", "infinity"] # DevSpace overrides this to run the synced binary
+          image: edabuilder-in-cluster-dev-registry:5555/eda-labs/cable-map/operators/cable-map:dev
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          command: ["sleep", "infinity"]
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -38,8 +39,6 @@ spec:
               value: "8080"
             - name: HOME
               value: /tmp
-            - name: CHROMEDP_NO_SANDBOX # chromium refuses to run as root without --no-sandbox
-              value: "1"
             - name: CABLE_MAP_DISABLE_AUTH # local dev: FE is auth-skipped on localhost, no EDA token to validate
               value: "1"
           ports:
