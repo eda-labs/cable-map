@@ -43,7 +43,8 @@ interface AppToolbarProps {
   namespaces: string[];
   namespace: string;
   onNamespaceChange: (ns: string) => void;
-  selected: string[];
+  exportNodeIds: string[];
+  exportScope: 'all' | 'filtered' | 'selected';
   pdfLoading: boolean;
   onExportPdf: (ids: string[]) => void;
 }
@@ -54,9 +55,20 @@ interface AppToolbarProps {
 function AppToolbar({
   mode, onToggleMode, ready, topo, query, onQueryChange, searchError,
   nodeLabelOptions, selectedLabels, onSelectedLabelsChange,
-  namespaces, namespace, onNamespaceChange, selected, pdfLoading, onExportPdf,
+  namespaces, namespace, onNamespaceChange, exportNodeIds, exportScope, pdfLoading, onExportPdf,
 }: AppToolbarProps) {
   const lldpOn = useLldp();
+  const exportCount = exportScope === 'all' ? 0 : exportNodeIds.length;
+  const pdfTitle = exportScope === 'selected'
+    ? `Download PDF (${exportNodeIds.length} selected)`
+    : exportScope === 'filtered'
+      ? `Download PDF (${exportNodeIds.length} filtered)`
+      : 'Download PDF (all nodes)';
+  const xlsxTitle = exportScope === 'selected'
+    ? `Download XLSX (${exportNodeIds.length} selected)`
+    : exportScope === 'filtered'
+      ? `Download XLSX (${exportNodeIds.length} filtered)`
+      : 'Download XLSX (all nodes)';
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
       <Toolbar variant="dense" sx={{ gap: 1.5, position: 'relative' }}>
@@ -114,11 +126,11 @@ function AppToolbar({
           <Chip size="small" variant="outlined" label={namespace} sx={{ maxWidth: 180 }} />
         )}
         {ready && (
-          <Tooltip title={selected.length ? `Download PDF (${selected.length} selected)` : 'Download PDF (all nodes)'}>
+          <Tooltip title={pdfTitle}>
             <IconButton size="small" sx={{ color: 'text.primary' }}
               disabled={pdfLoading}
-              onClick={() => onExportPdf(selected)}>
-              <Badge badgeContent={selected.length} color="primary">
+              onClick={() => onExportPdf(exportScope === 'all' ? [] : exportNodeIds)}>
+              <Badge badgeContent={exportCount} color="primary">
                 {pdfLoading
                   ? <CircularProgress size={24} color="primary" /> // keep 24px or the toolbar shifts on swap
                   : <SvgGlyph src={pdfIcon} />}
@@ -127,10 +139,10 @@ function AppToolbar({
           </Tooltip>
         )}
         {ready && topo && (
-          <Tooltip title={selected.length ? `Download XLSX (${selected.length} selected)` : 'Download XLSX (all nodes)'}>
+          <Tooltip title={xlsxTitle}>
             <IconButton size="small" sx={{ color: 'text.primary' }}
-              onClick={() => { void exportXlsx(topo, selected.length ? selected : topo.nodes.map((n) => n.name)).catch(console.error); }}>
-              <Badge badgeContent={selected.length} color="primary">
+              onClick={() => { void exportXlsx(topo, exportNodeIds).catch(console.error); }}>
+              <Badge badgeContent={exportCount} color="primary">
                 <SvgGlyph src={excelIcon} />
               </Badge>
             </IconButton>

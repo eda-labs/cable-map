@@ -294,11 +294,33 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := "cable-map"
-	if nodesParam != "" {
-		name += "-" + strings.ReplaceAll(nodesParam, ",", "_")
-	}
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s.pdf"`, name))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, pdfFilename(r.URL.Query().Get("ns"))))
 	_, _ = w.Write(pdf)
+}
+
+func pdfFilename(namespace string) string {
+	name := "cable_map"
+	if ns := safeFilenamePart(namespace); ns != "" {
+		name += "_" + ns
+	}
+	return name + ".pdf"
+}
+
+func safeFilenamePart(s string) string {
+	var b strings.Builder
+	lastUnderscore := false
+	for _, r := range strings.TrimSpace(s) {
+		ok := (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '.' || r == '-'
+		if ok {
+			b.WriteRune(r)
+			lastUnderscore = false
+			continue
+		}
+		if !lastUnderscore && b.Len() > 0 {
+			b.WriteByte('_')
+			lastUnderscore = true
+		}
+	}
+	return strings.Trim(b.String(), "_")
 }

@@ -53,6 +53,23 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const [drawerResetSizeSignal, setDrawerResetSizeSignal] = useState(0);
   const nodeByName = useMemo(() => new Map(topo?.nodes.map((n) => [n.name, n]) ?? []), [topo]);
   const openNode = open ? nodeByName.get(open) : undefined;
+  const { exportNodeIds, exportScope } = useMemo(() => {
+    const allNodeIds = topo?.nodes.map((n) => n.name) ?? [];
+    const shown = filter.shown;
+    if (!shown) {
+      return {
+        exportNodeIds: graph.selected.length ? graph.selected : allNodeIds,
+        exportScope: graph.selected.length ? 'selected' as const : 'all' as const,
+      };
+    }
+
+    const filteredNodeIds = allNodeIds.filter((id) => shown.has(id));
+    const filteredNodeSet = new Set(filteredNodeIds);
+    const selectedFilteredNodeIds = graph.selected.filter((id) => filteredNodeSet.has(id));
+    return selectedFilteredNodeIds.length
+      ? { exportNodeIds: selectedFilteredNodeIds, exportScope: 'selected' as const }
+      : { exportNodeIds: filteredNodeIds, exportScope: 'filtered' as const };
+  }, [topo, filter.shown, graph.selected]);
   const selectDrawerNode = useCallback((name: string | null, expand = false) => {
     startTransition(() => {
       setOpen((current) => current === name ? current : name);
@@ -84,7 +101,8 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         nodeLabelOptions={filter.nodeLabelOptions}
         selectedLabels={filter.selectedLabels} onSelectedLabelsChange={filter.setSelectedLabels}
         namespaces={namespaces} namespace={namespace} onNamespaceChange={setNamespace}
-        selected={graph.selected} pdfLoading={pdfLoading} onExportPdf={pdf.openPdf}
+        exportNodeIds={exportNodeIds} exportScope={exportScope}
+        pdfLoading={pdfLoading} onExportPdf={pdf.openPdf}
       />
 
       <Box ref={flowHostRef} sx={{ flex: 1, minHeight: 0 }}>

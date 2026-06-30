@@ -32,6 +32,8 @@ single OCI app image).
   GitHub. Requires access to that private repo: `gh auth setup-git` (or SSH/`.netrc`) so `go` can
   clone it, and `go env -w GOPRIVATE=eda.dev/edk` the first time the version is bumped.
 - `pnpm`, `docker`, `kubectl`, `edabuilder`.
+- `typst` on `PATH` for PDF export from the Vite mock dev server, or set `TYPST_BIN=/path/to/typst`.
+  The runtime image downloads Typst during `make image`.
 
 ## Local development (frontend)
 
@@ -43,8 +45,9 @@ make dev        # Vite dev server; /api is mocked from the golden topology fixtu
 ```
 
 The Go backend only returns live data inside the cluster (it needs the EDA internal
-certs). Use `make dev` for UI work against the built-in mock topology. To proxy
-to a real backend instead, run with `EDA_API=http://host:port make dev`.
+certs). Use `make dev` for UI work against the built-in mock topology; `/pdf`
+renders that mock topology locally with Typst. To proxy to a real backend instead,
+run with `EDA_API=http://host:port make dev`.
 
 ## Common commands
 
