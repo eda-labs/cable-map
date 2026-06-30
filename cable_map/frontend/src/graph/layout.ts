@@ -27,6 +27,11 @@ function podKey(n: Topology['nodes'][number]): string {
   return labelOf(n, 'eda.nokia.com/pod') ?? 'pod';
 }
 
+function nodeStateOf(n: Topology['nodes'][number]): string | undefined {
+  const value = n.raw?.status?.['node-state'];
+  return value == null ? undefined : String(value);
+}
+
 function breakoutsWithInferredChannels(explicit: Record<string, Breakout> | undefined, ports: PortInfo[]): Record<string, Breakout> | undefined {
   const inferred = new Map<string, number>();
   for (const port of ports) {
@@ -154,6 +159,7 @@ export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, ste
 
   const rfNodes: RFNode[] = topo.nodes.map((n) => {
     const nodePorts = switchPorts.get(n.name) ?? [];
+    const nodeState = nodeStateOf(n);
     return {
       id: n.name, type: 'switch', position: pos.get(n.name) ?? { x: 0, y: 0 },
       width: swW(n.name),
@@ -162,6 +168,8 @@ export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, ste
       initialHeight: swH(n.name),
       data: {
         name: n.name, role: n.role, platform: n.platform,
+        nodeState,
+        synced: nodeState?.trim().toLowerCase() === 'synced',
         portCount: portCountOf(stencilOf(n.name)), rows: rowsOf(stencilOf(n.name)),
         ports: nodePorts, layout: compact ? undefined : layoutOf(stencilOf(n.name)),
         aspect: aspectOf(stencilOf(n.name)), breakouts: compact ? undefined : breakoutsWithInferredChannels(n.breakouts, nodePorts), compact,

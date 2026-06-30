@@ -20,6 +20,8 @@ export type PortInfo = {
 
 export type SwitchData = {
   name: string; role: string; platform: string;
+  nodeState?: string;
+  synced?: boolean;
   portCount: number;
   rows: number;                      // physical cage rows, mirrored on the canvas
   ports: PortInfo[];                 // occupied ports only (free cells inferred)

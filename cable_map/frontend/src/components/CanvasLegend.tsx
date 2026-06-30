@@ -11,7 +11,7 @@ import { CABLE_COLOR, LLDP_COLOR } from '../graph';
 import { useLldp } from '../lldp';
 
 const LEGEND: Array<[string, string]> = [
-  ['Fabric (ISL)', CABLE_COLOR.isl], ['Edge', CABLE_COLOR.edge], ['Local LAG', CABLE_COLOR.lag], ['ESI / MH-LAG', CABLE_COLOR.mlag],
+  ['InterSwitch', CABLE_COLOR.isl], ['Edge', CABLE_COLOR.edge], ['Local LAG', CABLE_COLOR.lag], ['Multihome LAG', CABLE_COLOR.mlag],
 ];
 const LLDP_LEGEND: Array<[string, string]> = [
   ['LLDP confirmed', LLDP_COLOR.ok], ['Mismatch', LLDP_COLOR.mismatch], ['No neighbor', LLDP_COLOR.none],
@@ -32,7 +32,7 @@ export default function CanvasLegend() {
                 <CloseIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
               </IconButton>
             </Tooltip>
-            <Box sx={{ display: 'flex', gap: 2, mb: 0.75 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', columnGap: 2, rowGap: 0.5, mb: 0.75 }}>
               {(lldpOn ? LLDP_LEGEND : LEGEND).map(([label, swatch]) => (
                 <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                   <Box sx={{ width: 14, height: 6, borderRadius: 2, bgcolor: swatch }} />
@@ -40,11 +40,20 @@ export default function CanvasLegend() {
                 </Box>
               ))}
             </Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {lldpOn
-                ? 'LLDP overlay — cables coloured by neighbour match vs the configured remote'
-                : 'Hover to trace · click a cable or port to pin · click a switch for its panel'}
-            </Typography>
+            {lldpOn ? (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                LLDP overlay — cables coloured by neighbour match vs the configured remote
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Select a node to highlight its connections
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Double click on a node to see the front-panel layout
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Grow>
         <Grow in={!legendOpen} style={{ transformOrigin: 'bottom left' }} unmountOnExit>

@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { memo, useCallback, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
   CABLE_COLOR, LLDP_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W,
@@ -15,6 +15,32 @@ import { useOpenNode } from './components/NodeActionsContext';
 const RoleIcons: Record<string, string> = {
   spine: spineIcon, superspine: superspineIcon, leaf: leafIcon, borderleaf: leafIcon,
 };
+
+type RoleIconStyle = CSSProperties & {
+  '--color-icon-bg': string;
+  '--color-icon-fg': string;
+};
+
+const roleIconStyle = (size: number, synced?: boolean): RoleIconStyle => ({
+  lineHeight: 0,
+  width: size,
+  height: size,
+  flexShrink: 0,
+  '--color-icon-bg': synced ? 'var(--eda-green-600)' : 'var(--cell-free-bg)',
+  '--color-icon-fg': synced ? '#fff' : 'var(--muted)',
+});
+
+function RoleIcon({ icon, size, role, nodeState, synced }: { icon?: string; size: number; role: string; nodeState?: string; synced?: boolean }) {
+  if (!icon) return null;
+  const state = nodeState ? ` · node-state: ${nodeState}` : '';
+  return (
+    <span
+      title={`${role}${state}`}
+      style={roleIconStyle(size, synced)}
+      dangerouslySetInnerHTML={{ __html: icon.replace(/width="\d+"/, `width="${size}"`).replace(/height="\d+"/, `height="${size}"`) }}
+    />
+  );
+}
 
 const CELL = 13, CELL_GAP = 3;
 // occupied cells fill with their cable-kind colour, or their LLDP status while the overlay is on
@@ -285,7 +311,7 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
       <Handle type="target" id={compactSwitchHandle('bottom', true)} position={Position.Bottom} isConnectable={false}
         style={{ ...handleStyle, bottom: -5, top: 'auto' }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-        {icon && <span style={{ lineHeight: 0, width: 15, height: 15, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: icon.replace(/width="\d+"/, 'width="15"').replace(/height="\d+"/, 'height="15"') }} />}
+        <RoleIcon icon={icon} size={15} role={d.role} nodeState={d.nodeState} synced={d.synced} />
         <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
@@ -370,7 +396,7 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, height: 20 }}>
-        {icon && <span style={{ lineHeight: 0, width: 18, height: 18, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: icon.replace(/width="\d+"/, 'width="18"').replace(/height="\d+"/, 'height="18"') }} />}
+        <RoleIcon icon={icon} size={18} role={d.role} nodeState={d.nodeState} synced={d.synced} />
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0, maxWidth: '60%' }}>{d.name}</span>
         <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{d.platform}</span>
         <span style={{ flex: 1, minWidth: 0 }} />
