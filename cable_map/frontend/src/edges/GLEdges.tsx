@@ -194,6 +194,19 @@ function hitCandidates(index: HitIndex, p: XY, tolerance: number, current: strin
   return [...seen];
 }
 
+function EdgeLabels({ labels }: { labels: EdgeDrawLabel[] }) {
+  const [vtx, vty, vzoom] = useStore((s) => s.transform);
+  return labels.map((lab) => (
+    <div key={lab.key} style={{
+      position: 'absolute', left: 0, top: 0, pointerEvents: 'none', zIndex: 5, whiteSpace: 'nowrap',
+      transform: `translate(-50%, -50%) translate(${lab.x * vzoom + vtx}px, ${lab.y * vzoom + vty}px)`,
+      ...(lab.badge
+        ? { fontSize: 9, fontWeight: 800, lineHeight: 1.4, padding: '0 5px', borderRadius: 8, background: lab.color, color: '#000', border: '1px solid rgba(0,0,0,0.35)' }
+        : { fontSize: 10, fontWeight: 600, lineHeight: 1.3, padding: '1px 6px', borderRadius: 4, background: 'var(--label-bg)', color: 'var(--fg)', border: `1px solid ${lab.color}` }),
+    }}>{lab.text}</div>
+  ));
+}
+
 // One WebGL cable layer for both regimes. Normal fabrics resolve endpoints from React Flow's measured
 // handles (exact, interactive). `lite` (large fabrics) computes endpoints from node data instead — so
 // it works for culled / overview nodes the store doesn't hold — and drops hover/click + labels.
@@ -204,7 +217,6 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const store = useStoreApi();
   const rf = useReactFlow();
-  const transform = useStore((s) => s.transform);
   const width = useStore((s) => s.width);
   const height = useStore((s) => s.height);
   // A complete signature of everything an edge endpoint depends on: node position AND handle
@@ -239,6 +251,7 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
   // cached geometry: recomputed only when edges/positions/routing change (NOT on hover/trace)
   const geomCache = useRef<{ edges: RFEdge[]; nodes: RFNode[]; posHash: number; grouped: boolean; geom: EdgeDrawGeometry[] } | null>(null);
   const baseDrawCache = useRef<{ geom: EdgeDrawGeometry[]; lldpOn: boolean; dark: boolean; lite: boolean; labels: EdgeDrawLabel[] } | null>(null);
+  const drawRafRef = useRef<number | null>(null);
   const pointerRef = useRef<PointerState>({ active: false, x: 0, y: 0, overNode: false, lastHover: null });
   const repickRef = useRef<(() => void) | null>(null);
   const hoverTraceTimerRef = useRef<number | null>(null);
@@ -427,11 +440,36 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     drawBuffer(overlayBuf.current, overlayCount.current);
   }, [width, height, store]);
 
+  const scheduleDraw = useCallback(() => {
+    if (drawRafRef.current != null) return;
+    drawRafRef.current = window.requestAnimationFrame(() => {
+      drawRafRef.current = null;
+      draw();
+    });
+  }, [draw]);
+
   // rebuild geometry exactly when geometry deps change (data / drag / route / trace / theme), then draw.
   // Layout timing keeps hover highlights in the same paint as the trace state update.
   useLayoutEffect(() => { rebuild(); draw(); repickRef.current?.(); }, [rebuild, draw]);
-  // pan/zoom (and resize): geometry is current, just re-issue uniforms + one draw call
-  useEffect(() => { draw(); }, [transform, draw]);
+  // Pan/zoom is not React state for this layer: geometry is current, so coalesce transform changes to
+  // one RAF draw that only updates uniforms. This avoids re-rendering the whole edge component on
+  // every wheel tick; labels subscribe separately only when labels exist.
+  useEffect(() => {
+    let prev = store.getState().transform;
+    const unsubscribe = store.subscribe((state) => {
+      const next = state.transform;
+      if (next[0] === prev[0] && next[1] === prev[1] && next[2] === prev[2]) return;
+      prev = next;
+      scheduleDraw();
+    });
+    return () => {
+      unsubscribe();
+      if (drawRafRef.current != null) {
+        window.cancelAnimationFrame(drawRafRef.current);
+        drawRafRef.current = null;
+      }
+    };
+  }, [scheduleDraw, store]);
 
   // cable hover/click: the canvas is pointerEvents:none, so hit-test the pointer against the polylines
   // on React Flow's pane (which receives events over empty space — exactly where cables live).
@@ -575,19 +613,10 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     };
   }, [store, rf, edges.length]);
 
-  const [vtx, vty, vzoom] = transform;
   return (
     <>
       <canvas ref={ref} style={{ position: 'absolute', inset: 0, width, height, pointerEvents: 'none', zIndex: 0 }} />
-      {labels.map((lab) => (
-        <div key={lab.key} style={{
-          position: 'absolute', left: 0, top: 0, pointerEvents: 'none', zIndex: 5, whiteSpace: 'nowrap',
-          transform: `translate(-50%, -50%) translate(${lab.x * vzoom + vtx}px, ${lab.y * vzoom + vty}px)`,
-          ...(lab.badge
-            ? { fontSize: 9, fontWeight: 800, lineHeight: 1.4, padding: '0 5px', borderRadius: 8, background: lab.color, color: '#000', border: '1px solid rgba(0,0,0,0.35)' }
-            : { fontSize: 10, fontWeight: 600, lineHeight: 1.3, padding: '1px 6px', borderRadius: 4, background: 'var(--label-bg)', color: 'var(--fg)', border: `1px solid ${lab.color}` }),
-        }}>{lab.text}</div>
-      ))}
+      {labels.length > 0 && <EdgeLabels labels={labels} />}
     </>
   );
 }

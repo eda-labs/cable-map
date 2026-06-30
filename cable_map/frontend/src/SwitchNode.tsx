@@ -339,7 +339,7 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
   );
 }
 
-function SummaryPanelCanvas({ data, lldp, width, height }: { data: SwitchData; lldp: boolean; width: number; height: number }) {
+function SummaryPanelCanvas({ data, lldp, width, height, showLabels }: { data: SwitchData; lldp: boolean; width: number; height: number; showLabels: boolean }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const byPort = useMemo(() => {
     const m = new Map<string, PortInfo>();
@@ -363,16 +363,34 @@ function SummaryPanelCanvas({ data, lldp, width, height }: { data: SwitchData; l
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
-    const freeBg = cssColor('var(--cell-free-bg)');
-    const freeLine = cssColor('var(--cell-free-line)');
+    const colors = new Map<string, string>();
+    const resolveColor = (css: string) => {
+      const cached = colors.get(css);
+      if (cached) return cached;
+      const resolved = cssColor(css);
+      colors.set(css, resolved);
+      return resolved;
+    };
+    const freeBg = resolveColor('var(--cell-free-bg)');
+    const freeLine = resolveColor('var(--cell-free-line)');
+    const freeText = resolveColor('var(--cell-free-fg)');
+    const occupiedText = resolveColor('var(--bg)');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     const drawCell = (port: string, x: number, y: number, w: number, h: number) => {
       const info = byPort.get(port);
-      const fill = info ? cssColor(fillFor(info, lldp)) : freeBg;
+      const fill = info ? resolveColor(fillFor(info, lldp)) : freeBg;
       ctx.fillStyle = fill;
       ctx.fillRect(x, y, w, h);
       ctx.strokeStyle = info ? fill : freeLine;
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, w - 1), Math.max(0, h - 1));
+      if (!showLabels || w < 5 || h < 5) return;
+      const label = String(port);
+      const fontSize = Math.max(4, Math.min(9, h * 0.72, w / (Math.max(1, label.length) * 0.62)));
+      ctx.font = `700 ${fontSize}px sans-serif`;
+      ctx.fillStyle = info ? occupiedText : freeText;
+      ctx.fillText(label, x + w / 2, y + h / 2 + 0.2, Math.max(1, w - 1));
     };
 
     if (data.layout?.length) {
@@ -390,7 +408,7 @@ function SummaryPanelCanvas({ data, lldp, width, height }: { data: SwitchData; l
       const col = Math.floor(i / rows);
       drawCell(String(i + 1), col * (CELL + CELL_GAP), row * (CELL + CELL_GAP), CELL, CELL);
     }
-  }, [byPort, data.layout, data.portCount, data.rows, height, layoutKey, lldp, width]);
+  }, [byPort, data.layout, data.portCount, data.rows, height, layoutKey, lldp, showLabels, width]);
 
   return <canvas ref={ref} aria-hidden style={{ display: 'block', pointerEvents: 'none' }} />;
 }
@@ -416,6 +434,7 @@ function SummarySwitchNode({ id, data, selected }: NodeProps) {
     <div
       className="switch-node"
       data-mode={mode}
+      data-detail-level={d.detailLevel ?? 'summary'}
       onMouseEnter={() => trace.hover(`node:${id}`)}
       onMouseLeave={() => trace.hover(null)}
       style={{
@@ -433,7 +452,7 @@ function SummarySwitchNode({ id, data, selected }: NodeProps) {
         <span style={{ flex: 1, minWidth: 0 }} />
         <span style={{ fontSize: 8.5, color: 'var(--muted)', flexShrink: 0 }}>{used}/{d.portCount}</span>
       </div>
-      <SummaryPanelCanvas data={d} lldp={lldp} width={panelW} height={panelH} />
+      <SummaryPanelCanvas data={d} lldp={lldp} width={panelW} height={panelH} showLabels={d.detailLevel === 'labeled'} />
     </div>
   );
 }
@@ -494,6 +513,7 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
     <div
       className="switch-node"
       data-mode={mode}
+      data-detail-level={d.detailLevel ?? 'full'}
       onMouseEnter={() => { if (!d.showEdgeStubs) trace.hover(`node:${id}`); }}
       onMouseLeave={() => trace.hover(null)}
       style={{
@@ -538,7 +558,7 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
 
 function SwitchNode(props: NodeProps) {
   const d = props.data as SwitchData;
-  if (!d.compact && d.detailLevel === 'summary') return <SummarySwitchNode {...props} />;
+  if (!d.compact && (d.detailLevel === 'summary' || d.detailLevel === 'labeled')) return <SummarySwitchNode {...props} />;
   return d.compact ? <CompactSwitchNode {...props} /> : <DetailedSwitchNode {...props} />;
 }
 
