@@ -46,8 +46,9 @@ make dev        # Vite dev server; /api is mocked from the golden topology fixtu
 
 The Go backend only returns live data inside the cluster (it needs the EDA internal
 certs). Use `make dev` for UI work against the built-in mock topology; `/pdf`
-renders that mock topology locally with Typst. To proxy to a real backend instead,
-run with `EDA_API=http://host:port make dev`.
+renders that mock topology locally with Typst. The default mock exposes three
+namespaces: `demo`, `dev-mixed-sros`, and `dev-scale-1000`. To proxy to a real
+backend instead, run with `EDA_API=http://host:port make dev`.
 
 ## Common commands
 

@@ -14,11 +14,16 @@ import { DevPdfRequestError, renderDevPdf, type DevPdfTopology } from './dev/pdf
 // as plain assets.
 const edaApi = process.env.EDA_API
 const apiTarget = edaApi && /^https?:\/\//.test(edaApi) ? edaApi : ''
-const mockNamespace = 'demo'
 // MOCK_TOPOLOGY=/abs/path.json overrides the bundled golden topology, for previewing ad-hoc fixtures.
-const mockTopologyPath = process.env.MOCK_TOPOLOGY
-  ? new URL(`file://${process.env.MOCK_TOPOLOGY}`)
-  : new URL('../operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url)
+const mockTopologyEntries = process.env.MOCK_TOPOLOGY ? [
+  { namespace: 'demo', path: new URL(`file://${process.env.MOCK_TOPOLOGY}`) },
+] : [
+  { namespace: 'demo', path: new URL('../operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url) },
+  { namespace: 'dev-mixed-sros', path: new URL('./dev/fixtures/mixed-sros-topology.json', import.meta.url) },
+  { namespace: 'dev-scale-1000', path: new URL('./dev/fixtures/large-1000-topology.json', import.meta.url) },
+]
+const mockNamespaces = mockTopologyEntries.map((entry) => entry.namespace)
+const defaultMockNamespace = mockNamespaces[0] ?? 'demo'
 
 const sendJSON = (res: ServerResponse, status: number, body: unknown) => {
   res.statusCode = status
@@ -57,8 +62,14 @@ const sendHeartbeatSSE = (req: IncomingMessage, res: ServerResponse) => {
 const mockApiPlugin = (): Plugin => ({
   name: 'cable-map-dev-api',
   configureServer(server: ViteDevServer) {
-    const topologyData = JSON.parse(fs.readFileSync(mockTopologyPath, 'utf8')) as DevPdfTopology
-    const topology = JSON.stringify(topologyData)
+    const topologies = new Map(mockTopologyEntries.map((entry) => {
+      const data = JSON.parse(fs.readFileSync(entry.path, 'utf8')) as DevPdfTopology
+      return [entry.namespace, { data, json: JSON.stringify(data) }]
+    }))
+    const selectedTopology = (url: URL) => {
+      const namespace = url.searchParams.get('ns')?.trim() || defaultMockNamespace
+      return { namespace, topology: topologies.get(namespace) }
+    }
 
     server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => {
       if (req.method !== 'GET') {
@@ -67,26 +78,41 @@ const mockApiPlugin = (): Plugin => ({
       }
       const url = new URL(req.url ?? '/', 'http://localhost')
       if (url.pathname === '/api/namespaces') {
-        sendJSON(res, 200, [mockNamespace])
+        sendJSON(res, 200, mockNamespaces)
         return
       }
       if (url.pathname === '/api/namespaces/stream') {
-        sendSSE(req, res, JSON.stringify([mockNamespace]))
+        sendSSE(req, res, JSON.stringify(mockNamespaces))
         return
       }
       if (url.pathname === '/api/topology') {
+        const selected = selectedTopology(url)
+        if (!selected.topology) {
+          sendJSON(res, 404, { error: `unknown mock namespace ${selected.namespace}` })
+          return
+        }
         res.statusCode = 200
         res.setHeader('Content-Type', 'application/json')
-        res.end(topology)
+        res.end(selected.topology.json)
         return
       }
       if (url.pathname === '/api/topology/stream') {
-        if (topology.length > 1_000_000) sendHeartbeatSSE(req, res)
-        else sendSSE(req, res, topology)
+        const selected = selectedTopology(url)
+        if (!selected.topology) {
+          sendJSON(res, 404, { error: `unknown mock namespace ${selected.namespace}` })
+          return
+        }
+        if (selected.topology.json.length > 1_000_000) sendHeartbeatSSE(req, res)
+        else sendSSE(req, res, selected.topology.json)
         return
       }
       if (url.pathname === '/pdf') {
-        void renderDevPdf({ topology: topologyData, url, frontpanelDir, pdfAssetsDir })
+        const selected = selectedTopology(url)
+        if (!selected.topology) {
+          sendJSON(res, 404, { error: `unknown mock namespace ${selected.namespace}` })
+          return
+        }
+        void renderDevPdf({ topology: selected.topology.data, url, frontpanelDir, pdfAssetsDir })
           .then(({ bytes, filename }) => sendPDF(res, bytes, filename))
           .catch((error: unknown) => {
             const status = error instanceof DevPdfRequestError ? error.status : 500
