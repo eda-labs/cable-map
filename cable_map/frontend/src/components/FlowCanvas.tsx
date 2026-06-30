@@ -19,7 +19,7 @@ import { useLldp } from '../lldp';
 import { edgeLinkModeIcon, edgeLinkModeTitle, type EdgeLinkMode } from '../lib/edgeLinks';
 import { LARGE_DEFAULT_VIEWPORT, LARGE_MAX_ZOOM, LARGE_MIN_ZOOM } from '../lib/viewport';
 import { type Mode } from '../theme';
-import { NodeActionsProvider } from './NodeActionsContext';
+import { NodeActionsProvider, type OpenNodeHandler } from './NodeActionsContext';
 
 const nodeTypes: NodeTypes = { switch: SwitchNode, endpoint: EndpointNode };
 const edgeTypes: EdgeTypes = { cable: CableEdge };
@@ -40,7 +40,7 @@ interface FlowCanvasProps {
   onNodesChange: OnNodesChange<RFNode>;
   onInit: (flow: ReactFlowInstance) => void;
   onSelectionChange: (sel: { nodes: RFNode[] }) => void;
-  onOpenNode: (id: string | null, expand?: boolean) => void;
+  onOpenNode: OpenNodeHandler;
   onClearSelection: () => void;
   onViewportChange: (v: Viewport) => void;
   onWebglUnavailable: () => void;
@@ -77,13 +77,13 @@ function FlowCanvas({
         // single click only toggles the node's trace highlight; opening the drawer is reserved
         // for double-click so lightweight map inspection stays cheap.
         trace.pin(k);
-        onOpenNode(n.id);
+        onOpenNode(n.id, { select: true });
       }}
       onNodeDoubleClick={(_, n) => {
         if (!switchIds.has(n.id)) return;
         const k = `node:${n.id}`;
         if (trace.getPinned() !== k) trace.pin(k);
-        onOpenNode(n.id, true);
+        onOpenNode(n.id, { expand: true, select: true });
       }}
       onEdgeClick={(_, e) => trace.pin(`cable:${e.id}`)}
       onEdgeMouseEnter={(_, e) => trace.hover(`cable:${e.id}`)}

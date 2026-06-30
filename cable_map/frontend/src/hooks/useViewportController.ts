@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type RefObject } from 'react';
 import { getViewportForBounds, type Node as RFNode, type ReactFlowInstance, type Viewport } from '@xyflow/react';
 import {
-  LARGE_DEFAULT_VIEWPORT, LARGE_MAX_ZOOM, LARGE_MIN_ZOOM, nodesBounds, type FitNodesOptions,
+  LARGE_DEFAULT_VIEWPORT, LARGE_MAX_ZOOM, LARGE_MIN_ZOOM, nodeCenter, nodesBounds, type CenterNodeOptions, type FitNodesOptions,
 } from '../lib/viewport';
 
 // Single owner of the large-topology viewport. `fitNodes` animates to a node set and writes the
@@ -43,5 +43,32 @@ export function useViewportController(
     });
   }, [flow, largeTopology, flowHostRef]);
 
-  return { fitNodes, largeViewport, setLargeViewport };
+  const centerNode = useCallback((node: RFNode, options: CenterNodeOptions): Promise<boolean> => {
+    if (!flow) return Promise.resolve(false);
+    const center = nodeCenter(node);
+    const currentZoom = flow.getViewport().zoom;
+    const zoom = options.zoom ?? Math.max(currentZoom, options.minZoom ?? currentZoom);
+    if (options.bottomInset) {
+      const rect = flowHostRef.current?.getBoundingClientRect();
+      if (rect?.width && rect.height) {
+        const bottomInset = Math.max(0, Math.min(options.bottomInset, rect.height - 1));
+        const visibleHeight = rect.height - bottomInset;
+        const viewport: Viewport = {
+          x: rect.width / 2 - center.x * zoom,
+          y: visibleHeight / 2 - center.y * zoom,
+          zoom,
+        };
+        return flow.setViewport(viewport, { duration: options.duration }).then((ok) => {
+          if (ok && largeTopology) setLargeViewport(flow.getViewport());
+          return ok;
+        });
+      }
+    }
+    return flow.setCenter(center.x, center.y, { zoom, duration: options.duration }).then((ok) => {
+      if (ok && largeTopology) setLargeViewport(flow.getViewport());
+      return ok;
+    });
+  }, [flow, flowHostRef, largeTopology]);
+
+  return { fitNodes, centerNode, largeViewport, setLargeViewport };
 }

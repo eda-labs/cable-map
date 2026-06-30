@@ -5,9 +5,11 @@ export const LARGE_MIN_ZOOM = 0.02;
 export const LARGE_MAX_ZOOM = 2;
 export const LARGE_VIEWPORT_PAD = 900;
 export const LARGE_WEBGL_NODE_ZOOM = 0.2;
+export const NODE_FOCUS_ZOOM = 1.4;
 
 export type FlowBounds = { x: number; y: number; width: number; height: number };
 export type FitNodesOptions = { padding: number; duration: number; maxZoom?: number };
+export type CenterNodeOptions = { duration: number; zoom?: number; minZoom?: number; bottomInset?: number };
 
 export function nodeIntersectsViewport(node: RFNode, viewport: Viewport, width: number, height: number): boolean {
   const nodeWidth = node.width ?? node.measured?.width ?? 160;
@@ -26,6 +28,11 @@ function nodeBounds(node: RFNode): FlowBounds {
   const width = node.measured?.width ?? node.width ?? node.initialWidth ?? 160;
   const height = node.measured?.height ?? node.height ?? node.initialHeight ?? 80;
   return { x: node.position.x, y: node.position.y, width, height };
+}
+
+export function nodeCenter(node: RFNode): { x: number; y: number } {
+  const bounds = nodeBounds(node);
+  return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
 }
 
 export function nodesBounds(nodes: RFNode[]): FlowBounds | null {

@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -21,17 +21,19 @@ import NodeView from '../NodeView';
 import NodeDetails from '../NodeDetails';
 import { trace } from '../trace';
 import { type Mode } from '../theme';
+import { type OpenNodeHandler } from './NodeActionsContext';
 
 interface NodeDrawerProps {
   node: Node | undefined;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   resetSizeSignal: number;
-  onOpenNode: (name: string | null, expand?: boolean) => void;
+  onOpenNode: OpenNodeHandler;
   mode: Mode;
   topo: Topology | null;
   pdfLoading: boolean;
   onExportPdf: (ids: string[]) => void;
+  onHeightChange: (height: number) => void;
 }
 
 // A persistent bottom sheet: always present as a slim, draggable handle that pulls up to
@@ -40,11 +42,12 @@ interface NodeDrawerProps {
 // re-render the open sheet + its Monaco panel; it still re-renders when `node` changes.
 const defaultDrawerHeight = () => Math.round(window.innerHeight * 0.6);
 
-function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenNode, mode, topo, pdfLoading, onExportPdf }: NodeDrawerProps) {
+function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenNode, mode, topo, pdfLoading, onExportPdf, onHeightChange }: NodeDrawerProps) {
   const [drawerTab, setDrawerTab] = useState(0);            // 0 = Ports, 1 = Details
   const [drawerH, setDrawerH] = useState(defaultDrawerHeight);
   const [dragging, setDragging] = useState(false);          // suppresses the slide transition mid-drag
   const nodeName = node?.name;
+  const openLinkedNode = useCallback((name: string) => onOpenNode(name, { pan: true, pin: true, select: true }), [onOpenNode]);
 
   useEffect(() => {
     setDrawerTab(0);
@@ -53,6 +56,10 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
   useEffect(() => {
     setDrawerH(defaultDrawerHeight());
   }, [resetSizeSignal]);
+
+  useEffect(() => {
+    onHeightChange(drawerH);
+  }, [drawerH, onHeightChange]);
 
   // drag any handle: live-resize while dragging (collapsing if pulled near the bottom),
   // or — when released without moving — toggle expanded/collapsed (so a plain click opens
@@ -163,7 +170,7 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
             {drawerTab === 0 ? (
               <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, px: 3, py: 2, display: 'flex', flexDirection: 'column' }}>
                 <NodeView node={node} rows={node.table}
-                  showHeader={false} onOpenNode={onOpenNode} fillHeight
+                  showHeader={false} onOpenNode={openLinkedNode} fillHeight
                   panelMaxHeight={Math.round(drawerH * 0.4)} />
               </Box>
             ) : (

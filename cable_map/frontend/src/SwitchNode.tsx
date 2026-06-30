@@ -229,6 +229,7 @@ function renderCage(cage: string, infos: PortInfo[] | undefined, bo: Breakout | 
 
 function CompactSwitchNode({ id, data, selected }: NodeProps) {
   const d = data as SwitchData;
+  const isSelected = typeof d.selected === 'boolean' ? d.selected : selected;
   const icon = RoleIcons[d.role];
   const mode = useTrace(modeFor((s) => s.nodes.has(id)));
   const lldp = useLldp();
@@ -269,7 +270,7 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
         background: 'var(--panel)',
         borderRadius: 6,
         padding: '6px 7px',
-        border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
+        border: `1.5px solid ${isSelected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
         opacity: mode === 'dim' ? 0.32 : 1,
         transition: 'opacity 120ms, border-color 120ms',
         boxShadow: mode === 'on' ? '0 0 0 1px var(--eda-blue-400)' : undefined,
@@ -302,8 +303,9 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
 
 function DetailedSwitchNode({ id, data, selected }: NodeProps) {
   const d = data as SwitchData;
+  const isSelected = typeof d.selected === 'boolean' ? d.selected : selected;
   const openNode = useOpenNode();
-  const openThisNode = useCallback((expand?: boolean) => openNode(id, expand), [id, openNode]);
+  const openThisNode = useCallback((expand?: boolean) => openNode(id, { expand }), [id, openNode]);
   const rows = Math.max(1, d.rows);
   const cols = Math.ceil(d.portCount / rows);
   const icon = RoleIcons[d.role];
@@ -358,7 +360,7 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
       onMouseLeave={() => trace.hover(null)}
       style={{
         background: 'var(--panel)', borderRadius: 8, padding: 8,
-        border: `1.5px solid ${selected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
+        border: `1.5px solid ${isSelected ? 'var(--eda-blue-400)' : mode === 'on' ? 'var(--eda-gray-600)' : 'var(--line)'}`,
         opacity: mode === 'dim' ? 0.32 : 1, transition: 'opacity 140ms, border-color 140ms',
         contentVisibility: d.showEdgeStubs ? 'visible' : 'auto',
         containIntrinsicSize: panel ? `${panel.W + 16}px ${panel.H + 44}px` : '220px 96px',
@@ -381,14 +383,14 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
             const cw = Math.max(3, p.w * panel.W), ch = Math.max(3, p.h * panel.H);
             const box = { left: p.x * panel.W - cw / 2, top: p.y * panel.H - ch / 2, width: cw, height: ch };
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box, openThisNode);
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, isSelected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box, openThisNode);
           })}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${CELL}px)`, gridTemplateRows: `repeat(${rows}, ${CELL}px)`, gridAutoFlow: 'column', gap: CELL_GAP }}>
           {cages.map((cage) => {
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, selected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, undefined, openThisNode);
+            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, isSelected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, undefined, openThisNode);
           })}
         </div>
       )}

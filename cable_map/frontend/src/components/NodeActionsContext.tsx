@@ -1,6 +1,13 @@
 import { createContext, useContext } from 'react';
 
-export type OpenNodeHandler = (id: string | null, expand?: boolean) => void;
+export type OpenNodeOptions = {
+  expand?: boolean;
+  pan?: boolean;
+  pin?: boolean;
+  select?: boolean;
+};
+
+export type OpenNodeHandler = (id: string | null, options?: OpenNodeOptions) => void;
 
 const noopOpenNode: OpenNodeHandler = () => {};
 
