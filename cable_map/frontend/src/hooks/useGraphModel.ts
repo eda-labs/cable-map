@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNodesState, type Node as RFNode } from '@xyflow/react';
 import type { Topology } from '../domain/topology/contract';
 import { emptyAdjacency, type Adjacency } from '../graph/adjacency';
@@ -11,12 +11,20 @@ function sameSelection(a: string[], b: string[]): boolean {
   return true;
 }
 
+type SelectNodeOptions = {
+  protect?: boolean;
+};
+
+const SELECTION_PROTECTION_MS = 2500;
+
 // Builds the React Flow graph from a topology and owns the node state. The `setAdjacency` call
 // inside the memo pushes adjacency into the trace store — every highlight depends on it. A live
 // stream tick rebuilds node data but keeps each node's current position so a dragged node never
 // snaps back; new nodes adopt their computed layout position.
 export function useGraphModel(topo: Topology | null, largeTopology: boolean) {
   const [selected, setSelected] = useState<string[]>([]);
+  const protectedSelectionRef = useRef<string | null>(null);
+  const protectionTimerRef = useRef<number | null>(null);
 
   const { nodes: builtNodes, edges, switchIds, adjacency } = useMemo(() => {
     const empty: Adjacency = emptyAdjacency();
@@ -29,16 +37,68 @@ export function useGraphModel(topo: Topology | null, largeTopology: boolean) {
   const [nodes, setNodes, onNodesChange] = useNodesState<RFNode>([]);
   useEffect(() => {
     setNodes((prev) => {
-      const pos = new Map(prev.map((n) => [n.id, n.position]));
-      return builtNodes.map((n) => { const p = pos.get(n.id); return p ? { ...n, position: p } : n; });
+      const prevById = new Map(prev.map((n) => [n.id, n]));
+      return builtNodes.map((n) => {
+        const previous = prevById.get(n.id);
+        return previous ? { ...n, position: previous.position } : n;
+      });
     });
   }, [builtNodes, setNodes]);
 
+  const releaseProtectedSelection = useCallback(() => {
+    protectedSelectionRef.current = null;
+    if (protectionTimerRef.current != null) {
+      window.clearTimeout(protectionTimerRef.current);
+      protectionTimerRef.current = null;
+    }
+  }, []);
+
+  const protectSelection = useCallback((id: string) => {
+    if (protectionTimerRef.current != null) window.clearTimeout(protectionTimerRef.current);
+    protectedSelectionRef.current = id;
+    protectionTimerRef.current = window.setTimeout(() => {
+      if (protectedSelectionRef.current === id) protectedSelectionRef.current = null;
+      protectionTimerRef.current = null;
+    }, SELECTION_PROTECTION_MS);
+  }, []);
+
+  useEffect(() => () => {
+    if (protectionTimerRef.current != null) window.clearTimeout(protectionTimerRef.current);
+  }, []);
+
   const onSelectionChange = useCallback(({ nodes: sel }: { nodes: RFNode[] }) => {
     const next = sel.filter((n) => n.type === 'switch').map((n) => n.id);
-    setSelected((prev) => sameSelection(prev, next) ? prev : next);
+    setSelected((prev) => {
+      const protectedId = protectedSelectionRef.current;
+      if (protectedId && prev.includes(protectedId)) {
+        if (!next.includes(protectedId)) return prev;
+        return sameSelection(prev, [protectedId]) ? prev : [protectedId];
+      }
+      return sameSelection(prev, next) ? prev : next;
+    });
   }, []);
-  const clearSelection = useCallback(() => setSelected((prev) => prev.length ? [] : prev), []);
+  const selectNode = useCallback((id: string | null, options?: SelectNodeOptions) => {
+    const next = id && switchIds.has(id) ? id : null;
+    if (next && options?.protect) protectSelection(next);
+    else releaseProtectedSelection();
+    setSelected(next ? [next] : []);
+  }, [protectSelection, releaseProtectedSelection, switchIds]);
+  const clearSelection = useCallback(() => {
+    releaseProtectedSelection();
+    setSelected((prev) => prev.length ? [] : prev);
+  }, [releaseProtectedSelection]);
+
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const selectedNodes = useMemo(
+    () => nodes.map((n) => {
+      if (n.type !== 'switch') return n.selected ? { ...n, selected: false } : n;
+      const shouldSelect = n.type === 'switch' && selectedSet.has(n.id);
+      const dataSelectionMatches = (n.data as { selected?: unknown }).selected === shouldSelect;
+      const data = dataSelectionMatches ? n.data : { ...n.data, selected: shouldSelect };
+      return n.selected === shouldSelect && dataSelectionMatches ? n : { ...n, selected: shouldSelect, data };
+    }),
+    [nodes, selectedSet],
+  );
 
   // Ctrl/Cmd+A selects all switches (ignored while typing in an input)
   useEffect(() => {
@@ -47,11 +107,12 @@ export function useGraphModel(topo: Topology | null, largeTopology: boolean) {
       const el = document.activeElement;
       if (el && /^(input|textarea)$/i.test(el.tagName)) return;
       e.preventDefault();
-      setNodes((nds) => nds.map((n) => ({ ...n, selected: n.type === 'switch' })));
+      releaseProtectedSelection();
+      setSelected([...switchIds]);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setNodes]);
+  }, [releaseProtectedSelection, switchIds]);
 
-  return { nodes, onNodesChange, edges, switchIds, adjacency, selected, onSelectionChange, clearSelection };
+  return { nodes: selectedNodes, onNodesChange, edges, switchIds, adjacency, selected, onSelectionChange, selectNode, clearSelection };
 }

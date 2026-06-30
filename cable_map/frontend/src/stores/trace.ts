@@ -107,7 +107,7 @@ export const trace = {
       if (!pinnedKey) refresh();
     }
   },
-  pin(key: string) { pinnedKey = pinnedKey === key ? null : key; refresh(); },
+  pin(key: string, force = false) { pinnedKey = !force && pinnedKey === key ? null : key; refresh(); },
   // combined search box + label-chip filter: a node must match the free-text term AND carry every label
   filter(term: string, labels: string[]) {
     fTerm = term; fLabels = labels;

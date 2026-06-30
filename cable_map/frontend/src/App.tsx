@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type ReactFlowInstance } from '@xyflow/react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -20,6 +20,9 @@ import AppToolbar from './components/AppToolbar';
 import FlowCanvas from './components/FlowCanvas';
 import NodeDrawer from './components/NodeDrawer';
 import PdfExportProgress from './components/PdfExportProgress';
+import { type OpenNodeOptions } from './components/NodeActionsContext';
+import { NODE_FOCUS_ZOOM } from './lib/viewport';
+import { trace } from './trace';
 
 // Composition root: wires the data/view-model hooks into the toolbar, canvas and drawer. The
 // hooks form a fixed pipeline — graph → label filter → edge-link mode → flow model → search — so
@@ -32,9 +35,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
 
   const [flow, setFlow] = useState<ReactFlowInstance | null>(null);
   const flowHostRef = useRef<HTMLDivElement | null>(null);
+  const viewportActionSeqRef = useRef(0);
+  const getViewportActionSeq = useCallback(() => viewportActionSeqRef.current, []);
+  const nextViewportActionSeq = useCallback(() => {
+    viewportActionSeqRef.current += 1;
+    return viewportActionSeqRef.current;
+  }, []);
   const viewport = useViewportController(flow, largeTopology, flowHostRef, namespace);
+  const { centerNode } = viewport;
 
   const graph = useGraphModel(topo, largeTopology);
+  const { selectNode } = graph;
   const filter = useLabelFilter(graph.adjacency, graph.switchIds, namespace,
     { nodes: graph.nodes, ready, fitNodes: viewport.fitNodes, largeTopology });
   const links = useEdgeLinkMode(graph.edges, graph.adjacency, graph.switchIds, filter.shown);
@@ -46,13 +57,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   });
   const search = useSearch({
     displayNodes: flowModel.displayNodes, adjacency: graph.adjacency, shown: filter.shown,
-    ready, largeTopology, flow, viewport,
+    ready, largeTopology, flow, viewport, getViewportActionSeq,
   });
 
   const [open, setOpen] = useState<string | null>(null);
   const [drawerExpanded, setDrawerExpanded] = useState(false);
+  const [drawerHeight, setDrawerHeight] = useState(0);
   const [drawerResetSizeSignal, setDrawerResetSizeSignal] = useState(0);
+  const [pendingFocus, setPendingFocus] = useState<{ name: string; pin: boolean; seq: number } | null>(null);
   const nodeByName = useMemo(() => new Map(topo?.nodes.map((n) => [n.name, n]) ?? []), [topo]);
+  const graphNodeById = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph.nodes]);
+  const renderedNodeIds = useMemo(() => new Set(flowModel.flowNodes.map((n) => n.id)), [flowModel.flowNodes]);
   const openNode = open ? nodeByName.get(open) : undefined;
   const { exportNodeIds, exportScope } = useMemo(() => {
     const allNodeIds = topo?.nodes.map((n) => n.name) ?? [];
@@ -71,7 +86,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       ? { exportNodeIds: selectedFilteredNodeIds, exportScope: 'selected' as const }
       : { exportNodeIds: filteredNodeIds, exportScope: 'filtered' as const };
   }, [topo, filter.shown, graph.selected]);
-  const selectDrawerNode = useCallback((name: string | null, expand = false) => {
+  useEffect(() => {
+    if (!pendingFocus || !renderedNodeIds.has(pendingFocus.name)) return;
+    if (viewportActionSeqRef.current !== pendingFocus.seq) return;
+    setPendingFocus((current) => current?.seq === pendingFocus.seq ? null : current);
+    if (pendingFocus.pin) trace.pin(`node:${pendingFocus.name}`, true);
+    selectNode(pendingFocus.name, { protect: true });
+  }, [pendingFocus, renderedNodeIds, selectNode]);
+
+  const selectDrawerNode = useCallback((name: string | null, options: OpenNodeOptions = {}) => {
+    const { expand = false, pan = false, pin = false, select = false } = options;
+    const actionSeq = nextViewportActionSeq();
     startTransition(() => {
       setOpen((current) => current === name ? current : name);
       if (expand) {
@@ -80,7 +105,23 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
       }
       else if (!name) setDrawerExpanded(false);
     });
-  }, []);
+    if (!name) setPendingFocus(null);
+    if (name && pan) {
+      const target = graphNodeById.get(name);
+      if (target) {
+        void centerNode(target, {
+          duration: 350,
+          minZoom: NODE_FOCUS_ZOOM,
+          bottomInset: drawerExpanded ? drawerHeight : 0,
+        }).then((ok) => {
+          if (ok && viewportActionSeqRef.current === actionSeq) setPendingFocus({ name, pin, seq: actionSeq });
+        });
+        return;
+      }
+    }
+    if (name && pin) trace.pin(`node:${name}`, true);
+    if (select) selectNode(name);
+  }, [centerNode, drawerExpanded, drawerHeight, graphNodeById, nextViewportActionSeq, selectNode]);
   const pdf = usePdfExport({ topo, namespace });
   const pdfLoading = pdf.pdfState.status === 'loading';
 
@@ -142,6 +183,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         resetSizeSignal={drawerResetSizeSignal}
         onOpenNode={selectDrawerNode} mode={mode} topo={topo}
         pdfLoading={pdfLoading} onExportPdf={pdf.openPdf}
+        onHeightChange={setDrawerHeight}
       />
     </Box>
   );

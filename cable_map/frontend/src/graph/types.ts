@@ -27,6 +27,7 @@ export type SwitchData = {
   aspect?: number;                   // cage-box w/h, to size the layout panel
   breakouts?: Record<string, Breakout>;  // cage id -> breakout split (channels + speed)
   compact?: boolean;                 // large-topology mode: draw a cheap aggregate switch node
+  selected?: boolean;                // programmatic focus/selection mirrored outside React Flow's transient selection store
   showEdgeStubs?: boolean;           // draw short local downlink stubs instead of remote endpoint chips
   activeEdgeStubPorts?: string[];     // "node:port" ids whose stubs are expanded to full cables
 };
