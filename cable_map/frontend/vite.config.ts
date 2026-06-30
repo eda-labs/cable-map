@@ -223,12 +223,16 @@ const mockApiPlugin = (): Plugin => ({
         return
       }
       const url = new URL(req.url ?? '/', 'http://localhost')
-      const pdfJobMatch = /^\/api\/pdf\/jobs\/([^/]+)\/(events|download)$/.exec(url.pathname)
+      const pdfJobMatch = /^\/api\/pdf\/jobs\/([^/]+)\/(status|events|download)$/.exec(url.pathname)
       if (pdfJobMatch) {
         cleanupPdfJobs()
         const job = pdfJobs.get(pdfJobMatch[1])
         if (!job) {
           sendJSON(res, 404, { error: 'PDF job not found' })
+          return
+        }
+        if (pdfJobMatch[2] === 'status') {
+          sendJSON(res, 200, job.event)
           return
         }
         if (pdfJobMatch[2] === 'events') {
