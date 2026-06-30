@@ -19,6 +19,7 @@ import { useSearch } from './hooks/useSearch';
 import AppToolbar from './components/AppToolbar';
 import FlowCanvas from './components/FlowCanvas';
 import NodeDrawer from './components/NodeDrawer';
+import PdfExportProgress from './components/PdfExportProgress';
 
 // Composition root: wires the data/view-model hooks into the toolbar, canvas and drawer. The
 // hooks form a fixed pipeline — graph → label filter → edge-link mode → flow model → search — so
@@ -90,9 +91,10 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert severity="error" onClose={pdf.dismissError}>
-          {pdf.pdfState.message}
+          {pdf.pdfState.status === 'error' ? pdf.pdfState.message : ''}
         </Alert>
       </Snackbar>
+      <PdfExportProgress state={pdf.pdfState} />
 
       <AppToolbar
         mode={mode} onToggleMode={onToggleMode}

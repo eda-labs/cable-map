@@ -2,9 +2,10 @@ import { defineConfig, type Plugin, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'node:fs'
 import path from 'node:path'
+import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { DevPdfRequestError, renderDevPdf, type DevPdfTopology } from './dev/pdf'
+import { DevPdfRequestError, renderDevPdf, type DevPdfProgress, type DevPdfTopology } from './dev/pdf'
 
 // The dev server uses a small local topology mock by default. Set EDA_API=http://... to proxy
 // /api + /pdf to a real cable-map backend instead. Without EDA_API, /api is mocked from the
@@ -38,6 +39,59 @@ const sendPDF = (res: ServerResponse, body: Buffer, filename: string) => {
   res.end(body)
 }
 
+type MockPdfProgressEvent = {
+  status: 'running' | 'ready' | 'error'
+  phase: string
+  detail?: string
+  percent?: number
+  indeterminate?: boolean
+  message?: string
+}
+
+type MockPdfJobRequest = {
+  namespace?: unknown
+  nodes?: unknown
+  remote?: unknown
+  stencils?: unknown
+}
+
+type MockPdfJob = {
+  id: string
+  event: MockPdfProgressEvent
+  subscribers: Set<ServerResponse>
+  bytes?: Buffer
+  filename?: string
+  expiresAt?: number
+}
+
+const pdfJobTtlMs = 10 * 60 * 1000
+
+const readJSONBody = (req: IncomingMessage): Promise<MockPdfJobRequest> => new Promise((resolve, reject) => {
+  let body = ''
+  req.setEncoding('utf8')
+  req.on('data', (chunk: string) => {
+    body += chunk
+    if (body.length > 4 * 1024 * 1024) reject(new Error('request body too large'))
+  })
+  req.on('end', () => {
+    if (!body.trim()) { resolve({}); return }
+    try { resolve(JSON.parse(body) as MockPdfJobRequest) } catch (error) { reject(error) }
+  })
+  req.on('error', reject)
+})
+
+const stringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.map((item) => String(item).trim()).filter(Boolean) : []
+
+const stringRecord = (value: unknown): Record<string, string> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const out: Record<string, string> = {}
+  for (const [key, recordValue] of Object.entries(value)) {
+    if (recordValue != null) out[key] = String(recordValue)
+  }
+  return out
+}
+
 const sendSSE = (req: IncomingMessage, res: ServerResponse, payload: string) => {
   res.statusCode = 200
   res.setHeader('Content-Type', 'text/event-stream')
@@ -59,6 +113,39 @@ const sendHeartbeatSSE = (req: IncomingMessage, res: ServerResponse) => {
   req.on('close', () => clearInterval(timer))
 }
 
+const writePdfJobEvent = (res: ServerResponse, event: MockPdfProgressEvent) => {
+  res.write(`data: ${JSON.stringify(event)}\n\n`)
+}
+
+const updatePdfJob = (job: MockPdfJob, event: MockPdfProgressEvent) => {
+  job.event = event
+  if (event.status !== 'running') job.expiresAt = Date.now() + pdfJobTtlMs
+  for (const res of job.subscribers) {
+    writePdfJobEvent(res, event)
+    if (event.status !== 'running') res.end()
+  }
+  if (event.status !== 'running') job.subscribers.clear()
+}
+
+const sendPdfJobSSE = (req: IncomingMessage, res: ServerResponse, job: MockPdfJob) => {
+  res.statusCode = 200
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.write('retry: 3000\n\n')
+  writePdfJobEvent(res, job.event)
+  if (job.event.status !== 'running') {
+    res.end()
+    return
+  }
+  job.subscribers.add(res)
+  const timer = setInterval(() => res.write(': ping\n\n'), 25000)
+  req.on('close', () => {
+    clearInterval(timer)
+    job.subscribers.delete(res)
+  })
+}
+
 const mockApiPlugin = (): Plugin => ({
   name: 'cable-map-dev-api',
   configureServer(server: ViteDevServer) {
@@ -66,17 +153,99 @@ const mockApiPlugin = (): Plugin => ({
       const data = JSON.parse(fs.readFileSync(entry.path, 'utf8')) as DevPdfTopology
       return [entry.namespace, { data, json: JSON.stringify(data) }]
     }))
+    const pdfJobs = new Map<string, MockPdfJob>()
+    const cleanupPdfJobs = () => {
+      const now = Date.now()
+      for (const [id, job] of pdfJobs) {
+        if (job.expiresAt && now > job.expiresAt) pdfJobs.delete(id)
+      }
+    }
     const selectedTopology = (url: URL) => {
       const namespace = url.searchParams.get('ns')?.trim() || defaultMockNamespace
       return { namespace, topology: topologies.get(namespace) }
     }
+    const selectedTopologyByNamespace = (namespace: string) => {
+      const selected = namespace.trim() || defaultMockNamespace
+      return { namespace: selected, topology: topologies.get(selected) }
+    }
+    const pdfUrlForJob = (body: MockPdfJobRequest, namespace: string) => {
+      const pdfUrl = new URL('/pdf', 'http://localhost')
+      pdfUrl.searchParams.set('ns', namespace)
+      const nodes = stringArray(body.nodes)
+      const remote = stringRecord(body.remote)
+      const stencils = stringRecord(body.stencils)
+      if (nodes.length) pdfUrl.searchParams.set('nodes', nodes.join(','))
+      if (Object.keys(remote).length) pdfUrl.searchParams.set('remote', JSON.stringify(remote))
+      if (Object.keys(stencils).length) pdfUrl.searchParams.set('stencils', JSON.stringify(stencils))
+      return pdfUrl
+    }
 
     server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => {
       if (req.method !== 'GET') {
+        const url = new URL(req.url ?? '/', 'http://localhost')
+        if (req.method === 'POST' && url.pathname === '/api/pdf/jobs') {
+          void readJSONBody(req)
+            .then((body) => {
+              cleanupPdfJobs()
+              const namespace = typeof body.namespace === 'string' ? body.namespace : ''
+              const selected = selectedTopologyByNamespace(namespace)
+              if (!selected.topology) {
+                sendJSON(res, 404, { error: `unknown mock namespace ${selected.namespace}` })
+                return
+              }
+              const job: MockPdfJob = {
+                id: randomUUID(),
+                event: { status: 'running', phase: 'Queued', percent: 0 },
+                subscribers: new Set(),
+              }
+              pdfJobs.set(job.id, job)
+              sendJSON(res, 202, { id: job.id })
+
+              const pdfUrl = pdfUrlForJob(body, selected.namespace)
+              void renderDevPdf({
+                topology: selected.topology.data, url: pdfUrl, frontpanelDir, pdfAssetsDir,
+                onProgress: (progress: DevPdfProgress) => updatePdfJob(job, { status: 'running', ...progress }),
+              })
+                .then(({ bytes, filename }) => {
+                  job.bytes = bytes
+                  job.filename = filename
+                  updatePdfJob(job, { status: 'ready', phase: 'PDF ready', percent: 100 })
+                })
+                .catch((error: unknown) => {
+                  const message = error instanceof Error ? error.message : 'PDF export failed'
+                  updatePdfJob(job, { status: 'error', phase: 'PDF export failed', message })
+                })
+            })
+            .catch(() => sendJSON(res, 400, { error: 'invalid PDF job request' }))
+          return
+        }
         next()
         return
       }
       const url = new URL(req.url ?? '/', 'http://localhost')
+      const pdfJobMatch = /^\/api\/pdf\/jobs\/([^/]+)\/(events|download)$/.exec(url.pathname)
+      if (pdfJobMatch) {
+        cleanupPdfJobs()
+        const job = pdfJobs.get(pdfJobMatch[1])
+        if (!job) {
+          sendJSON(res, 404, { error: 'PDF job not found' })
+          return
+        }
+        if (pdfJobMatch[2] === 'events') {
+          sendPdfJobSSE(req, res, job)
+          return
+        }
+        if (job.event.status === 'ready' && job.bytes && job.filename) {
+          sendPDF(res, job.bytes, job.filename)
+          return
+        }
+        if (job.event.status === 'error') {
+          sendJSON(res, 500, { error: job.event.message || 'PDF export failed' })
+          return
+        }
+        sendJSON(res, 409, { error: 'PDF job is still running' })
+        return
+      }
       if (url.pathname === '/api/namespaces') {
         sendJSON(res, 200, mockNamespaces)
         return

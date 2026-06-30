@@ -35,6 +35,13 @@ type pdfEngine struct {
 	initErr  error
 }
 
+type pdfRenderProgress struct {
+	Phase         string
+	Detail        string
+	Percent       *int
+	Indeterminate bool
+}
+
 func newPDFEngine() *pdfEngine {
 	bin := os.Getenv("TYPST_BIN")
 	if bin == "" {
@@ -76,10 +83,16 @@ func (e *pdfEngine) close() {
 // node name to its resolved front-panel filename (modular chassis render a card-derived composite,
 // not <platform>.svg); a node absent from the map falls back to its platform.
 func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDir string, remote, stencils map[string]string) ([]byte, error) {
+	return e.renderWithProgress(ctx, nodes, stencilDir, remote, stencils, nil)
+}
+
+func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Node, stencilDir string, remote, stencils map[string]string, progress func(pdfRenderProgress)) ([]byte, error) {
+	reportPDFProgress(progress, "Preparing PDF", "", intPtr(0), false)
 	fontsDir, err := e.fonts()
 	if err != nil {
 		return nil, fmt.Errorf("font setup: %w", err)
 	}
+	reportPDFProgress(progress, "Preparing assets", "Fonts ready", intPtr(5), false)
 	work, err := os.MkdirTemp("", "cable-map-pdf-")
 	if err != nil {
 		return nil, err
@@ -95,6 +108,7 @@ func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDi
 			return nil, err
 		}
 	}
+	reportPDFProgress(progress, "Preparing assets", "Template ready", intPtr(10), false)
 
 	type pdfNode struct {
 		Name     string     `json:"name"`
@@ -106,6 +120,7 @@ func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDi
 		Nodes []pdfNode `json:"nodes"`
 	}{}
 
+	totalNodes := len(nodes)
 	for i, n := range nodes {
 		panel := ""
 		svgName := n.Platform
@@ -126,6 +141,7 @@ func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDi
 			}
 		}
 		data.Nodes = append(data.Nodes, pdfNode{Name: n.Name, Platform: n.Platform, Panel: panel, Rows: tableRows(n, remote)})
+		reportPDFProgress(progress, "Rendering panels", fmt.Sprintf("%d / %d nodes", i+1, totalNodes), intPtr(10+((i+1)*60)/totalNodes), false)
 	}
 
 	jb, err := json.Marshal(data)
@@ -135,14 +151,23 @@ func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDi
 	if err := os.WriteFile(filepath.Join(work, "data.json"), jb, 0o644); err != nil {
 		return nil, err
 	}
+	reportPDFProgress(progress, "Writing PDF data", "", intPtr(75), false)
 
 	out := filepath.Join(work, "out.pdf")
+	reportPDFProgress(progress, "Rendering PDF", "Typst compile", nil, true)
 	cmd := exec.CommandContext(ctx, e.bin, "compile",
 		filepath.Join(work, "template.typ"), out, "--font-path", fontsDir, "--root", work)
 	if outp, err := cmd.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("typst compile failed: %w: %s", err, strings.TrimSpace(string(outp)))
 	}
 	return os.ReadFile(out)
+}
+
+func reportPDFProgress(progress func(pdfRenderProgress), phase, detail string, percent *int, indeterminate bool) {
+	if progress == nil {
+		return
+	}
+	progress(pdfRenderProgress{Phase: phase, Detail: detail, Percent: percent, Indeterminate: indeterminate})
 }
 
 // ---- data shaping ---------------------------------------------------------------

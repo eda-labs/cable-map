@@ -38,11 +38,19 @@ export type DevPdfTopology = {
   nodes: DevPdfNode[]
 }
 
+export type DevPdfProgress = {
+  phase: string
+  detail?: string
+  percent?: number
+  indeterminate?: boolean
+}
+
 type RenderDevPdfArgs = {
   topology: DevPdfTopology
   url: URL
   frontpanelDir: string
   pdfAssetsDir: string
+  onProgress?: (progress: DevPdfProgress) => void
 }
 
 type TypstError = Error & {
@@ -51,7 +59,8 @@ type TypstError = Error & {
   stderr?: string | Buffer
 }
 
-export async function renderDevPdf({ topology, url, frontpanelDir, pdfAssetsDir }: RenderDevPdfArgs) {
+export async function renderDevPdf({ topology, url, frontpanelDir, pdfAssetsDir, onProgress }: RenderDevPdfArgs) {
+  onProgress?.({ phase: 'Preparing PDF', percent: 0 })
   const nodesParam = url.searchParams.get('nodes')?.trim() ?? ''
   const byName = new Map(topology.nodes.map((node) => [node.name, node]))
   const nodes = nodesParam
@@ -65,16 +74,26 @@ export async function renderDevPdf({ topology, url, frontpanelDir, pdfAssetsDir 
   try {
     await Promise.all(['template.typ', 'eda.svg'].map((file) =>
       fs.copyFile(path.join(pdfAssetsDir, file), path.join(work, file))))
+    onProgress?.({ phase: 'Preparing assets', detail: 'Template ready', percent: 10 })
 
+    let renderedPanels = 0
     const data = {
       nodes: await Promise.all(nodes.map(async (node, index) => {
         const panel = await writePanel({ node, index, work, frontpanelDir, svgName: stencils[node.name] || node.platform })
+        renderedPanels += 1
+        onProgress?.({
+          phase: 'Rendering panels',
+          detail: `${renderedPanels} / ${nodes.length} nodes`,
+          percent: 10 + Math.round((renderedPanels * 60) / nodes.length),
+        })
         return { name: node.name, platform: node.platform, panel, rows: tableRows(node, remote) }
       })),
     }
     await fs.writeFile(path.join(work, 'data.json'), JSON.stringify(data))
+    onProgress?.({ phase: 'Writing PDF data', percent: 75 })
 
     const out = path.join(work, 'out.pdf')
+    onProgress?.({ phase: 'Rendering PDF', detail: 'Typst compile', indeterminate: true })
     await compileTypst(work, out, pdfAssetsDir)
     const bytes = await fs.readFile(out)
     return { bytes, filename: pdfFilename(url.searchParams.get('ns')?.trim() ?? '') }

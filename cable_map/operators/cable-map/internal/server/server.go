@@ -28,10 +28,14 @@ type Server struct {
 	stencil http.Handler
 	auth    *authManager
 	engine  *pdfEngine
+	pdfJobs *pdfJobStore
 }
 
 func New(store *eda.Store, port string) *Server {
-	return &Server{store: store, port: port, spa: spaHandler(distRoot()), stencil: stencilHandler(stencilDir()), auth: newAuthManager(), engine: newPDFEngine()}
+	return &Server{
+		store: store, port: port, spa: spaHandler(distRoot()), stencil: stencilHandler(stencilDir()),
+		auth: newAuthManager(), engine: newPDFEngine(), pdfJobs: newPDFJobStore(),
+	}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -42,6 +46,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/toponode", s.topoNode)
 	mux.HandleFunc("/api/topology", s.topology)
 	mux.HandleFunc("/api/topology/stream", s.topologyStream)
+	mux.HandleFunc("/api/pdf/jobs", s.pdfJobsRoot)
+	mux.HandleFunc("/api/pdf/jobs/", s.pdfJob)
 	mux.HandleFunc("/pdf", s.pdf)
 	mux.Handle("/frontpanel/", s.stencil) // front-panel SVGs from STENCIL_DIR (served, not embedded)
 	mux.Handle("/", s.spa)                // SPA + client routes (/, /print)

@@ -1,10 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
-import { authenticatedFetch } from '../api/client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { pdfJobDownloadUrl, startPdfJob, streamPdfJob, type PdfProgressEvent } from '../api/pdf';
 import type { Topology } from '../domain/topology/contract';
 import { edgeRemote } from '../edge-remote';
 import { stencilFor, componentsOf } from '../stencil';
 
-type PdfState = { status: 'idle' | 'loading' | 'error'; message?: string };
+export type PdfState =
+  | { status: 'idle' }
+  | { status: 'loading'; phase: string; detail?: string; percent?: number; indeterminate?: boolean }
+  | { status: 'error'; message: string };
 
 // Owns PDF export state + the download flow. Consumed by both the toolbar and the node drawer;
 // the error Snackbar is rendered by App from `pdfState` + `dismissError`. `openPdf` is kept stable
@@ -16,17 +19,55 @@ export function usePdfExport({ topo, namespace }: { topo: Topology | null; names
   const namespaceRef = useRef(namespace);
   namespaceRef.current = namespace;
   const loadingRef = useRef(false); // guards against a second export starting mid-flight
+  const streamCleanupRef = useRef<(() => void) | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      streamCleanupRef.current?.();
+    };
+  }, []);
+
+  const setSafePdfState = useCallback((next: PdfState) => {
+    if (mountedRef.current) setPdfState(next);
+  }, []);
+
+  const startBrowserDownload = useCallback((jobId: string) => {
+    const a = document.createElement('a');
+    a.href = pdfJobDownloadUrl(jobId);
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }, []);
+
+  const applyProgress = useCallback((event: PdfProgressEvent, jobId: string) => {
+    if (event.status === 'error') {
+      loadingRef.current = false;
+      streamCleanupRef.current?.();
+      streamCleanupRef.current = null;
+      setSafePdfState({ status: 'error', message: event.message || 'PDF export failed' });
+      return;
+    }
+    if (event.status === 'ready') {
+      loadingRef.current = false;
+      streamCleanupRef.current?.();
+      streamCleanupRef.current = null;
+      setSafePdfState({ status: 'idle' });
+      startBrowserDownload(jobId);
+      return;
+    }
+    setSafePdfState({ status: 'loading', phase: event.phase, detail: event.detail, percent: event.percent, indeterminate: event.indeterminate });
+  }, [setSafePdfState, startBrowserDownload]);
 
   const openPdf = useCallback(async (ids: string[]) => {
     if (loadingRef.current) return;
     const currentTopo = topoRef.current;
     const ns = namespaceRef.current;
     const targets = ids.length ? ids : (currentTopo?.nodes.map((n) => n.name) ?? []);
-    const params = new URLSearchParams();
-    if (ids.length) params.set('nodes', ids.join(','));
-    if (ns) params.set('ns', ns);
     const sub = edgeRemote.subset(targets);
-    if (Object.keys(sub).length) params.set('remote', JSON.stringify(sub));
     const byName = new Map(currentTopo?.nodes.map((n) => [n.name, n]) ?? []);
     const stencils: Record<string, string> = {};
     for (const name of targets) {
@@ -35,39 +76,31 @@ export function usePdfExport({ topo, namespace }: { topo: Topology | null; names
       const resolved = stencilFor(n.platform, componentsOf(n.raw));
       if (resolved !== n.platform) stencils[name] = resolved;
     }
-    if (Object.keys(stencils).length) params.set('stencils', JSON.stringify(stencils));
-    const qs = params.toString();
     loadingRef.current = true;
-    setPdfState({ status: 'loading' });
+    setSafePdfState({ status: 'loading', phase: 'Starting export', percent: 0 });
     try {
-      const res = await authenticatedFetch(`pdf${qs ? `?${qs}` : ''}`);
-      if (!res.ok) {
-        const detail = await res.json().then((b) => b?.error).catch(() => '');
-        throw new Error(detail ? `PDF export failed: ${detail}` : `PDF export failed (HTTP ${res.status})`);
-      }
-      const blob = await res.blob();
-      if (blob.size === 0) throw new Error('PDF export returned an empty document');
-      const name = /filename="?([^"]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'cable-map.pdf';
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      setPdfState({ status: 'idle' });
+      const jobId = await startPdfJob({
+        namespace: ns || undefined,
+        nodes: ids.length ? ids : undefined,
+        remote: Object.keys(sub).length ? sub : undefined,
+        stencils: Object.keys(stencils).length ? stencils : undefined,
+      });
+      streamCleanupRef.current?.();
+      streamCleanupRef.current = streamPdfJob(jobId, (event) => applyProgress(event, jobId), (message) => {
+        setSafePdfState({ status: 'loading', phase: 'Waiting for PDF', detail: message, indeterminate: true });
+      });
     } catch (e) {
       // fetch only throws (TypeError) when the request never completed
       const message = e instanceof TypeError ? 'PDF export failed: service unreachable'
         : e instanceof Error ? e.message : 'PDF export failed';
-      setPdfState({ status: 'error', message });
-    } finally {
       loadingRef.current = false;
+      streamCleanupRef.current?.();
+      streamCleanupRef.current = null;
+      setSafePdfState({ status: 'error', message });
     }
-  }, []);
+  }, [applyProgress, setSafePdfState]);
 
-  const dismissError = useCallback(() => setPdfState({ status: 'idle' }), []);
+  const dismissError = useCallback(() => setSafePdfState({ status: 'idle' }), [setSafePdfState]);
 
   return { pdfState, openPdf, dismissError };
 }
