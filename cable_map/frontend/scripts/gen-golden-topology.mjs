@@ -502,7 +502,11 @@ function buildMixedSrosTopology() {
     platform: '7750 SR-1',
     os: 'sros',
     labels: { 'eda.nokia.com/plane': 'plane-00' },
-    components: [{ kind: 'lineCard', type: 'i48-400g-qsfpdd-1', slot: '1' }],
+    components: [
+      { kind: 'lineCard', type: 'i48-400g-qsfpdd-1', slot: '1' },
+      { kind: 'mda', type: 'me12-100gb-qsfp28', slot: '1' },
+      { kind: 'mda', type: 'me6-100gb-qsfp28', slot: '2' },
+    ],
   });
   addNode({
     name: 'mix-spine-srl',
@@ -518,7 +522,7 @@ function buildMixedSrosTopology() {
     labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/plane': 'plane-01' },
     components: [
       { kind: 'mda', type: 'ms18-100gb-qsfp28', slot: '1' },
-      { kind: 'mda', type: 'ms4-400gb-qsfpdd-4-100gb-qsfp28', slot: '2' },
+      { kind: 'mda', type: 'ms4-400gb-qsfpdd+4-100gb-qsfp28', slot: '2' },
     ],
   });
   addNode({
@@ -565,7 +569,7 @@ function buildMixedSrosTopology() {
     platform: '7750 SR-1s',
     os: 'sros',
     labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-05' },
-    components: [{ kind: 'mda', type: 'ms16-100gb-sfpdd-4-100gb-qsfp28', slot: '1' }],
+    components: [{ kind: 'mda', type: 'ms16-100gb-sfpdd+4-100gb-qsfp28', slot: '1' }],
   });
   addNode({
     name: 'mix-leaf-sxr',
@@ -575,12 +579,61 @@ function buildMixedSrosTopology() {
     labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-06' },
   });
 
+  const srosVariants = [];
+  function addSrosVariant(name, platform, components) {
+    addNode({
+      name,
+      role: 'leaf',
+      platform,
+      os: 'sros',
+      labels: { 'eda.nokia.com/pod': 'sros-variants', 'eda.nokia.com/rack': name },
+      components,
+    });
+    srosVariants.push(name);
+  }
+
+  [
+    ['mix-sros-sr1-46s', 'i40-200g-sfpdd+6-800g-qsfpdd-1'],
+    ['mix-sros-sr1-92s', 'i80-200g-sfpdd+12-400g-qsfpdd-1'],
+    ['mix-sros-sr1x-48d', 'i48-800g-qsfpdd-1x'],
+    ['mix-sros-sr1x-92s', 'i80-200g-sfpdd+12-800g-qsfpdd-1x'],
+    ['mix-sros-sr1se-imm', 'imm36-800g-qsfpdd'],
+  ].forEach(([name, type]) => addSrosVariant(name, '7750 SR-1', [{ kind: 'lineCard', type, slot: '1' }]));
+
+  addSrosVariant('mix-sros-sr1-mda-me12-me6', '7750 SR-1', [
+    { kind: 'mda', type: 'me12-100gb-qsfp28', slot: '1' },
+    { kind: 'mda', type: 'me6-100gb-qsfp28', slot: '2' },
+  ]);
+  addSrosVariant('mix-sros-sr1-iom-me6', '7750 SR-1', [
+    { kind: 'lineCard', type: 'iom-1', slot: '1' },
+    { kind: 'mda', type: 'me6-100gb-qsfp28', slot: '1-a' },
+    { kind: 'connector', type: 'c10-10g', slot: '1-a-1' },
+    { kind: 'connector', type: 'c10-10g', slot: '1-a-2' },
+    { kind: 'connector', type: 'c10-10g', slot: '1-a-3' },
+    { kind: 'connector', type: 'c10-10g', slot: '1-a-4' },
+  ]);
+  addSrosVariant('mix-sros-sr1se-direct', '7750 SR-1se');
+  addSrosVariant('mix-sros-sr1s-s18', '7750 SR-1s', [{ kind: 'mda', type: 's18-100gb-qsfp28', slot: '1' }]);
+  addSrosVariant('mix-sros-sr1s-s36', '7750 SR-1s', [{ kind: 'mda', type: 's36-400gb-qsfpdd', slot: '1' }]);
+  addSrosVariant('mix-sros-sr2s-ms16-ms8', '7750 SR-2s', [
+    { kind: 'mda', type: 'ms16-100gb-sfpdd+4-100gb-qsfp28', slot: '1' },
+    { kind: 'mda', type: 'ms8-100gb-sfpdd+2-100gb-qsfp28', slot: '2' },
+  ]);
+  addSrosVariant('mix-sros-sr2se-x2-mse6', '7750 SR-2se', [
+    { kind: 'mda', type: 'x2-s36-800g-qsfpdd-18.0t', slot: '1' },
+    { kind: 'mda', type: 'mse6-800g-qsfpdd', slot: '2' },
+  ]);
+  addSrosVariant('mix-sros-sr2se-m36-mse24', '7750 SR-2se', [
+    { kind: 'mda', type: 'm36-800g-qsfpdd', slot: '1' },
+    { kind: 'mda', type: 'mse24-200g-sfpdd', slot: '2' },
+  ]);
+
   addLink('mix-spine-srl', 'mix-core-sr1', 'core uplink');
   addLink('mix-spine-sros', 'mix-core-sr1', 'core uplink');
   addLink('mix-border-sr2', 'mix-spine-srl', 'border fabric');
   addLaggedLinkPair('mix-border-sr2', 'mix-spine-sros', 'border-sros-fabric');
 
-  for (const leaf of ['mix-leaf-d3l', 'mix-leaf-d2', 'mix-leaf-h3', 'mix-leaf-sr1', 'mix-leaf-sr1s', 'mix-leaf-sxr']) {
+  for (const leaf of ['mix-leaf-d3l', 'mix-leaf-d2', 'mix-leaf-h3', 'mix-leaf-sr1', 'mix-leaf-sr1s', 'mix-leaf-sxr', ...srosVariants]) {
     addLink(leaf, 'mix-spine-srl', 'leaf fabric A');
     addLink(leaf, 'mix-spine-sros', 'leaf fabric B');
   }
