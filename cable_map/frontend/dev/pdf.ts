@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -77,9 +78,10 @@ export async function renderDevPdf({ topology, url, frontpanelDir, pdfAssetsDir,
     onProgress?.({ phase: 'Preparing assets', detail: 'Template ready', percent: 10 })
 
     let renderedPanels = 0
+    const panelByHash = new Map<string, string>()
     const data = {
-      nodes: await Promise.all(nodes.map(async (node, index) => {
-        const panel = await writePanel({ node, index, work, frontpanelDir, svgName: stencils[node.name] || node.platform })
+      nodes: await Promise.all(nodes.map(async (node) => {
+        const panel = await writePanel({ node, work, frontpanelDir, svgName: stencils[node.name] || node.platform, panelByHash })
         renderedPanels += 1
         onProgress?.({
           phase: 'Rendering panels',
@@ -113,16 +115,16 @@ export class DevPdfRequestError extends Error {
 
 async function writePanel({
   node,
-  index,
   work,
   frontpanelDir,
   svgName,
+  panelByHash,
 }: {
   node: DevPdfNode
-  index: number
   work: string
   frontpanelDir: string
   svgName: string
+  panelByHash: Map<string, string>
 }): Promise<string> {
   const svgPath = panelPath(frontpanelDir, svgName)
   if (!svgPath) return ''
@@ -141,8 +143,16 @@ async function writePanel({
     if (cage) occupied.add(cage)
   }
 
-  const panel = `panel-${index}.svg`
-  await fs.writeFile(path.join(work, panel), colourPanel(svg, occupied))
+  // Nodes sharing a stencil and cabled-cage set produce identical panels; write each
+  // distinct one once so Typst embeds a single shared resource (matches operator pdf.go).
+  const coloured = colourPanel(svg, occupied)
+  const key = createHash('sha256').update(coloured).digest('hex').slice(0, 24)
+  let panel = panelByHash.get(key)
+  if (!panel) {
+    panel = `panel-${key}.svg`
+    panelByHash.set(key, panel)
+    await fs.writeFile(path.join(work, panel), coloured)
+  }
   return panel
 }
 

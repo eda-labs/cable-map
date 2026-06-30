@@ -28,32 +28,44 @@ export async function startPdfJob(request: PdfJobRequest): Promise<string> {
   return body.id;
 }
 
+// streamPdfJob polls the job status until it reaches a terminal state. We poll rather than use SSE
+// because the EDA httpproxy in front of the app buffers/drops streamed responses, which made the
+// progress stream endlessly "reconnect" on the deployed path.
 export function streamPdfJob(
   id: string,
   onEvent: (event: PdfProgressEvent) => void,
   onReconnect: (message: string) => void,
 ): () => void {
   let closed = false;
-  const es = new EventSource(authenticatedUrl(`api/pdf/jobs/${encodeURIComponent(id)}/events`));
-  es.addEventListener('message', (ev) => {
-    if (closed || !ev.data) return;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const poll = async () => {
+    if (closed) return;
     try {
-      const event = JSON.parse(ev.data) as PdfProgressEvent;
+      const res = await authenticatedFetch(`api/pdf/jobs/${encodeURIComponent(id)}/status`);
+      if (res.status === 404) {
+        closed = true;
+        onEvent({ status: 'error', phase: 'PDF export failed', message: 'PDF job expired or was not found' });
+        return;
+      }
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const event = await res.json() as PdfProgressEvent;
+      if (closed) return;
       onEvent(event);
       if (event.status !== 'running') {
         closed = true;
-        es.close();
+        return;
       }
     } catch {
-      onReconnect('PDF progress update was unreadable');
+      if (!closed) onReconnect('Waiting for PDF…');
     }
-  });
-  es.addEventListener('error', () => {
-    if (!closed) onReconnect('PDF progress stream reconnecting...');
-  });
+    if (!closed) timer = setTimeout(() => void poll(), 700);
+  };
+  void poll();
+
   return () => {
     closed = true;
-    es.close();
+    if (timer) clearTimeout(timer);
   };
 }
 

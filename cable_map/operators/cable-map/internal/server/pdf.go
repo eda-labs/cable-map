@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -121,23 +123,41 @@ func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Nod
 	}{}
 
 	totalNodes := len(nodes)
+	panelByHash := map[string]string{}        // coloured-panel content hash -> filename
+	plans := map[string]*stencilPlan{}        // stencil filename -> precomputed plan (nil if missing)
+	slottedByName := map[string]bool{}        // stencil filename -> slotted cage ids
 	for i, n := range nodes {
 		panel := ""
 		svgName := n.Platform
 		if s := stencils[n.Name]; s != "" {
 			svgName = s
 		}
-		if svgBytes, err := os.ReadFile(filepath.Join(stencilDir, svgName+".svg")); err == nil {
-			slotted := svgSlotted(svgBytes)
+		plan, planned := plans[svgName]
+		if !planned {
+			if svgBytes, err := os.ReadFile(filepath.Join(stencilDir, svgName+".svg")); err == nil {
+				plan = planStencil(svgBytes)
+				slottedByName[svgName] = svgSlotted(svgBytes)
+			}
+			plans[svgName] = plan
+		}
+		if plan != nil {
 			occupied := map[string]bool{}
 			for _, r := range n.Table {
-				if c := cageKey(r.Label, slotted); c != "" {
+				if c := cageKey(r.Label, slottedByName[svgName]); c != "" {
 					occupied[c] = true
 				}
 			}
-			panel = fmt.Sprintf("panel-%d.svg", i)
-			if err := os.WriteFile(filepath.Join(work, panel), colourPanel(svgBytes, occupied), 0o644); err != nil {
-				return nil, err
+			// Nodes that share a stencil and cabled-cage set produce byte-identical panels; write
+			// each distinct one once so Typst parses it a single time and embeds one shared resource.
+			coloured := plan.colour(occupied)
+			sum := sha256.Sum256(coloured)
+			key := hex.EncodeToString(sum[:12])
+			if panel = panelByHash[key]; panel == "" {
+				panel = "panel-" + key + ".svg"
+				if err := os.WriteFile(filepath.Join(work, panel), coloured, 0o644); err != nil {
+					return nil, err
+				}
+				panelByHash[key] = panel
 			}
 		}
 		data.Nodes = append(data.Nodes, pdfNode{Name: n.Name, Platform: n.Platform, Panel: panel, Rows: tableRows(n, remote)})
@@ -160,7 +180,49 @@ func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Nod
 	if outp, err := cmd.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("typst compile failed: %w: %s", err, strings.TrimSpace(string(outp)))
 	}
-	return os.ReadFile(out)
+	if !pdfCompressEnabled() { // qpdf recompression trades render time for ~13% size — opt-in
+		return os.ReadFile(out)
+	}
+	reportPDFProgress(progress, "Compressing PDF", "", intPtr(95), true)
+	return e.compress(ctx, out)
+}
+
+// pdfCompressEnabled gates the lossless qpdf pass (PDF_COMPRESS=1). Off by default: it adds
+// noticeable time to large exports and only improves file size.
+func pdfCompressEnabled() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("PDF_COMPRESS"))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
+}
+
+// compress losslessly shrinks the Typst PDF with qpdf — object streams plus max-level flate
+// recompression. Best-effort: if qpdf is absent (e.g. local dev) or fails, the original PDF is
+// returned unchanged, so output stays 1:1 either way.
+func (e *pdfEngine) compress(ctx context.Context, pdf string) ([]byte, error) {
+	bin := os.Getenv("QPDF_BIN")
+	if bin == "" {
+		bin = "qpdf"
+	}
+	if _, err := exec.LookPath(bin); err != nil {
+		return os.ReadFile(pdf)
+	}
+	small := pdf + ".min"
+	cmd := exec.CommandContext(ctx, bin,
+		"--object-streams=generate", "--recompress-flate", "--compression-level=9", pdf, small)
+	err := cmd.Run()
+	code := -1
+	if cmd.ProcessState != nil {
+		code = cmd.ProcessState.ExitCode()
+	}
+	// qpdf exit 0 = success, 3 = warnings only (output still written); both are usable.
+	if err == nil || code == 3 {
+		if b, rerr := os.ReadFile(small); rerr == nil {
+			return b, nil
+		}
+	}
+	return os.ReadFile(pdf)
 }
 
 func reportPDFProgress(progress func(pdfRenderProgress), phase, detail string, percent *int, indeterminate bool) {
@@ -259,31 +321,54 @@ func svgSlotted(svg []byte) bool {
 	return false
 }
 
-// colourPanel fills the occupied cages.
-func colourPanel(svg []byte, occupied map[string]bool) []byte {
-	raised := raiseOccupiedCages(svg, occupied)
-	return rePathCage.ReplaceAllFunc(raised, func(tag []byte) []byte {
-		m := rePathCage.FindSubmatch(tag)
-		if m == nil || !occupied[portAttrBytes(m)] {
-			return tag
+// stencilPlan is a stencil's occupancy-independent structure, computed once per platform so that
+// colouring a node's panel doesn't re-scan the (identical-per-platform) ~500KB SVG every time.
+// cages are every data-port cage (recoloured in place when occupied); raises are the green copies
+// lifted above the pins, each at a precomputed insert position — both filtered by occupancy per node.
+type stencilPlan struct {
+	svg    []byte
+	cages  []cageSpan  // sorted by start
+	raises []raiseSpan // sorted by pos (stable in document order)
+}
+
+type cageSpan struct {
+	start, end int
+	port       string
+}
+
+type raiseSpan struct {
+	pos  int    // byte offset in svg to insert the raised copy
+	port string
+	copy []byte // the original cage tag with its id stripped (greened per node)
+}
+
+// planStencil precomputes the cage spans and raise insert points for one stencil SVG.
+func planStencil(svg []byte) *stencilPlan {
+	var cages []cageSpan
+	for _, m := range rePathCage.FindAllSubmatchIndex(svg, -1) {
+		port := ""
+		if m[2] >= 0 {
+			port = string(svg[m[2]:m[3]])
+		} else if m[4] >= 0 {
+			port = string(svg[m[4]:m[5]])
 		}
-		return colourCageTag(tag)
-	})
-}
-
-type svgFrame struct {
-	name    string
-	inserts []string
-	labelAt int
-}
-
-func raiseOccupiedCages(svg []byte, occupied map[string]bool) []byte {
-	if len(occupied) == 0 {
-		return svg
+		cages = append(cages, cageSpan{start: m[0], end: m[1], port: port})
 	}
+	return &stencilPlan{svg: svg, cages: cages, raises: computeRaises(svg)}
+}
+
+type raiseFrame struct {
+	name    string
+	labelAt int
+	cands   []raiseSpan
+}
+
+// computeRaises mirrors the old raise-occupied-cages structure pass, but for every cage (not just
+// occupied ones), recording each raised copy's insert position. Occupancy is applied per node.
+func computeRaises(svg []byte) []raiseSpan {
 	text := string(svg)
-	stack := []svgFrame{}
-	inserts := map[int][]string{}
+	var stack []raiseFrame
+	var raises []raiseSpan
 	for _, m := range reTag.FindAllStringSubmatchIndex(text, -1) {
 		tag := text[m[0]:m[1]]
 		name := strings.ToLower(text[m[2]:m[3]])
@@ -300,49 +385,78 @@ func raiseOccupiedCages(svg []byte, occupied map[string]bool) []byte {
 			}
 			frame := stack[i]
 			stack = append(stack[:i], stack[i+1:]...)
-			if len(frame.inserts) > 0 {
-				insertAt := frame.labelAt
-				if insertAt < 0 {
-					insertAt = m[0]
-				}
-				inserts[insertAt] = append(inserts[insertAt], frame.inserts...)
+			insertAt := frame.labelAt
+			if insertAt < 0 {
+				insertAt = m[0]
+			}
+			for _, c := range frame.cands {
+				c.pos = insertAt
+				raises = append(raises, c)
 			}
 			continue
 		}
-
 		if len(stack) > 0 && name == "text" && stack[len(stack)-1].labelAt < 0 && reTextAdded.MatchString(tag) {
 			stack[len(stack)-1].labelAt = m[0]
 		}
 		if len(stack) > 0 && name == "path" && reSelfClose.MatchString(tag) {
-			if port := tagPort(tag); port != "" && occupied[port] {
-				stack[len(stack)-1].inserts = append(stack[len(stack)-1].inserts, reIDAttr.ReplaceAllString(tag, ""))
+			if port := tagPort(tag); port != "" {
+				top := &stack[len(stack)-1]
+				top.cands = append(top.cands, raiseSpan{port: port, copy: reIDAttr.ReplaceAll([]byte(tag), nil)})
 			}
 		}
 		if !reSelfClose.MatchString(tag) {
-			stack = append(stack, svgFrame{name: name, labelAt: -1})
+			stack = append(stack, raiseFrame{name: name, labelAt: -1})
 		}
 	}
-	if len(inserts) == 0 {
-		return svg
-	}
-	points := make([]int, 0, len(inserts))
-	for point := range inserts {
-		points = append(points, point)
-	}
-	sort.Ints(points)
+	sort.SliceStable(raises, func(a, b int) bool { return raises[a].pos < raises[b].pos })
+	return raises
+}
 
-	var out strings.Builder
-	out.Grow(len(text))
-	cursor := 0
-	for _, point := range points {
-		out.WriteString(text[cursor:point])
-		for _, insert := range inserts[point] {
-			out.WriteString(insert)
+// colour assembles a node's panel: occupied cages recoloured green in place, plus their raised
+// green copies inserted at the precomputed points — a single forward pass over the base SVG, no
+// per-node regex scanning. Output is byte-identical to the old scan-per-node colourPanel.
+func (p *stencilPlan) colour(occupied map[string]bool) []byte {
+	svg := p.svg
+	out := make([]byte, 0, len(svg)+512)
+	cursor, ci, ri := 0, 0, 0
+	for ci < len(p.cages) || ri < len(p.raises) {
+		for ri < len(p.raises) && !occupied[p.raises[ri].port] {
+			ri++
 		}
-		cursor = point
+		rp, cp := 1<<62, 1<<62
+		if ri < len(p.raises) {
+			rp = p.raises[ri].pos
+		}
+		if ci < len(p.cages) {
+			cp = p.cages[ci].start
+		}
+		if rp == 1<<62 && cp == 1<<62 {
+			break
+		}
+		if rp <= cp {
+			out = append(out, svg[cursor:rp]...)
+			cursor = rp
+			out = append(out, colourCageTag(p.raises[ri].copy)...)
+			ri++
+		} else {
+			c := p.cages[ci]
+			out = append(out, svg[cursor:c.start]...)
+			if occupied[c.port] {
+				out = append(out, colourCageTag(svg[c.start:c.end])...)
+			} else {
+				out = append(out, svg[c.start:c.end]...)
+			}
+			cursor = c.end
+			ci++
+		}
 	}
-	out.WriteString(text[cursor:])
-	return []byte(out.String())
+	return append(out, svg[cursor:]...)
+}
+
+// colourPanel fills the occupied cages. Single-shot callers plan inline; the renderer caches the
+// plan per platform (planStencil) so the expensive scan happens once, not once per node.
+func colourPanel(svg []byte, occupied map[string]bool) []byte {
+	return planStencil(svg).colour(occupied)
 }
 
 func tagPort(tag string) string {

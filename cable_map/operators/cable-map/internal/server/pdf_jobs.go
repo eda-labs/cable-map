@@ -130,7 +130,7 @@ func (j *pdfJob) update(event pdfJobEvent) {
 
 func (j *pdfJob) ready(pdf []byte) {
 	j.mu.Lock()
-	j.pdf = append([]byte(nil), pdf...)
+	j.pdf = pdf // freshly rendered slice, not aliased — take ownership rather than copy (it can be 100s of MB)
 	j.mu.Unlock()
 	j.update(pdfJobEvent{Status: pdfJobReady, Phase: "PDF ready", Percent: intPtr(100)})
 }
@@ -163,7 +163,15 @@ func (j *pdfJob) subscribe() (<-chan pdfJobEvent, func()) {
 func (j *pdfJob) result() ([]byte, string, pdfJobEvent) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
-	return append([]byte(nil), j.pdf...), j.filename, j.event
+	return j.pdf, j.filename, j.event // j.pdf is set once at ready and never mutated; no need to copy
+}
+
+// status returns the latest progress event without copying the (large) rendered PDF — used by the
+// polling endpoint, which the frontend prefers over SSE since the EDA httpproxy buffers streams.
+func (j *pdfJob) status() pdfJobEvent {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	return j.event
 }
 
 func isTerminalPDFJobStatus(status pdfJobStatus) bool {
@@ -262,6 +270,8 @@ func (s *Server) pdfJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch parts[1] {
+	case "status":
+		s.pdfJobStatus(w, r, parts[0])
 	case "events":
 		s.pdfJobEvents(w, r, parts[0])
 	case "download":
@@ -269,6 +279,20 @@ func (s *Server) pdfJob(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+func (s *Server) pdfJobStatus(w http.ResponseWriter, r *http.Request, id string) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	job, ok := s.pdfJobs.get(id)
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "PDF job not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, job.status())
 }
 
 func (s *Server) pdfJobEvents(w http.ResponseWriter, r *http.Request, id string) {

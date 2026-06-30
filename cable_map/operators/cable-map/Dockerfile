@@ -5,7 +5,7 @@ FROM ${TARGET_IMAGE}
 # The /pdf endpoint renders with Typst (the static musl binary below). The operator embeds the
 # NokiaPureText fonts + template and passes them via --font-path; font-noto is just a glyph fallback.
 ARG TYPST_VERSION=0.15.0
-RUN apk add --no-cache ca-certificates font-noto \
+RUN apk add --no-cache ca-certificates font-noto qpdf \
  && apk add --no-cache --virtual .typst-dl wget xz \
  && wget -qO /tmp/typst.tar.xz "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" \
  && xz -dc /tmp/typst.tar.xz | tar -x -C /tmp \
