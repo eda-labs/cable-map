@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -187,10 +188,14 @@ func dash(s string) string {
 var (
 	reNum       = regexp.MustCompile(`\d+`)
 	reSrosConn  = regexp.MustCompile(`(?i)(?:^|[/_-])c(\d+)(?:[/_-]|$)`)
-	reDataPort  = regexp.MustCompile(`data-port="([^"]*)"`)
-	rePathCage  = regexp.MustCompile(`<path\b[^>]*\bdata-port="([^"]+)"[^>]*>`)
-	reFillAttr  = regexp.MustCompile(`\s+fill="[^"]*"`)
-	reFillStyle = regexp.MustCompile(`fill\s*:[^;"]*;?`)
+	reDataPort  = regexp.MustCompile(`\bdata-port=(?:"([^"]*)"|'([^']*)')`)
+	rePathCage  = regexp.MustCompile(`<path\b[^>]*\bdata-port=(?:"([^"]+)"|'([^']+)')[^>]*>`)
+	reFillAttr  = regexp.MustCompile(`\s+fill=(?:"[^"]*"|'[^']*')`)
+	reFillStyle = regexp.MustCompile(`fill\s*:[^;"']*;?`)
+	reIDAttr    = regexp.MustCompile(`\s+id=(?:"[^"]*"|'[^']*')`)
+	reTag       = regexp.MustCompile(`</?([A-Za-z][A-Za-z0-9_:.-]*)(?:\s[^<>]*)?>`)
+	reTextAdded = regexp.MustCompile(`^<text\b[^>]*\bdata-added=(?:"[^"]*"|'[^']*')[^>]*>`)
+	reSelfClose = regexp.MustCompile(`/\s*>$`)
 )
 
 // cageKey maps an EDA/SROS interface name to its front-panel cage id (port "12" or slotted "1-12").
@@ -222,7 +227,7 @@ func cageKey(label string, slotted bool) string {
 // svgSlotted reports whether cage ids are per-slot ("<slot>-<port>").
 func svgSlotted(svg []byte) bool {
 	for _, m := range reDataPort.FindAllSubmatch(svg, -1) {
-		if strings.Contains(string(m[1]), "-") {
+		if strings.Contains(portAttrBytes(m), "-") {
 			return true
 		}
 	}
@@ -231,19 +236,126 @@ func svgSlotted(svg []byte) bool {
 
 // colourPanel fills the occupied cages.
 func colourPanel(svg []byte, occupied map[string]bool) []byte {
-	return rePathCage.ReplaceAllFunc(svg, func(tag []byte) []byte {
+	raised := raiseOccupiedCages(svg, occupied)
+	return rePathCage.ReplaceAllFunc(raised, func(tag []byte) []byte {
 		m := rePathCage.FindSubmatch(tag)
-		if m == nil || !occupied[string(m[1])] {
+		if m == nil || !occupied[portAttrBytes(m)] {
 			return tag
 		}
-		t := reFillAttr.ReplaceAll(tag, nil)
-		t = reFillStyle.ReplaceAll(t, nil)
-		fill := "fill:" + occupiedColour + ";fill-opacity:1"
-		if strings.Contains(string(t), `style="`) {
-			return []byte(strings.Replace(string(t), `style="`, `style="`+fill+`;`, 1))
-		}
-		return []byte(strings.Replace(string(t), "<path", `<path style="`+fill+`"`, 1))
+		return colourCageTag(tag)
 	})
+}
+
+type svgFrame struct {
+	name    string
+	inserts []string
+	labelAt int
+}
+
+func raiseOccupiedCages(svg []byte, occupied map[string]bool) []byte {
+	if len(occupied) == 0 {
+		return svg
+	}
+	text := string(svg)
+	stack := []svgFrame{}
+	inserts := map[int][]string{}
+	for _, m := range reTag.FindAllStringSubmatchIndex(text, -1) {
+		tag := text[m[0]:m[1]]
+		name := strings.ToLower(text[m[2]:m[3]])
+		if strings.HasPrefix(tag, "</") {
+			i := -1
+			for j := len(stack) - 1; j >= 0; j-- {
+				if stack[j].name == name {
+					i = j
+					break
+				}
+			}
+			if i < 0 {
+				continue
+			}
+			frame := stack[i]
+			stack = append(stack[:i], stack[i+1:]...)
+			if len(frame.inserts) > 0 {
+				insertAt := frame.labelAt
+				if insertAt < 0 {
+					insertAt = m[0]
+				}
+				inserts[insertAt] = append(inserts[insertAt], frame.inserts...)
+			}
+			continue
+		}
+
+		if len(stack) > 0 && name == "text" && stack[len(stack)-1].labelAt < 0 && reTextAdded.MatchString(tag) {
+			stack[len(stack)-1].labelAt = m[0]
+		}
+		if len(stack) > 0 && name == "path" && reSelfClose.MatchString(tag) {
+			if port := tagPort(tag); port != "" && occupied[port] {
+				stack[len(stack)-1].inserts = append(stack[len(stack)-1].inserts, reIDAttr.ReplaceAllString(tag, ""))
+			}
+		}
+		if !reSelfClose.MatchString(tag) {
+			stack = append(stack, svgFrame{name: name, labelAt: -1})
+		}
+	}
+	if len(inserts) == 0 {
+		return svg
+	}
+	points := make([]int, 0, len(inserts))
+	for point := range inserts {
+		points = append(points, point)
+	}
+	sort.Ints(points)
+
+	var out strings.Builder
+	out.Grow(len(text))
+	cursor := 0
+	for _, point := range points {
+		out.WriteString(text[cursor:point])
+		for _, insert := range inserts[point] {
+			out.WriteString(insert)
+		}
+		cursor = point
+	}
+	out.WriteString(text[cursor:])
+	return []byte(out.String())
+}
+
+func tagPort(tag string) string {
+	return portAttr(reDataPort.FindStringSubmatch(tag))
+}
+
+func portAttr(match []string) string {
+	if len(match) > 1 && match[1] != "" {
+		return match[1]
+	}
+	if len(match) > 2 {
+		return match[2]
+	}
+	return ""
+}
+
+func portAttrBytes(match [][]byte) string {
+	if len(match) > 1 && len(match[1]) > 0 {
+		return string(match[1])
+	}
+	if len(match) > 2 {
+		return string(match[2])
+	}
+	return ""
+}
+
+func colourCageTag(tag []byte) []byte {
+	t := reFillAttr.ReplaceAll(tag, nil)
+	t = reFillStyle.ReplaceAll(t, nil)
+	fill := "fill:" + occupiedColour + ";fill-opacity:1"
+	text := string(t)
+	if strings.Contains(text, `style="`) {
+		return []byte(strings.Replace(text, `style="`, `style="`+fill+`;`, 1))
+	}
+	if strings.Contains(text, `style='`) {
+		return []byte(strings.Replace(text, `style='`, `style='`+fill+`;`, 1))
+	}
+	return []byte(strings.Replace(text, "<path", `<path style="`+fill+`"`, 1))
 }
 
 // ---- handler --------------------------------------------------------------------
