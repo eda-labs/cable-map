@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const GOLDEN_OUT = new URL('../../operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url);
 const MIXED_SROS_OUT = new URL('../dev/fixtures/mixed-sros-topology.json', import.meta.url);
 const LARGE_SCALE_OUT = new URL('../dev/fixtures/large-1000-topology.json', import.meta.url);
+const AI_FABRIC_OUT = new URL('../dev/fixtures/ai-fabric-196-topology.json', import.meta.url);
 
 const LEAF_COUNT = 80;
 const SPINE_COUNT = 16;
@@ -788,6 +789,121 @@ function buildLargeScaleTopology() {
   return topology(nodes, links, lags);
 }
 
+function buildAiFabricTopology() {
+  const namespace = 'dev-ai-fabric-196';
+  const version = 'dev-ai-fabric-196';
+  const nodes = [];
+  const byName = new Map();
+  const links = [];
+  const lags = {};
+  const leafNextPort = new Map();
+  let physicalLinkIndex = 0;
+
+  function addNode(name, role, labels = {}) {
+    const allLabels = {
+      'eda.nokia.com/role': role,
+      'eda.nokia.com/os': 'srl',
+      'eda.nokia.com/dev-fixture': 'ai-fabric-196',
+      ...labels,
+    };
+    const node = {
+      name,
+      platform: '7220 IXR-H2',
+      os: 'srl',
+      role,
+      namespace,
+      version,
+      labels: allLabels,
+      table: [],
+      raw: makeRaw(name, '7220 IXR-H2', 'srl', allLabels, namespace),
+    };
+    nodes.push(node);
+    byName.set(name, node);
+    return node;
+  }
+
+  function leafPort(name) {
+    const next = leafNextPort.get(name) ?? 1;
+    leafNextPort.set(name, next + 1);
+    return iface(next);
+  }
+
+  function addLink(sourceName, targetName, sourcePort, targetPort, desc) {
+    physicalLinkIndex += 1;
+    const source = byName.get(sourceName);
+    const target = byName.get(targetName);
+    const status = lldpFor(physicalLinkIndex);
+    const id = `a${pad(physicalLinkIndex, 5)}`;
+
+    source.table.push(row({
+      label: sourcePort,
+      desc,
+      remoteNode: target.name,
+      remotePort: targetPort,
+      type: 'interSwitch',
+      lldpStatus: status,
+      lldpPeer: lldpPeerText(status, target.name, targetPort),
+    }));
+    target.table.push(row({
+      label: targetPort,
+      desc,
+      remoteNode: source.name,
+      remotePort: sourcePort,
+      type: 'interSwitch',
+      lldpStatus: status,
+      lldpPeer: lldpPeerText(status, source.name, sourcePort),
+    }));
+    links.push({
+      id,
+      source: source.name,
+      target: target.name,
+      sourcePort,
+      targetPort,
+      type: 'interSwitch',
+    });
+  }
+
+  for (let i = 1; i <= 128; i += 1) {
+    addNode(`l${pad(i, 3)}`, 'leaf', {
+      'eda.nokia.com/rack': `rack-${pad(i, 3)}`,
+    });
+  }
+  for (let i = 1; i <= 64; i += 1) {
+    addNode(`s${pad(i, 3)}`, 'spine', {
+      'eda.nokia.com/plane': `plane-${pad(((i - 1) % 16) + 1, 2)}`,
+    });
+  }
+  for (let i = 1; i <= 4; i += 1) {
+    addNode(`ss${i}`, 'superspine', {
+      'eda.nokia.com/plane': `plane-${pad(i, 2)}`,
+    });
+  }
+
+  for (let spineIndex = 1; spineIndex <= 64; spineIndex += 1) {
+    const spineName = `s${pad(spineIndex, 3)}`;
+    const skippedLeaves = new Set();
+    const skipStart = ((spineIndex - 1) * 7) % 128;
+    for (let offset = 0; offset < 7; offset += 1) {
+      skippedLeaves.add(((skipStart + offset) % 128) + 1);
+    }
+
+    let spinePort = 1;
+    for (let leafIndex = 1; leafIndex <= 128; leafIndex += 1) {
+      if (skippedLeaves.has(leafIndex)) continue;
+      const leafName = `l${pad(leafIndex, 3)}`;
+      addLink(leafName, spineName, leafPort(leafName), iface(spinePort), 'leaf-spine 800G');
+      spinePort += 1;
+    }
+
+    for (let superIndex = 1; superIndex <= 4; superIndex += 1) {
+      addLink(spineName, `ss${superIndex}`, iface(spinePort), iface(spineIndex), 'spine-superspine 800G');
+      spinePort += 1;
+    }
+  }
+
+  return topology(nodes, links, lags);
+}
+
 function writeTopology(out, topo) {
   fs.mkdirSync(new URL('.', out), { recursive: true });
   fs.writeFileSync(out, `${JSON.stringify(topo, null, 2)}\n`);
@@ -799,3 +915,4 @@ function writeTopology(out, topo) {
 writeTopology(GOLDEN_OUT, buildGoldenTopology());
 writeTopology(MIXED_SROS_OUT, buildMixedSrosTopology());
 writeTopology(LARGE_SCALE_OUT, buildLargeScaleTopology());
+writeTopology(AI_FABRIC_OUT, buildAiFabricTopology());

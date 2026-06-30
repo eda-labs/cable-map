@@ -22,6 +22,7 @@ const mockTopologyEntries = process.env.MOCK_TOPOLOGY ? [
   { namespace: 'demo', path: new URL('../operators/cable-map/internal/topology/testdata/golden-topology.json', import.meta.url) },
   { namespace: 'dev-mixed-sros', path: new URL('./dev/fixtures/mixed-sros-topology.json', import.meta.url) },
   { namespace: 'dev-scale-1000', path: new URL('./dev/fixtures/large-1000-topology.json', import.meta.url) },
+  { namespace: 'dev-ai-fabric-196', path: new URL('./dev/fixtures/ai-fabric-196-topology.json', import.meta.url) },
 ]
 const mockNamespaces = mockTopologyEntries.map((entry) => entry.namespace)
 const defaultMockNamespace = mockNamespaces[0] ?? 'demo'
