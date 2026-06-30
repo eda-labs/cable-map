@@ -16,6 +16,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import ListItemText from '@mui/material/ListItemText';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
+import CloseIcon from '@mui/icons-material/CloseOutlined';
 import LightModeIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeIcon from '@mui/icons-material/DarkModeOutlined';
 import SensorsIcon from '@mui/icons-material/SensorsOutlined';
@@ -98,25 +99,55 @@ function AppToolbar({
         )}
         {ready && nodeLabelOptions.length > 0 && (
           <FormControl size="small" sx={{ width: 260 }}>
-            <Select
-              multiple
-              displayEmpty
-              value={selectedLabels}
-              onChange={(e) => onSelectedLabelsChange(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-              renderValue={(sel) => sel.length === 0
-                ? <Box component="span" sx={{ color: 'text.secondary' }}>Label filter</Box>
-                : sel.length === 1 ? sel[0] : `${sel.length} labels`}
-              inputProps={{ 'aria-label': 'Label filter' }}
-              MenuProps={{ slotProps: { paper: { sx: { maxHeight: 360 } } } }}
-              sx={{ height: 31 }}
-            >
-              {nodeLabelOptions.map((value) => (
-                <MenuItem key={value} value={value} dense>
-                  <Checkbox size="small" checked={selectedLabels.includes(value)} sx={{ py: 0, mr: 0.5 }} />
-                  <ListItemText primary={value} slotProps={{ primary: { noWrap: true } }} />
-                </MenuItem>
-              ))}
-            </Select>
+            <Box sx={{ position: 'relative' }}>
+              <Select
+                multiple
+                displayEmpty
+                value={selectedLabels}
+                onChange={(e) => onSelectedLabelsChange(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                renderValue={(sel) => sel.length === 0
+                  ? <Box component="span" sx={{ color: 'text.secondary' }}>Label filter</Box>
+                  : sel.length === 1 ? sel[0] : `${sel.length} labels`}
+                inputProps={{ 'aria-label': 'Label filter' }}
+                MenuProps={{ slotProps: { paper: { sx: { maxHeight: 360 } } } }}
+                sx={{
+                  height: 31,
+                  width: '100%',
+                  '& .MuiSelect-select': selectedLabels.length > 0 ? { pr: '64px !important' } : undefined,
+                }}
+              >
+                {nodeLabelOptions.map((value) => (
+                  <MenuItem key={value} value={value} dense>
+                    <Checkbox size="small" checked={selectedLabels.includes(value)} sx={{ py: 0, mr: 0.5 }} />
+                    <ListItemText primary={value} slotProps={{ primary: { noWrap: true } }} />
+                  </MenuItem>
+                ))}
+              </Select>
+              {selectedLabels.length > 0 && (
+                <Tooltip title="Clear label filters">
+                  <IconButton
+                    aria-label="Clear label filters"
+                    size="small"
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onClick={(e) => { e.stopPropagation(); onSelectedLabelsChange([]); }}
+                    sx={{
+                      position: 'absolute',
+                      right: 28,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 1,
+                      width: 24,
+                      height: 24,
+                      p: 0.25,
+                      color: 'text.secondary',
+                      '&:hover': { color: 'text.primary' },
+                    }}
+                  >
+                    <CloseIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           </FormControl>
         )}
         {namespaces.length > 1 && namespace && (
