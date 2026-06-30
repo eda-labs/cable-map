@@ -18,7 +18,7 @@ import (
 )
 
 // The output contract structs (Node, Edge, Row, LagInfo, Breakout, Topology) live in contract.go —
-// the single source of truth that generates src/topology.gen.ts.
+// the single source of truth that generates src/generated/topology.gen.ts.
 
 // ---- projected inputs (the few CRD fields we read) -------------------------------
 

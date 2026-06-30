@@ -10,6 +10,8 @@ include $(sort $(wildcard $(MKLIBS)/*.mk))
 # Project targets: small, memorable wrappers around the generated EDA targets.
 PNPM ?= pnpm
 APP_DIR := cable_map
+FRONTEND_DIR := $(APP_DIR)/frontend
+FRONTEND := $(PNPM) -C $(FRONTEND_DIR)
 OPERATOR := cable-map
 EMBED_DIR := $(APP_DIR)/operators/$(OPERATOR)/internal/server/dist
 OPERATOR_BIN := build/operators/$(OPERATOR)/$(OPERATOR)
@@ -37,47 +39,55 @@ PROJECT_TARGETS += clean
 
 .PHONY: dev
 HELP_dev := Start the Vite dev server (mock /api by default; set EDA_API to proxy a real backend)
+# The EDA make defaults (.mk/01-globals.mk) force `--output-sync=target`, which holds a
+# target's output until its recipe exits — so a long-running server prints nothing until you
+# Ctrl+C it. Re-exec into dev-run with those defaults disabled (cleared MAKEFLAGS +
+# DISABLE_MAKE_DEFAULTS) so Vite's banner and URLs stream live.
 dev:
-	$(PNPM) dev
+	@env MAKEFLAGS= MFLAGS= $(MAKE) DISABLE_MAKE_DEFAULTS=1 --no-print-directory dev-run
+
+.PHONY: dev-run
+dev-run:
+	@trap 'exit 0' INT TERM; $(FRONTEND) exec vite
 
 .PHONY: dev-cluster
 HELP_dev-cluster := DevSpace: hot-reload the operator in the deployed pod + run the frontend (HMR)
 dev-cluster:
-	$(PNPM) dev:cluster
+	devspace dev
 
 .PHONY: preview
 HELP_preview := Preview the production Vite build locally
 preview:
-	$(PNPM) preview
+	$(FRONTEND) preview
 
 .PHONY: lint
 HELP_lint := Run frontend lint checks
 lint:
-	$(PNPM) lint
+	$(FRONTEND) lint
 
 TYGO ?= github.com/gzuidhof/tygo@v0.2.21
 
 .PHONY: ts-contract
-HELP_ts-contract := Generate src/topology.gen.ts from the Go output contract (internal/topology/contract.go)
+HELP_ts-contract := Generate frontend/src/generated/topology.gen.ts from the Go output contract (internal/topology/contract.go)
 ts-contract:
 	go -C "$(APP_DIR)" run $(TYGO) generate
 
 .PHONY: ts-contract-check
-HELP_ts-contract-check := Fail if src/topology.gen.ts is stale vs the Go contract (CI drift guard)
+HELP_ts-contract-check := Fail if frontend/src/generated/topology.gen.ts is stale vs the Go contract (CI drift guard)
 ts-contract-check: ts-contract
-	git diff --exit-code src/topology.gen.ts
+	git diff --exit-code $(FRONTEND_DIR)/src/generated/topology.gen.ts
 
 .PHONY: ui-build
-HELP_ui-build := Build the React SPA into dist/
+HELP_ui-build := Build the React SPA into frontend/dist/
 ui-build: ts-contract
-	$(PNPM) build
+	$(FRONTEND) build
 
 .PHONY: ui-embed
 HELP_ui-embed := Build and copy the React SPA into the Go embed directory
 ui-embed: ui-build
 	mkdir -p "$(EMBED_DIR)"
 	find "$(EMBED_DIR)" -mindepth 1 ! -name '.keep' ! -name '.gitignore' -exec rm -rf {} +
-	cp -R dist/. "$(EMBED_DIR)/"
+	cp -R $(FRONTEND_DIR)/dist/. "$(EMBED_DIR)/"
 
 .PHONY: operator-build
 HELP_operator-build := Build the embedded Go operator binary (vars: GOOS, GOARCH, CGO_ENABLED)
@@ -114,5 +124,5 @@ check: lint ts-contract-check test build
 .PHONY: clean
 HELP_clean := Remove generated frontend, embedded frontend, and operator build output
 clean:
-	rm -rf dist "$(APP_DIR)/build"
+	rm -rf $(FRONTEND_DIR)/dist "$(APP_DIR)/build"
 	find "$(EMBED_DIR)" -mindepth 1 ! -name '.keep' ! -name '.gitignore' -exec rm -rf {} +

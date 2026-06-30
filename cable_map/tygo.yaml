@@ -1,6 +1,6 @@
 packages:
   - path: cable-map.eda.labs/cable-map/operators/cable-map/internal/topology
-    output_path: ../src/topology.gen.ts
+    output_path: frontend/src/generated/topology.gen.ts
     include_files:
       - contract.go
     frontmatter: |

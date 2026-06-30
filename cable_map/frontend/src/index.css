@@ -1,0 +1,154 @@
+:root {
+  --eda-blue-100: #e4f0ff;
+  --eda-blue-200: #badaff;
+  --eda-blue-300: #8ec2ff;
+  --eda-blue-400: #4092ff;
+  --eda-blue-500: #005aff;
+  --eda-blue-600: #005adf;
+  --eda-blue-700: #0049b4;
+  --eda-blue-800: #003480;
+  --eda-blue-900: #001135;
+  --eda-teal-100: #e4fbff;
+  --eda-teal-200: #b9eaf2;
+  --eda-teal-300: #90dce5;
+  --eda-teal-400: #50c4d0;
+  --eda-teal-500: #23abb6;
+  --eda-teal-600: #0893a8;
+  --eda-teal-700: #027490;
+  --eda-teal-800: #01516e;
+  --eda-teal-900: #003047;
+  --eda-green-100: #e4ffec;
+  --eda-green-200: #c2f8d4;
+  --eda-green-300: #a0f0be;
+  --eda-green-400: #63e194;
+  --eda-green-500: #37cc73;
+  --eda-green-600: #14b949;
+  --eda-green-700: #089b2a;
+  --eda-green-800: #037312;
+  --eda-green-900: #004702;
+  --eda-yellow-100: #fff7d3;
+  --eda-yellow-200: #fff0af;
+  --eda-yellow-300: #ffe890;
+  --eda-yellow-400: #ffd568;
+  --eda-yellow-500: #f7b737;
+  --eda-yellow-600: #d98c0f;
+  --eda-yellow-700: #b06205;
+  --eda-yellow-800: #7e3b02;
+  --eda-yellow-900: #471b00;
+  --eda-orange-100: #fff1e4;
+  --eda-orange-200: #ffe1c5;
+  --eda-orange-300: #ffd0a5;
+  --eda-orange-400: #ffa663;
+  --eda-orange-500: #f47f31;
+  --eda-orange-600: #d7560c;
+  --eda-orange-700: #af3903;
+  --eda-orange-800: #7d2101;
+  --eda-orange-900: #470e00;
+  --eda-red-100: #ffe6e4;
+  --eda-red-200: #fdc8c5;
+  --eda-red-300: #fbaaa7;
+  --eda-red-400: #f26c69;
+  --eda-red-500: #e23b3b;
+  --eda-red-600: #c91514;
+  --eda-red-700: #a60808;
+  --eda-red-800: #790303;
+  --eda-red-900: #470000;
+  --eda-pink-100: #ffe4fe;
+  --eda-pink-200: #fdc6f9;
+  --eda-pink-300: #faa7f5;
+  --eda-pink-400: #f06ae5;
+  --eda-pink-500: #e03dcd;
+  --eda-pink-600: #c816ac;
+  --eda-pink-700: #a50885;
+  --eda-pink-800: #78035a;
+  --eda-pink-900: #470031;
+  --eda-purple-100: #eae4ff;
+  --eda-purple-200: #d4c5ff;
+  --eda-purple-300: #c0a5ff;
+  --eda-purple-400: #9765fe;
+  --eda-purple-500: #7d33f2;
+  --eda-purple-600: #5a0dd5;
+  --eda-purple-700: #4604ae;
+  --eda-purple-800: #33017d;
+  --eda-purple-900: #1e0047;
+  --eda-gray-100: #f9f9f9;
+  --eda-gray-200: #f3f3f3;
+  --eda-gray-300: #ebebeb;
+  --eda-gray-400: #dcdcdc;
+  --eda-gray-500: #cccccc;
+  --eda-gray-600: #999999;
+  --eda-gray-700: #757575;
+  --eda-gray-800: #666666;
+  --eda-gray-900: #333333;
+}
+
+:root {
+  --bg: #1A222E;
+  --panel: #101824;
+  --line: #4A5361B2;
+  --fg: #ffffff;
+  --muted: #C9CED6;
+  --cell-free-bg: #222c39;
+  --cell-free-fg: #3d4756;
+  --cell-free-line: #2c3645;
+  --label-bg: var(--eda-blue-900);
+  --edge-idle: 0.62;
+  --app-scrollbar-thumb: #FFFFFF7F;
+  --app-scrollbar-thumb-hover: #FFFFFF99;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #E7ECF2;
+  --panel: #FFFFFF;
+  --line: #BCC5D2;
+  --fg: #0B1119;
+  --muted: #4A5563;
+  --cell-free-bg: #DBE1E9;
+  --cell-free-fg: #9AA4B2;
+  --cell-free-line: #C0C8D4;
+  --label-bg: var(--eda-blue-100);
+  --edge-idle: 0.95;
+  --app-scrollbar-thumb: #00000052;
+  --app-scrollbar-thumb-hover: #00000073;
+  color-scheme: light;
+}
+
+/* EDA scrollbar: thin, transparent track, translucent rounded thumb (white in dark / dark in light) */
+* { scrollbar-width: thin; scrollbar-color: var(--app-scrollbar-thumb) transparent; }
+*::-webkit-scrollbar { width: 11px; height: 11px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--app-scrollbar-thumb-hover); background-clip: padding-box; }
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.react-flow {
+  --xy-background-color: var(--panel);
+  -webkit-user-select: none;
+  user-select: none;
+}

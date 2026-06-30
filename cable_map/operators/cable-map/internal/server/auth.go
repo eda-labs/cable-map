@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -71,10 +70,9 @@ func edaAPITLS() *tls.Config {
 
 // wrap gates /api/* and /pdf with a valid EDA bearer token. The SPA, /healthz and other static paths
 // stay public — the document must load unauthenticated so keycloak-js can run and obtain a token.
-// Loopback requests (the operator's own chromedp /pdf render hitting 127.0.0.1) are exempt.
 func (a *authManager) wrap(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !a.enabled() || !protectedPath(r.URL.Path) || isLoopback(r) {
+		if !a.enabled() || !protectedPath(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -88,15 +86,6 @@ func (a *authManager) wrap(next http.Handler) http.Handler {
 
 func protectedPath(p string) bool {
 	return p == "/pdf" || p == "/api" || strings.HasPrefix(p, "/api/")
-}
-
-func isLoopback(r *http.Request) bool {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && ip.IsLoopback()
 }
 
 // authenticate verifies the request's bearer token (Authorization header, or the ?access_token= query

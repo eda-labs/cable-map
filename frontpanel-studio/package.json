@@ -1,0 +1,29 @@
+{
+  "name": "frontpanel-studio",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "description": "Dev-only tooling for the cable-map front-panel stencils: a visual inspector (previews a stencil with the app's real SwitchNode renderer) plus the generation/minify scripts.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.1.1",
+    "@mui/material": "^9.1.1",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@xyflow/react": "^12.11.0",
+    "keycloak-js": "^26.2.4",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "svgo": "^3.0.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12"
+  }
+}

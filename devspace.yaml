@@ -1,0 +1,49 @@
+version: v2beta1
+name: cable-map
+
+deployments:
+  cable-map-dev:
+    kubectl:
+      manifests:
+        - dev/deployment.dev.yaml
+
+dev:
+  cable-map:
+    namespace: eda-system
+    labelSelector:
+      eda.labs/app: cable-map-dev
+    command:
+      - sh
+      - -c
+      - cp /tmp/cable-map /tmp/cable-map-run && exec /tmp/cable-map-run
+    sync:
+      - path: ./cable_map/build/operators/cable-map/cable-map:/tmp/cable-map
+        file: true
+        onUpload:
+          restartContainer: true
+    ports:
+      - port: "17080:8080" # not 8090 — DevSpace's own UI binds that, colliding on IPv4
+
+pipelines:
+  dev: |-
+    run_pipelines build-watch start
+  # rebuild the binary on the host on first run + on every Go change; the sync watcher ships it
+  build-watch: |-
+    make operator-build-dev
+    run_watch --path "./cable_map/**/*.go" -- make operator-build-dev
+  # build the operator image (Typst + stencils, SPA embedded) and push it to the in-cluster edabuilder
+  # dev registry so the dev pod's base is fresh, then deploy the pod and start the binary-sync watcher.
+  start: |-
+    FWD_PORT=15055
+    PUSH_IMAGE="localhost:${FWD_PORT}/eda-labs/cable-map/operators/cable-map:dev"
+    echo "==> build operator image (Typst + stencils): ${PUSH_IMAGE}"
+    IMAGE="$PUSH_IMAGE" ./scripts/build-image.sh
+    echo "==> port-forward dev registry (localhost:${FWD_PORT} -> svc/edabuilder-in-cluster-dev-registry:5555)"
+    kubectl -n eda-system port-forward svc/edabuilder-in-cluster-dev-registry "${FWD_PORT}:5555" >/tmp/cable-map-regfwd.log 2>&1 &
+    FWD=$!
+    for _ in $(seq 1 80); do curl -sf "http://localhost:${FWD_PORT}/v2/" >/dev/null 2>&1 && break; sleep 0.25; done
+    echo "==> push to dev registry"
+    docker push "$PUSH_IMAGE"
+    kill "$FWD" 2>/dev/null || true
+    create_deployments cable-map-dev
+    start_dev cable-map
