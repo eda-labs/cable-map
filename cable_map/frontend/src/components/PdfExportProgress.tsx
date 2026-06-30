@@ -11,32 +11,28 @@ function PdfExportProgress({ state }: { state: PdfState }) {
   const loading = state.status === 'loading';
   const percent = loading ? state.percent : undefined;
   const indeterminate = state.status === 'loading' && !!state.indeterminate;
-  const [displayPercent, setDisplayPercent] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
     if (!loading) {
-      setDisplayPercent(0);
+      setElapsedSeconds(0);
       return;
     }
-    if (typeof percent === 'number') {
-      setDisplayPercent((current) => Math.max(current, percent));
-      return;
-    }
-    setDisplayPercent((current) => Math.max(current, 78));
-  }, [loading, percent]);
-
-  useEffect(() => {
-    if (!loading || !indeterminate) return undefined;
+    const startedAt = Date.now();
     const timer = window.setInterval(() => {
-      setDisplayPercent((current) => Math.min(94, current + Math.max(0.4, (94 - current) * 0.06)));
-    }, 450);
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
     return () => window.clearInterval(timer);
-  }, [loading, indeterminate]);
+  }, [loading]);
 
   const phase = loading ? state.phase : '';
   const detail = loading ? state.detail : '';
-  const roundedPercent = Math.min(100, Math.max(0, Math.round(displayPercent)));
   const determinate = loading && !indeterminate;
+  const roundedPercent = determinate ? Math.min(100, Math.max(0, Math.round(percent ?? 0))) : undefined;
+  const metric = determinate ? `${roundedPercent}%` : formatElapsed(elapsedSeconds);
+  const progressDetail = indeterminate
+    ? [detail, `Elapsed ${formatElapsed(elapsedSeconds)}`].filter(Boolean).join(' · ')
+    : detail;
 
   return (
     <Fade in={loading} mountOnEnter unmountOnExit timeout={180}>
@@ -84,7 +80,7 @@ function PdfExportProgress({ state }: { state: PdfState }) {
                   Rendering PDF
                 </Typography>
                 <Typography variant="h6" sx={{ lineHeight: 1, fontWeight: 300, flexShrink: 0 }}>
-                  {roundedPercent}%
+                  {metric}
                 </Typography>
               </Box>
               <Typography variant="body2" noWrap sx={{ color: 'text.secondary', mt: 0.25 }}>
@@ -92,22 +88,22 @@ function PdfExportProgress({ state }: { state: PdfState }) {
               </Typography>
             </Box>
           </Box>
-          {detail && (
+          {progressDetail && (
             <Typography variant="caption" noWrap sx={{ display: 'block', mt: 0.25, color: 'text.secondary' }}>
-              {detail}
+              {progressDetail}
             </Typography>
           )}
           <LinearProgress
-            variant="determinate"
-            value={roundedPercent}
+            variant={determinate ? 'determinate' : 'indeterminate'}
+            value={determinate ? roundedPercent : undefined}
             sx={{
               mt: 1.25,
               height: 6,
               borderRadius: 1,
-              '& .MuiLinearProgress-bar': { transition: 'transform 420ms ease-out' },
+              ...(determinate ? { '& .MuiLinearProgress-bar': { transition: 'transform 420ms ease-out' } } : {}),
             }}
           />
-          {loading && indeterminate && roundedPercent < 94 && (
+          {loading && indeterminate && (
             <Box
               sx={{
                 position: 'absolute',
@@ -128,6 +124,12 @@ function PdfExportProgress({ state }: { state: PdfState }) {
       </Box>
     </Fade>
   );
+}
+
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export default memo(PdfExportProgress);
