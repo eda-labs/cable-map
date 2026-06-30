@@ -162,6 +162,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             onSelectionChange={graph.onSelectionChange}
             onOpenNode={selectDrawerNode} onClearSelection={graph.clearSelection}
             onViewportChange={viewport.setLargeViewport}
+            onViewportChangeEnd={viewport.commitLargeViewport}
             onWebglUnavailable={flowModel.markWebglEdgesUnavailable}
           />
         ) : (

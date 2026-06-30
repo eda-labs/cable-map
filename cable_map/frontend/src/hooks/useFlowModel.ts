@@ -12,6 +12,44 @@ const WEBGL_OK = (() => {
   try { const c = document.createElement('canvas'); return !!(c.getContext('webgl') || c.getContext('experimental-webgl')); } catch { return false; }
 })();
 
+type RenderNodeData = {
+  renderHandles?: boolean;
+  detailLevel?: 'full' | 'summary';
+  showEdgeStubs?: boolean;
+  activeEdgeStubPorts?: string[];
+};
+
+function withRenderData(node: RFNode, renderHandles: boolean, extra?: Omit<RenderNodeData, 'renderHandles'>): RFNode {
+  const data = node.data as RenderNodeData;
+  const next: RenderNodeData = {};
+  let changed = false;
+
+  if (!renderHandles && data.renderHandles !== false) {
+    next.renderHandles = false;
+    changed = true;
+  } else if (renderHandles && data.renderHandles === false) {
+    next.renderHandles = true;
+    changed = true;
+  }
+  if (extra?.showEdgeStubs !== undefined && data.showEdgeStubs !== extra.showEdgeStubs) {
+    next.showEdgeStubs = extra.showEdgeStubs;
+    changed = true;
+  }
+  if (extra?.detailLevel !== undefined && data.detailLevel !== extra.detailLevel) {
+    next.detailLevel = extra.detailLevel;
+    changed = true;
+  }
+  if (extra?.activeEdgeStubPorts !== undefined && data.activeEdgeStubPorts !== extra.activeEdgeStubPorts) {
+    next.activeEdgeStubPorts = extra.activeEdgeStubPorts;
+    changed = true;
+  }
+
+  return changed ? Object.assign({}, node, { data: Object.assign({}, node.data, next) }) : node;
+}
+
+const FULL_DETAIL_PORT_BUDGET = 512;
+const FULL_DETAIL_ZOOM = 1.65;
+
 type FlowModelArgs = {
   nodes: RFNode[];
   edges: RFEdge[];
@@ -39,20 +77,24 @@ export function useFlowModel({
   const markWebglEdgesUnavailable = useCallback(() => setWebglEdgesUnavailable(true), []);
   useEffect(() => { setWebglEdgesUnavailable(false); }, [namespace]);
 
+  // GL draws the cables whenever WebGL is usable; otherwise React Flow's SVG edges take over.
+  const webglEdges = WEBGL_OK && !webglEdgesUnavailable;
+
   const displayNodes = useMemo(() => {
     let ns = edgeLinkMode === 'enabled'
       ? nodes
       : nodes.filter((n) => n.type !== 'endpoint' || activeStubEndpointIds.has(n.id));
     if (shown) ns = ns.filter((n) => shown.has(n.id));
-    if (edgeLinkMode !== 'stub') return ns;
+    const renderHandles = !webglEdges;
+    if (edgeLinkMode !== 'stub') return renderHandles ? ns : ns.map((node) => withRenderData(node, renderHandles));
     const out: RFNode[] = [];
     for (const node of ns) {
       out.push(node.type === 'switch'
-        ? Object.assign({}, node, { data: Object.assign({}, node.data, { showEdgeStubs: true, activeEdgeStubPorts: activeStubPortIds }) })
-        : node);
+        ? withRenderData(node, renderHandles, { showEdgeStubs: true, activeEdgeStubPorts: activeStubPortIds })
+        : withRenderData(node, renderHandles));
     }
     return out;
-  }, [edgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds]);
+  }, [edgeLinkMode, nodes, shown, activeStubEndpointIds, activeStubPortIds, webglEdges]);
 
   const displayEdges = useMemo(() => {
     let base = edges;
@@ -69,11 +111,9 @@ export function useFlowModel({
     return base;
   }, [edgeLinkMode, edges, activeStubEdges, shown, adjacency]);
 
-  // GL draws the cables whenever WebGL is usable; otherwise React Flow's SVG edges take over.
-  const webglEdges = WEBGL_OK && !webglEdgesUnavailable;
   const useWebglNodeOverview = webglEdges && largeTopology && largeViewport.zoom < LARGE_WEBGL_NODE_ZOOM;
 
-  const flowNodes = useMemo(
+  const rawFlowNodes = useMemo(
     () => useWebglNodeOverview
       ? NO_NODES
       : largeTopology
@@ -81,6 +121,20 @@ export function useFlowModel({
         : displayNodes,
     [useWebglNodeOverview, largeTopology, displayNodes, largeViewport, windowSize],
   );
+  const flowNodes = useMemo(() => {
+    if (!largeTopology || useWebglNodeOverview || rawFlowNodes.length === 0) return rawFlowNodes;
+    let visiblePorts = 0;
+    for (const node of rawFlowNodes) {
+      if (node.type !== 'switch') continue;
+      visiblePorts += Number((node.data as { portCount?: unknown }).portCount) || 0;
+    }
+    const detailLevel = visiblePorts <= FULL_DETAIL_PORT_BUDGET || largeViewport.zoom >= FULL_DETAIL_ZOOM
+      ? 'full' as const
+      : 'summary' as const;
+    return rawFlowNodes.map((node) => node.type === 'switch'
+      ? withRenderData(node, !webglEdges, { detailLevel })
+      : node);
+  }, [largeTopology, useWebglNodeOverview, rawFlowNodes, largeViewport.zoom, webglEdges]);
   const flowNodeIds = useMemo(() => new Set(flowNodes.map((node) => node.id)), [flowNodes]);
   // the hovered cable rides above its neighbours — only meaningful for React Flow's SVG edges (the GL
   // layer orders traced cables on top itself). Applied here, not in displayEdges, so GL's `edges` prop

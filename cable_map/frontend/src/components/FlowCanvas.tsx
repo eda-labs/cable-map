@@ -43,6 +43,7 @@ interface FlowCanvasProps {
   onOpenNode: OpenNodeHandler;
   onClearSelection: () => void;
   onViewportChange: (v: Viewport) => void;
+  onViewportChangeEnd: (v: Viewport) => void;
   onWebglUnavailable: () => void;
 }
 
@@ -54,7 +55,7 @@ function FlowCanvas({
   webglEdges, useWebglNodeOverview,
   hasEdgeLinks, edgeLinkMode, onCycleEdgeLinkMode,
   onNodesChange, onInit, onSelectionChange, onOpenNode, onClearSelection,
-  onViewportChange, onWebglUnavailable,
+  onViewportChange, onViewportChangeEnd, onWebglUnavailable,
 }: FlowCanvasProps) {
   const grouped = useGroupedEdges();
   const lldpOn = useLldp();
@@ -91,6 +92,7 @@ function FlowCanvas({
       onSelectionChange={onSelectionChange}
       onPaneClick={() => { onClearSelection(); trace.clear(); onOpenNode(null); }}
       onMove={largeTopology ? (_, nextViewport) => onViewportChange(nextViewport) : undefined}
+      onMoveEnd={largeTopology ? (_, nextViewport) => onViewportChangeEnd(nextViewport) : undefined}
       fitView={!largeTopology}
       defaultViewport={largeTopology ? LARGE_DEFAULT_VIEWPORT : undefined}
       fitViewOptions={{ padding: largeTopology ? 0.05 : 0.12, maxZoom: largeTopology ? 0.5 : 1.5 }} panOnDrag selectionKeyCode="Shift" multiSelectionKeyCode="Shift"
@@ -98,7 +100,13 @@ function FlowCanvas({
       <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
       <TraceHud />
       {webglEdges && (
-        <GLEdges nodes={displayNodes} edges={displayEdges} dark={mode === 'dark'} onUnavailable={onWebglUnavailable} />
+        <GLEdges
+          nodes={displayNodes}
+          edges={displayEdges}
+          dark={mode === 'dark'}
+          lite={largeTopology && useWebglNodeOverview}
+          onUnavailable={onWebglUnavailable}
+        />
       )}
       {largeTopology && (
         <WebGLNodeLayer nodes={displayNodes} lldp={lldpOn} mode={mode} visible={useWebglNodeOverview} onUnavailable={onWebglUnavailable} />
