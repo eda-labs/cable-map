@@ -54,6 +54,16 @@
               "kind": "lineCard",
               "type": "i48-400g-qsfpdd-1",
               "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "me12-100gb-qsfp28",
+              "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "me6-100gb-qsfp28",
+              "slot": "2"
             }
           ]
         },
@@ -151,6 +161,123 @@
           "type": "interSwitch",
           "lldpStatus": "ok",
           "lldpPeer": "mix-leaf-sxr ethernet-1-1"
+        },
+        {
+          "label": "ethernet-1-9",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1-46s",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-46s 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-10",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1-92s",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-92s 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-11",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1x-48d",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1x-48d 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-12",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1x-92s",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1x-92s 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-13",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1se-imm",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1se-imm 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-14",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1-mda-me12-me6",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-mda-me12-me6 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-15",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1-iom-me6",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-iom-me6 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-16",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1se-direct",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1se-direct 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-17",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1s-s18",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1s-s18 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-18",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr1s-s36",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1s-s36 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-19",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr2s-ms16-ms8",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr2s-ms16-ms8 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-20",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr2se-x2-mse6",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr2se-x2-mse6 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-21",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-sros-sr2se-m36-mse24",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr2se-m36-mse24 1/1/c1/1"
         }
       ],
       "raw": {
@@ -276,6 +403,123 @@
           "type": "interSwitch",
           "lldpStatus": "ok",
           "lldpPeer": "mix-leaf-sxr ethernet-1-2"
+        },
+        {
+          "label": "1/1/c10/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1-46s",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-46s 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c11/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1-92s",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-92s 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c12/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1x-48d",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1x-48d 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c13/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1x-92s",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1x-92s 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c14/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1se-imm",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1se-imm 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c15/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1-mda-me12-me6",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-mda-me12-me6 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c16/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1-iom-me6",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1-iom-me6 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c17/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1se-direct",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1se-direct 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c18/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1s-s18",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1s-s18 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c19/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr1s-s36",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr1s-s36 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c20/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr2s-ms16-ms8",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr2s-ms16-ms8 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c21/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr2se-x2-mse6",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr2se-x2-mse6 1/1/c2/1"
+        },
+        {
+          "label": "1/1/c22/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-sros-sr2se-m36-mse24",
+          "remotePort": "1/1/c2/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-sros-sr2se-m36-mse24 1/1/c2/1"
         }
       ],
       "raw": {
@@ -303,7 +547,7 @@
             },
             {
               "kind": "mda",
-              "type": "ms4-400gb-qsfpdd-4-100gb-qsfp28",
+              "type": "ms4-400gb-qsfpdd+4-100gb-qsfp28",
               "slot": "2"
             }
           ]
@@ -755,7 +999,7 @@
           "component": [
             {
               "kind": "mda",
-              "type": "ms16-100gb-sfpdd-4-100gb-qsfp28",
+              "type": "ms16-100gb-sfpdd+4-100gb-qsfp28",
               "slot": "1"
             }
           ]
@@ -824,6 +1068,915 @@
           "platform": "7730 SXR-1D-32D",
           "operatingSystem": "srl",
           "version": "24.7.1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1-46s",
+      "platform": "7750 SR-1",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1-46s"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-9",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-9"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c10/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c10/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1-46s",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1-46s"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "lineCard",
+              "type": "i40-200g-sfpdd+6-800g-qsfpdd-1",
+              "slot": "1"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1-92s",
+      "platform": "7750 SR-1",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1-92s"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-10",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-10"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c11/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c11/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1-92s",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1-92s"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "lineCard",
+              "type": "i80-200g-sfpdd+12-400g-qsfpdd-1",
+              "slot": "1"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1x-48d",
+      "platform": "7750 SR-1",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1x-48d"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-11",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-11"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c12/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c12/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1x-48d",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1x-48d"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "lineCard",
+              "type": "i48-800g-qsfpdd-1x",
+              "slot": "1"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1x-92s",
+      "platform": "7750 SR-1",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1x-92s"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-12",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-12"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c13/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c13/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1x-92s",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1x-92s"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "lineCard",
+              "type": "i80-200g-sfpdd+12-800g-qsfpdd-1x",
+              "slot": "1"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1se-imm",
+      "platform": "7750 SR-1",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1se-imm"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-13",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-13"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c14/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c14/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1se-imm",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1se-imm"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "lineCard",
+              "type": "imm36-800g-qsfpdd",
+              "slot": "1"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1-mda-me12-me6",
+      "platform": "7750 SR-1",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1-mda-me12-me6"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-14",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-14"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c15/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c15/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1-mda-me12-me6",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1-mda-me12-me6"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "mda",
+              "type": "me12-100gb-qsfp28",
+              "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "me6-100gb-qsfp28",
+              "slot": "2"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1-iom-me6",
+      "platform": "7750 SR-1",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1-iom-me6"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-15",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-15"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c16/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c16/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1-iom-me6",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1-iom-me6"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "lineCard",
+              "type": "iom-1",
+              "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "me6-100gb-qsfp28",
+              "slot": "1-a"
+            },
+            {
+              "kind": "connector",
+              "type": "c10-10g",
+              "slot": "1-a-1"
+            },
+            {
+              "kind": "connector",
+              "type": "c10-10g",
+              "slot": "1-a-2"
+            },
+            {
+              "kind": "connector",
+              "type": "c10-10g",
+              "slot": "1-a-3"
+            },
+            {
+              "kind": "connector",
+              "type": "c10-10g",
+              "slot": "1-a-4"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1se-direct",
+      "platform": "7750 SR-1se",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1se-direct"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-16",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-16"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c17/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c17/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1se-direct",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1se-direct"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1se",
+          "operatingSystem": "sros"
+        },
+        "status": {
+          "platform": "7750 SR-1se",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1s-s18",
+      "platform": "7750 SR-1s",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1s-s18"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-17",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-17"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c18/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c18/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1s-s18",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1s-s18"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1s",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "mda",
+              "type": "s18-100gb-qsfp28",
+              "slot": "1"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1s",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr1s-s36",
+      "platform": "7750 SR-1s",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr1s-s36"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-18",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-18"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c19/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c19/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr1s-s36",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr1s-s36"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1s",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "mda",
+              "type": "s36-400gb-qsfpdd",
+              "slot": "1"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1s",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr2s-ms16-ms8",
+      "platform": "7750 SR-2s",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr2s-ms16-ms8"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-19",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-19"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c20/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c20/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr2s-ms16-ms8",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr2s-ms16-ms8"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-2s",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "mda",
+              "type": "ms16-100gb-sfpdd+4-100gb-qsfp28",
+              "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "ms8-100gb-sfpdd+2-100gb-qsfp28",
+              "slot": "2"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-2s",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr2se-x2-mse6",
+      "platform": "7750 SR-2se",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr2se-x2-mse6"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-20",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-20"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c21/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c21/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr2se-x2-mse6",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr2se-x2-mse6"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-2se",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "mda",
+              "type": "x2-s36-800g-qsfpdd-18.0t",
+              "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "mse6-800g-qsfpdd",
+              "slot": "2"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-2se",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "mix-sros-sr2se-m36-mse24",
+      "platform": "7750 SR-2se",
+      "os": "sros",
+      "role": "leaf",
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "leaf",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "sros-variants",
+        "eda.nokia.com/rack": "mix-sros-sr2se-m36-mse24"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "leaf fabric A",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-21",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-21"
+        },
+        {
+          "label": "1/1/c2/1",
+          "desc": "leaf fabric B",
+          "remoteNode": "mix-spine-sros",
+          "remotePort": "1/1/c22/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-sros 1/1/c22/1"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "mix-sros-sr2se-m36-mse24",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "leaf",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "sros-variants",
+            "eda.nokia.com/rack": "mix-sros-sr2se-m36-mse24"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-2se",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "mda",
+              "type": "m36-800g-qsfpdd",
+              "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "mse24-200g-sfpdd",
+              "slot": "2"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-2se",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
           "node-state": "connected"
         }
       }
@@ -965,6 +2118,214 @@
       "sourcePort": "ethernet-1-2",
       "targetPort": "1/1/c9/1",
       "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-46s-mix-spine-srl-18",
+      "source": "mix-sros-sr1-46s",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-9",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-46s-mix-spine-sros-19",
+      "source": "mix-sros-sr1-46s",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c10/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-92s-mix-spine-srl-20",
+      "source": "mix-sros-sr1-92s",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-10",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-92s-mix-spine-sros-21",
+      "source": "mix-sros-sr1-92s",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c11/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1x-48d-mix-spine-srl-22",
+      "source": "mix-sros-sr1x-48d",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-11",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1x-48d-mix-spine-sros-23",
+      "source": "mix-sros-sr1x-48d",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c12/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1x-92s-mix-spine-srl-24",
+      "source": "mix-sros-sr1x-92s",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-12",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1x-92s-mix-spine-sros-25",
+      "source": "mix-sros-sr1x-92s",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c13/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1se-imm-mix-spine-srl-26",
+      "source": "mix-sros-sr1se-imm",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-13",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1se-imm-mix-spine-sros-27",
+      "source": "mix-sros-sr1se-imm",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c14/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-mda-me12-me6-mix-spine-srl-28",
+      "source": "mix-sros-sr1-mda-me12-me6",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-14",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-mda-me12-me6-mix-spine-sros-29",
+      "source": "mix-sros-sr1-mda-me12-me6",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c15/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-iom-me6-mix-spine-srl-30",
+      "source": "mix-sros-sr1-iom-me6",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-15",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1-iom-me6-mix-spine-sros-31",
+      "source": "mix-sros-sr1-iom-me6",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c16/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1se-direct-mix-spine-srl-32",
+      "source": "mix-sros-sr1se-direct",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-16",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1se-direct-mix-spine-sros-33",
+      "source": "mix-sros-sr1se-direct",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c17/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1s-s18-mix-spine-srl-34",
+      "source": "mix-sros-sr1s-s18",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-17",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1s-s18-mix-spine-sros-35",
+      "source": "mix-sros-sr1s-s18",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c18/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1s-s36-mix-spine-srl-36",
+      "source": "mix-sros-sr1s-s36",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-18",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr1s-s36-mix-spine-sros-37",
+      "source": "mix-sros-sr1s-s36",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c19/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr2s-ms16-ms8-mix-spine-srl-38",
+      "source": "mix-sros-sr2s-ms16-ms8",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-19",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr2s-ms16-ms8-mix-spine-sros-39",
+      "source": "mix-sros-sr2s-ms16-ms8",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c20/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr2se-x2-mse6-mix-spine-srl-40",
+      "source": "mix-sros-sr2se-x2-mse6",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-20",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr2se-x2-mse6-mix-spine-sros-41",
+      "source": "mix-sros-sr2se-x2-mse6",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c21/1",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr2se-m36-mse24-mix-spine-srl-42",
+      "source": "mix-sros-sr2se-m36-mse24",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-21",
+      "type": "interSwitch"
+    },
+    {
+      "id": "mix-mix-sros-sr2se-m36-mse24-mix-spine-sros-43",
+      "source": "mix-sros-sr2se-m36-mse24",
+      "target": "mix-spine-sros",
+      "sourcePort": "1/1/c2/1",
+      "targetPort": "1/1/c22/1",
+      "type": "interSwitch"
     }
   ],
   "lags": {
@@ -1064,9 +2425,23 @@
     ],
     "eda.nokia.com/pod": [
       "edge",
-      "pod-00"
+      "pod-00",
+      "sros-variants"
     ],
     "eda.nokia.com/rack": [
+      "mix-sros-sr1-46s",
+      "mix-sros-sr1-92s",
+      "mix-sros-sr1-iom-me6",
+      "mix-sros-sr1-mda-me12-me6",
+      "mix-sros-sr1s-s18",
+      "mix-sros-sr1s-s36",
+      "mix-sros-sr1se-direct",
+      "mix-sros-sr1se-imm",
+      "mix-sros-sr1x-48d",
+      "mix-sros-sr1x-92s",
+      "mix-sros-sr2s-ms16-ms8",
+      "mix-sros-sr2se-m36-mse24",
+      "mix-sros-sr2se-x2-mse6",
       "rack-01",
       "rack-02",
       "rack-03",

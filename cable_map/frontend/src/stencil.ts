@@ -32,6 +32,20 @@ const MODULAR_CHASSIS = new Set(['7750 SR-1', '7750 SR-1s', '7750 SR-2s', '7750 
 // '/' and '+' are mangled in stencil filenames/URLs (slash = path sep, '+' decodes to space in the
 // static-server path), so the composites are written with them flattened to '-'; match that here.
 const sanitise = (t: string) => t.replace(/[/+]/g, '-');
+const twoBaySlot = (slot?: string): string => {
+  const tail = (slot ?? '').split('/').pop() || '1';
+  const letter = tail.toLowerCase().split(/[-_]/).find((part) => part === 'a' || part === 'b');
+  if (letter === 'a') return '1';
+  if (letter === 'b') return '2';
+  return tail;
+};
+const sr1LineCardStencil = (type: string): string | undefined => {
+  const exact = SR1_LINECARD_STENCIL[type];
+  if (exact) return exact;
+  const normalised = sanitise(type);
+  return Object.entries(SR1_LINECARD_STENCIL)
+    .find(([lineCard]) => sanitise(lineCard) === normalised)?.[1];
+};
 const mdaTypes = (components?: Component[]): string[] =>
   (components ?? [])
     .filter((c) => c.kind === 'mda' && c.type)
@@ -41,6 +55,13 @@ const mdaTypes = (components?: Component[]): string[] =>
 // The stencil name to render for a node: a card-derived variant for modular chassis when that stencil
 // exists, else its platform if that already names a stencil, else the platform unchanged (schematic).
 export function stencilFor(platform: string, components?: Component[]): string {
+  // 7750 SR-1 integrated variants are fixed faceplates. Some EDA inventories can still include
+  // MDA-ish component rows; the line card wins because there is only one real front panel.
+  if (platform === '7750 SR-1') {
+    const lineCard = components?.find((c) => c.kind === 'lineCard')?.type;
+    const variant = lineCard && sr1LineCardStencil(lineCard);
+    if (variant) return variant;
+  }
   // 7750 SR-1s also takes a full-width XMA-s (s18/s36) that fills the XCM -> single faceplate;
   // its ms* MDAs pair via the two-bay branch below.
   if (platform === '7750 SR-1s') {
@@ -56,7 +77,7 @@ export function stencilFor(platform: string, components?: Component[]): string {
     const bay = new Map<string, string>();
     for (const c of components ?? []) {
       if (c.kind !== 'mda' || !c.type) continue;
-      const b = (c.slot ?? '').split('/').pop() || '1';
+      const b = twoBaySlot(c.slot);
       if (!bay.has(b)) bay.set(b, sanitise(c.type));
     }
     if (bay.size) {
@@ -99,11 +120,6 @@ export function stencilFor(platform: string, components?: Component[]): string {
       const pair = `7750 SR-2s ${bySlot.get('1') ?? 'blank'}_${bySlot.get('2') ?? 'blank'}`;
       if (hasFrontPanelMeta(pair)) return pair;
     }
-  }
-  // 7750 SR-1: integrated line-card variants report the bare modular platform -> fixed-variant stencil.
-  if (platform === '7750 SR-1') {
-    const lineCard = components?.find((c) => c.kind === 'lineCard')?.type;
-    if (lineCard && SR1_LINECARD_STENCIL[lineCard]) return SR1_LINECARD_STENCIL[lineCard];
   }
   if (SINGLE_MDA_CHASSIS.has(platform)) {
     const mda = mdaTypes(components)[0];
