@@ -23,6 +23,88 @@ const iface = (port) => `ethernet-1-${port}`;
 const breakoutIface = (port, channel) => `ethernet-1-${port}-${channel}`;
 const srosIface = (port, channel = 1) => `1/1/c${port}/${channel}`;
 
+function rackPlacement({ rack, row: rackRow, rowIndex, position, side = 'front', u, units }) {
+  const labels = {
+    'eda.nokia.com/rack': rack,
+    'eda.nokia.com/rack-row': rackRow,
+    'eda.nokia.com/rack-position': String(position),
+    'eda.nokia.com/rack-side': side,
+  };
+  if (rowIndex != null) labels['eda.nokia.com/rack-row-index'] = String(rowIndex);
+  if (u != null) labels['eda.nokia.com/rack-u'] = String(u);
+  if (units != null) labels['eda.nokia.com/rack-units'] = String(units);
+  return labels;
+}
+
+function rackRowName(rowIndex) {
+  return `row-${pad(rowIndex, 2)}`;
+}
+
+function rackName(rowIndex, position) {
+  return `rack-${pad(rowIndex, 2)}-${pad(position, 2)}`;
+}
+
+function pairedRackPlacement(_prefix, pod, pair, { u, units = 1, rowIndex = pod + 1 } = {}) {
+  const position = pair + 1;
+  return rackPlacement({
+    rack: rackName(rowIndex, position),
+    row: rackRowName(rowIndex),
+    rowIndex,
+    position,
+    side: 'front',
+    u,
+    units,
+  });
+}
+
+function pairedLeafRack(prefix, pod, leafInPod, units = 1, rowIndex = pod + 1) {
+  return pairedRackPlacement(prefix, pod, Math.floor(leafInPod / 2), {
+    rowIndex,
+    u: leafInPod % 2 === 0 ? 37 : 34,
+    units,
+  });
+}
+
+function aiRackPlacement(pair, { u, units = 2 } = {}) {
+  const rowIndex = Math.floor(pair / 16) + 1;
+  const position = (pair % 16) + 1;
+  return rackPlacement({
+    rack: rackName(rowIndex, position),
+    row: rackRowName(rowIndex),
+    rowIndex,
+    position,
+    side: 'front',
+    u,
+    units,
+  });
+}
+
+const SCALE_PODS_PER_ROW = 3;
+const SCALE_RACKS_PER_POD = 10;
+const SCALE_EDGE_RACKS_PER_ROW = 25;
+const SCALE_POD_ROW_COUNT = Math.ceil(40 / SCALE_PODS_PER_ROW);
+
+function scalePodRackPlacement(pod, pair, { u, units = 1 } = {}) {
+  const rowIndex = Math.floor(pod / SCALE_PODS_PER_ROW) + 1;
+  const position = (pod % SCALE_PODS_PER_ROW) * SCALE_RACKS_PER_POD + pair + 1;
+  return rackPlacement({
+    rack: rackName(rowIndex, position),
+    row: rackRowName(rowIndex),
+    rowIndex,
+    position,
+    side: 'front',
+    u,
+    units,
+  });
+}
+
+function scaleLeafRack(pod, leafInPod, units = 1) {
+  return scalePodRackPlacement(pod, Math.floor(leafInPod / 2), {
+    u: leafInPod % 2 === 0 ? 37 : 34,
+    units,
+  });
+}
+
 function makeRaw(name, platform, os, labels, namespace, components = undefined) {
   const spec = { platform, operatingSystem: os };
   if (components?.length) spec.component = components;
@@ -109,6 +191,28 @@ function topology(nodes, links, lags) {
   return { nodes, links, lags, labels: collectLabels(nodes) };
 }
 
+function assertPhysicalRackFixture(name, topo) {
+  const racks = new Map();
+  for (const node of topo.nodes) {
+    const rack = node.labels?.['eda.nokia.com/rack'];
+    if (!rack) throw new Error(`${name}: ${node.name} has no physical rack label`);
+    if (!/^rack-\d{2}-\d{2}$/.test(rack)) {
+      throw new Error(`${name}: ${node.name} uses non-physical rack label ${rack}`);
+    }
+    const nodes = racks.get(rack) ?? [];
+    nodes.push(node);
+    racks.set(rack, nodes);
+  }
+
+  for (const [rack, nodes] of racks) {
+    const roles = new Set(nodes.map((node) => node.role));
+    if ((roles.has('spine') || roles.has('superspine')) && !roles.has('leaf')) {
+      const names = nodes.map((node) => `${node.name}:${node.role}`).join(', ');
+      throw new Error(`${name}: ${rack} has spine/superspine devices without leaf devices (${names})`);
+    }
+  }
+}
+
 function buildGoldenTopology() {
   const namespace = 'demo';
   const version = 'dev-golden';
@@ -158,10 +262,12 @@ function buildGoldenTopology() {
   }
 
   for (let i = 0; i < SUPERSPINE_COUNT; i += 1) {
+    const pod = i % 4;
     addNode(`super-${pad(i, 2)}`, 'superspine', SUPERSPINE_PLATFORM, {
       'eda.nokia.com/role': 'superspine',
       'eda.nokia.com/plane': `plane-${pad(i % 4, 2)}`,
       'eda.nokia.com/golden': 'dev-fixture',
+      ...pairedRackPlacement('DEMO', pod, 4, { rowIndex: pod + 1, u: 20, units: 5 }),
     });
   }
 
@@ -172,6 +278,7 @@ function buildGoldenTopology() {
       'eda.nokia.com/pod': `pod-${pad(pod, 2)}`,
       'eda.nokia.com/plane': `plane-${pad(i % 4, 2)}`,
       'eda.nokia.com/golden': 'dev-fixture',
+      ...pairedRackPlacement('DEMO', pod, i % 4, { rowIndex: pod + 1, u: 25, units: 4 }),
     });
   }
 
@@ -180,8 +287,8 @@ function buildGoldenTopology() {
     const leaf = addNode(`leaf-${pad(i, 4)}`, 'leaf', LEAF_PLATFORM, {
       'eda.nokia.com/role': 'leaf',
       'eda.nokia.com/pod': `pod-${pad(pod, 2)}`,
-      'eda.nokia.com/rack': `rack-${pad(i % POD_SIZE, 2)}`,
       'eda.nokia.com/golden': 'dev-fixture',
+      ...pairedLeafRack('DEMO', pod, i % POD_SIZE, 1, pod + 1),
     });
     if (leafUsesBreakout(i)) {
       leaf.breakouts = {
@@ -502,7 +609,10 @@ function buildMixedSrosTopology() {
     role: 'superspine',
     platform: '7750 SR-1',
     os: 'sros',
-    labels: { 'eda.nokia.com/plane': 'plane-00' },
+    labels: {
+      'eda.nokia.com/plane': 'plane-00',
+      ...rackPlacement({ rack: rackName(1, 2), row: rackRowName(1), rowIndex: 1, position: 2, side: 'front', u: 22, units: 1 }),
+    },
     components: [
       { kind: 'lineCard', type: 'i48-400g-qsfpdd-1', slot: '1' },
       { kind: 'mda', type: 'me12-100gb-qsfp28', slot: '1' },
@@ -513,14 +623,22 @@ function buildMixedSrosTopology() {
     name: 'mix-spine-srl',
     role: 'spine',
     platform: '7220 IXR-H4',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/plane': 'plane-00' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      'eda.nokia.com/plane': 'plane-00',
+      ...rackPlacement({ rack: rackName(1, 1), row: rackRowName(1), rowIndex: 1, position: 1, side: 'front', u: 25, units: 4 }),
+    },
   });
   addNode({
     name: 'mix-spine-sros',
     role: 'spine',
     platform: '7750 SR-1s',
     os: 'sros',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/plane': 'plane-01' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      'eda.nokia.com/plane': 'plane-01',
+      ...rackPlacement({ rack: rackName(1, 3), row: rackRowName(1), rowIndex: 1, position: 3, side: 'front', u: 25, units: 1 }),
+    },
     components: [
       { kind: 'mda', type: 'ms18-100gb-qsfp28', slot: '1' },
       { kind: 'mda', type: 'ms4-400gb-qsfpdd+4-100gb-qsfp28', slot: '2' },
@@ -531,7 +649,11 @@ function buildMixedSrosTopology() {
     role: 'borderleaf',
     platform: '7750 SR-2s',
     os: 'sros',
-    labels: { 'eda.nokia.com/site': 'dc-a', 'eda.nokia.com/pod': 'edge' },
+    labels: {
+      'eda.nokia.com/site': 'dc-a',
+      'eda.nokia.com/pod': 'edge',
+      ...rackPlacement({ rack: rackName(2, 1), row: rackRowName(2), rowIndex: 2, position: 1, side: 'front', u: 36, units: 2 }),
+    },
     components: [
       { kind: 'mda', type: 's36-400gb-qsfpdd', slot: '1' },
       { kind: 'mda', type: 's18-100gb-qsfp28', slot: '2' },
@@ -541,26 +663,38 @@ function buildMixedSrosTopology() {
     name: 'mix-leaf-d3l',
     role: 'leaf',
     platform: '7220 IXR-D3L',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-01' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      ...rackPlacement({ rack: rackName(1, 1), row: rackRowName(1), rowIndex: 1, position: 1, side: 'front', u: 37, units: 1 }),
+    },
   });
   addNode({
     name: 'mix-leaf-d2',
     role: 'leaf',
     platform: '7220 IXR-D2',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-02' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      ...rackPlacement({ rack: rackName(1, 1), row: rackRowName(1), rowIndex: 1, position: 1, side: 'front', u: 35, units: 1 }),
+    },
   });
   addNode({
     name: 'mix-leaf-h3',
     role: 'leaf',
     platform: '7220 IXR-H3',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-03' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      ...rackPlacement({ rack: rackName(1, 2), row: rackRowName(1), rowIndex: 1, position: 2, side: 'front', u: 35, units: 3 }),
+    },
   });
   const sr1Leaf = addNode({
     name: 'mix-leaf-sr1',
     role: 'leaf',
     platform: '7750 SR-1',
     os: 'sros',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-04' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      ...rackPlacement({ rack: rackName(1, 2), row: rackRowName(1), rowIndex: 1, position: 2, side: 'front', u: 30, units: 1 }),
+    },
     components: [{ kind: 'lineCard', type: 'i24-800g-qsfpdd-1', slot: '1' }],
   });
   sr1Leaf.breakouts = { 3: { channels: 4, speed: '100G' } };
@@ -569,7 +703,10 @@ function buildMixedSrosTopology() {
     role: 'leaf',
     platform: '7750 SR-1s',
     os: 'sros',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-05' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      ...rackPlacement({ rack: rackName(1, 3), row: rackRowName(1), rowIndex: 1, position: 3, side: 'front', u: 36, units: 1 }),
+    },
     components: [{ kind: 'mda', type: 'ms16-100gb-sfpdd+4-100gb-qsfp28', slot: '1' }],
   });
   addNode({
@@ -577,17 +714,33 @@ function buildMixedSrosTopology() {
     role: 'leaf',
     platform: '7730 SXR-1D-32D',
     os: 'srl',
-    labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-06' },
+    labels: {
+      'eda.nokia.com/pod': 'pod-00',
+      ...rackPlacement({ rack: rackName(1, 3), row: rackRowName(1), rowIndex: 1, position: 3, side: 'front', u: 34, units: 1 }),
+    },
   });
 
   const srosVariants = [];
   function addSrosVariant(name, platform, components) {
+    const variantIndex = srosVariants.length;
+    const position = variantIndex + 1;
     addNode({
       name,
       role: 'leaf',
       platform,
       os: 'sros',
-      labels: { 'eda.nokia.com/pod': 'sros-variants', 'eda.nokia.com/rack': name },
+      labels: {
+        'eda.nokia.com/pod': 'sros-variants',
+        ...rackPlacement({
+          rack: rackName(3, position),
+          row: rackRowName(3),
+          rowIndex: 3,
+          position,
+          side: 'front',
+          u: 34,
+          units: 1,
+        }),
+      },
       components,
     });
     srosVariants.push(name);
@@ -746,28 +899,44 @@ function buildLargeScaleTopology() {
   }
 
   for (let i = 0; i < 20; i += 1) {
+    const pod = Math.min(i * 2, 39);
     addNode(`scale-super-${pad(i, 2)}`, 'superspine', SUPERSPINE_PLATFORM, {
       'eda.nokia.com/plane': `plane-${pad(i, 2)}`,
+      ...scalePodRackPlacement(pod, 4, { u: 18, units: 5 }),
     });
   }
   for (let i = 0; i < 80; i += 1) {
+    const pod = Math.floor(i / 2);
     addNode(`scale-spine-${pad(i, 3)}`, 'spine', SPINE_PLATFORM, {
-      'eda.nokia.com/pod': `pod-${pad(Math.floor(i / 2), 2)}`,
+      'eda.nokia.com/pod': `pod-${pad(pod, 2)}`,
       'eda.nokia.com/plane': `plane-${pad(i % 20, 2)}`,
+      ...scalePodRackPlacement(pod, i % 2, { u: 25, units: 4 }),
     });
   }
   for (let i = 0; i < 100; i += 1) {
+    const rack = Math.floor(i / 2);
+    const rowIndex = SCALE_POD_ROW_COUNT + Math.floor(rack / SCALE_EDGE_RACKS_PER_ROW) + 1;
+    const position = (rack % SCALE_EDGE_RACKS_PER_ROW) + 1;
     addNode(`scale-border-${pad(i, 3)}`, 'borderleaf', '7750 SR-1-48D', {
       'eda.nokia.com/pod': `edge-${pad(Math.floor(i / 10), 2)}`,
-      'eda.nokia.com/rack': `border-${pad(i % 10, 2)}`,
+      ...rackPlacement({
+        rack: rackName(rowIndex, position),
+        row: rackRowName(rowIndex),
+        rowIndex,
+        position,
+        side: 'front',
+        u: i % 2 === 0 ? 36 : 32,
+        units: 2,
+      }),
     }, 'sros');
   }
   const leafPlatforms = ['7220 IXR-D3L', '7220 IXR-D2', '7220 IXR-D4', '7730 SXR-1D-32D'];
   for (let i = 0; i < 800; i += 1) {
     const srosLeaf = i % 20 === 0;
+    const pod = Math.floor(i / 20);
     addNode(`scale-leaf-${pad(i, 4)}`, 'leaf', srosLeaf ? '7750 SR-1-24D' : leafPlatforms[i % leafPlatforms.length], {
-      'eda.nokia.com/pod': `pod-${pad(Math.floor(i / 20), 2)}`,
-      'eda.nokia.com/rack': `rack-${pad(i % 20, 2)}`,
+      'eda.nokia.com/pod': `pod-${pad(pod, 2)}`,
+      ...scaleLeafRack(pod, i % 20, srosLeaf ? 1 : undefined),
     }, srosLeaf ? 'sros' : 'srl');
   }
 
@@ -864,18 +1033,22 @@ function buildAiFabricTopology() {
   }
 
   for (let i = 1; i <= 128; i += 1) {
+    const pair = Math.floor((i - 1) / 2);
     addNode(`l${pad(i, 3)}`, 'leaf', {
-      'eda.nokia.com/rack': `rack-${pad(i, 3)}`,
+      ...aiRackPlacement(pair, { u: i % 2 === 1 ? 36 : 32, units: 2 }),
     });
   }
   for (let i = 1; i <= 64; i += 1) {
     addNode(`s${pad(i, 3)}`, 'spine', {
       'eda.nokia.com/plane': `plane-${pad(((i - 1) % 16) + 1, 2)}`,
+      ...aiRackPlacement(i - 1, { u: 24, units: 2 }),
     });
   }
+  const superspineRackPairs = [19, 20, 27, 28];
   for (let i = 1; i <= 4; i += 1) {
     addNode(`ss${i}`, 'superspine', {
       'eda.nokia.com/plane': `plane-${pad(i, 2)}`,
+      ...aiRackPlacement(superspineRackPairs[i - 1], { u: 16, units: 2 }),
     });
   }
 
@@ -905,6 +1078,7 @@ function buildAiFabricTopology() {
 }
 
 function writeTopology(out, topo) {
+  assertPhysicalRackFixture(out.pathname, topo);
   fs.mkdirSync(new URL('.', out), { recursive: true });
   fs.writeFileSync(out, `${JSON.stringify(topo, null, 2)}\n`);
   const rowCount = topo.nodes.reduce((sum, node) => sum + node.table.length, 0);

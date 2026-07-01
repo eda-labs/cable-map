@@ -16,11 +16,15 @@ import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import LightModeIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeIcon from '@mui/icons-material/DarkModeOutlined';
 import SensorsIcon from '@mui/icons-material/SensorsOutlined';
+import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined';
+import ViewInArIcon from '@mui/icons-material/ViewInArOutlined';
 import SvgGlyph from './SvgGlyph';
 import pdfIcon from '../assets/icons/pdf.svg?raw';
 import excelIcon from '../assets/icons/excel.svg?raw';
@@ -51,6 +55,8 @@ interface AppToolbarProps {
   exportScope: 'all' | 'filtered' | 'selected';
   pdfLoading: boolean;
   onExportPdf: (ids: string[]) => void;
+  viewMode: 'topology' | 'racks';
+  onViewModeChange: (mode: 'topology' | 'racks') => void;
 }
 
 // Memoized: with stable callbacks (onToggleMode, onExportPdf) it skips re-render on App updates
@@ -60,6 +66,7 @@ function AppToolbar({
   mode, onToggleMode, ready, topo, query, onQueryChange, searchError,
   nodeLabelOptions, selectedLabels, onSelectedLabelsChange, labelFilterText, onLabelFilterTextChange,
   namespaces, namespace, onNamespaceChange, exportNodeIds, exportScope, pdfLoading, onExportPdf,
+  viewMode, onViewModeChange,
 }: AppToolbarProps) {
   const lldpOn = useLldp();
   const labelFilterTerms = useMemo(
@@ -90,12 +97,12 @@ function AppToolbar({
       : 'Download XLSX (all nodes)';
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
-      <Toolbar variant="dense" sx={{ gap: 1.5, position: 'relative' }}>
+      <Toolbar variant="dense" sx={{ gap: 1, position: 'relative', flexWrap: 'wrap', py: 0.5 }}>
         <img src={appPath('eda.svg')} alt="EDA" style={{ height: 26 }} />
-        <Typography variant="h6" sx={{ fontWeight: 200, color: 'text.primary' }}>EDA Cable Map</Typography>
-        <Box sx={{ flex: 1 }} />
+        <Typography variant="h6" sx={{ fontWeight: 200, color: 'text.primary', display: { xs: 'none', sm: 'block' } }}>EDA Cable Map</Typography>
+        {!ready && <Box sx={{ flex: 1 }} />}
         {ready && (
-          <Box sx={{ position: 'absolute', left: '50%', top: 0, bottom: 0, transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.75, width: 400, maxWidth: 400, overflow: 'hidden' }}>
+          <Box sx={{ order: { xs: 10, lg: 0 }, flex: { xs: '1 0 100%', lg: '1 1 240px' }, maxWidth: { xs: 'none', lg: 340 }, minWidth: { xs: '100%', lg: 180 }, display: 'flex', alignItems: 'center', gap: 0.75 }}>
             {/* Search locates matches by fitting the viewport; filtering is handled by the label dropdown. */}
             <TextField size="small" variant="outlined" value={query}
               onChange={(e) => onQueryChange(e.target.value)}
@@ -116,7 +123,7 @@ function AppToolbar({
           </Box>
         )}
         {ready && nodeLabelOptions.length > 0 && (
-          <FormControl size="small" sx={{ width: 260 }}>
+          <FormControl size="small" sx={{ width: { xs: 180, md: 220, xl: 260 } }}>
             <Box sx={{ position: 'relative' }}>
               <Select
                 multiple
@@ -211,6 +218,30 @@ function AppToolbar({
         )}
         {namespaces.length === 1 && namespace && (
           <Chip size="small" variant="outlined" label={namespace} sx={{ maxWidth: 180 }} />
+        )}
+        {ready && (
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={viewMode}
+            onChange={(_, next) => {
+              if (next === 'topology' || next === 'racks') onViewModeChange(next);
+            }}
+            aria-label="View mode"
+            sx={{
+              '& .MuiToggleButton-root': { height: 31, px: 1, gap: 0.5, color: 'text.secondary' },
+              '& .Mui-selected': { color: 'primary.main' },
+            }}
+          >
+            <ToggleButton value="topology" aria-label="Topology view">
+              <AccountTreeIcon sx={{ fontSize: 18 }} />
+              <Box component="span" sx={{ display: { xs: 'none', xl: 'inline' } }}>Topology</Box>
+            </ToggleButton>
+            <ToggleButton value="racks" aria-label="Rack view">
+              <ViewInArIcon sx={{ fontSize: 18 }} />
+              <Box component="span" sx={{ display: { xs: 'none', xl: 'inline' } }}>Racks</Box>
+            </ToggleButton>
+          </ToggleButtonGroup>
         )}
         {ready && (
           <Tooltip title={pdfTitle}>

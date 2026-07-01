@@ -18,6 +18,7 @@ import { useFlowModel } from './hooks/useFlowModel';
 import { useSearch } from './hooks/useSearch';
 import AppToolbar from './components/AppToolbar';
 import FlowCanvas from './components/FlowCanvas';
+import RackView from './components/RackView';
 import NodeDrawer from './components/NodeDrawer';
 import PdfExportProgress from './components/PdfExportProgress';
 import { type OpenNodeOptions } from './components/NodeActionsContext';
@@ -32,6 +33,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   const ready = !!topo && topo.nodes.length > 0;
   const largeTopology = useMemo(() => (topo ? isLargeTopology(topo) : false), [topo]);
   const windowSize = useWindowSize();
+  const [viewMode, setViewMode] = useState<'topology' | 'racks'>('topology');
 
   const [flow, setFlow] = useState<ReactFlowInstance | null>(null);
   const flowHostRef = useRef<HTMLDivElement | null>(null);
@@ -114,7 +116,14 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
           minZoom: NODE_FOCUS_ZOOM,
           bottomInset: drawerExpanded ? drawerHeight : 0,
         }).then((ok) => {
-          if (ok && viewportActionSeqRef.current === actionSeq) setPendingFocus({ name, pin, seq: actionSeq });
+          if (ok && viewportActionSeqRef.current === actionSeq) {
+            setPendingFocus({ name, pin, seq: actionSeq });
+            return;
+          }
+          if (!ok && viewportActionSeqRef.current === actionSeq) {
+            if (pin) trace.pin(`node:${name}`, true);
+            if (select) selectNode(name);
+          }
         });
         return;
       }
@@ -124,6 +133,9 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
   }, [centerNode, drawerExpanded, drawerHeight, graphNodeById, nextViewportActionSeq, selectNode]);
   const pdf = usePdfExport({ topo, namespace });
   const pdfLoading = pdf.pdfState.status === 'loading';
+  useEffect(() => {
+    if (viewMode === 'racks') setFlow(null);
+  }, [viewMode]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -147,10 +159,17 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         namespaces={namespaces} namespace={namespace} onNamespaceChange={setNamespace}
         exportNodeIds={exportNodeIds} exportScope={exportScope}
         pdfLoading={pdfLoading} onExportPdf={pdf.openPdf}
+        viewMode={viewMode} onViewModeChange={setViewMode}
       />
 
       <Box ref={flowHostRef} sx={{ flex: 1, minHeight: 0 }}>
-        {ready ? (
+        {ready && topo ? (
+          viewMode === 'racks' ? (
+            <RackView
+              topo={topo} shown={filter.shown} selected={graph.selected}
+              mode={mode} onOpenNode={selectDrawerNode} onClearSelection={graph.clearSelection}
+            />
+          ) : (
           <FlowCanvas
             mode={mode} largeTopology={largeTopology}
             flowNodes={flowModel.flowNodes} flowEdges={flowModel.flowEdges}
@@ -166,6 +185,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
             onViewportChangeEnd={viewport.settleLargeViewport}
             onWebglUnavailable={flowModel.markWebglEdgesUnavailable}
           />
+          )
         ) : (
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, color: 'text.secondary' }}>
             {!topo && !err ? (

@@ -10,7 +10,14 @@
       "labels": {
         "eda.nokia.com/role": "superspine",
         "eda.nokia.com/plane": "plane-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-05",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "20",
+        "eda.nokia.com/rack-units": "5"
       },
       "table": [
         {
@@ -95,7 +102,14 @@
           "labels": {
             "eda.nokia.com/role": "superspine",
             "eda.nokia.com/plane": "plane-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-05",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "20",
+            "eda.nokia.com/rack-units": "5"
           }
         },
         "spec": {
@@ -114,7 +128,14 @@
       "labels": {
         "eda.nokia.com/role": "superspine",
         "eda.nokia.com/plane": "plane-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-05",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "20",
+        "eda.nokia.com/rack-units": "5"
       },
       "table": [
         {
@@ -199,7 +220,14 @@
           "labels": {
             "eda.nokia.com/role": "superspine",
             "eda.nokia.com/plane": "plane-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-05",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "20",
+            "eda.nokia.com/rack-units": "5"
           }
         },
         "spec": {
@@ -218,7 +246,14 @@
       "labels": {
         "eda.nokia.com/role": "superspine",
         "eda.nokia.com/plane": "plane-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-05",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "20",
+        "eda.nokia.com/rack-units": "5"
       },
       "table": [
         {
@@ -303,7 +338,14 @@
           "labels": {
             "eda.nokia.com/role": "superspine",
             "eda.nokia.com/plane": "plane-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-05",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "20",
+            "eda.nokia.com/rack-units": "5"
           }
         },
         "spec": {
@@ -322,7 +364,14 @@
       "labels": {
         "eda.nokia.com/role": "superspine",
         "eda.nokia.com/plane": "plane-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-05",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "20",
+        "eda.nokia.com/rack-units": "5"
       },
       "table": [
         {
@@ -407,7 +456,14 @@
           "labels": {
             "eda.nokia.com/role": "superspine",
             "eda.nokia.com/plane": "plane-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-05",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "20",
+            "eda.nokia.com/rack-units": "5"
           }
         },
         "spec": {
@@ -427,7 +483,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-00",
         "eda.nokia.com/plane": "plane-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-01",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -859,7 +922,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-00",
             "eda.nokia.com/plane": "plane-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-01",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -879,7 +949,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-00",
         "eda.nokia.com/plane": "plane-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-02",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -1311,7 +1388,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-00",
             "eda.nokia.com/plane": "plane-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-02",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -1331,7 +1415,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-00",
         "eda.nokia.com/plane": "plane-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-03",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -1763,7 +1854,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-00",
             "eda.nokia.com/plane": "plane-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-03",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -1783,7 +1881,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-00",
         "eda.nokia.com/plane": "plane-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-04",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -2215,7 +2320,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-00",
             "eda.nokia.com/plane": "plane-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-04",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -2235,7 +2347,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-01",
         "eda.nokia.com/plane": "plane-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-01",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -2666,7 +2785,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-01",
             "eda.nokia.com/plane": "plane-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-01",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -2686,7 +2812,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-01",
         "eda.nokia.com/plane": "plane-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-02",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -3118,7 +3251,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-01",
             "eda.nokia.com/plane": "plane-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-02",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -3138,7 +3278,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-01",
         "eda.nokia.com/plane": "plane-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-03",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -3570,7 +3717,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-01",
             "eda.nokia.com/plane": "plane-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-03",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -3590,7 +3744,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-01",
         "eda.nokia.com/plane": "plane-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-04",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -4022,7 +4183,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-01",
             "eda.nokia.com/plane": "plane-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-04",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -4042,7 +4210,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-02",
         "eda.nokia.com/plane": "plane-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-01",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -4473,7 +4648,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-02",
             "eda.nokia.com/plane": "plane-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-01",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -4493,7 +4675,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-02",
         "eda.nokia.com/plane": "plane-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-02",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -4925,7 +5114,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-02",
             "eda.nokia.com/plane": "plane-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-02",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -4945,7 +5141,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-02",
         "eda.nokia.com/plane": "plane-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-03",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -5377,7 +5580,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-02",
             "eda.nokia.com/plane": "plane-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-03",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -5397,7 +5607,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-02",
         "eda.nokia.com/plane": "plane-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-04",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -5829,7 +6046,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-02",
             "eda.nokia.com/plane": "plane-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-04",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -5849,7 +6073,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-03",
         "eda.nokia.com/plane": "plane-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-01",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -6280,7 +6511,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-03",
             "eda.nokia.com/plane": "plane-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-01",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -6300,7 +6538,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-03",
         "eda.nokia.com/plane": "plane-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-02",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -6732,7 +6977,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-03",
             "eda.nokia.com/plane": "plane-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-02",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -6752,7 +7004,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-03",
         "eda.nokia.com/plane": "plane-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-03",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -7184,7 +7443,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-03",
             "eda.nokia.com/plane": "plane-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-03",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -7204,7 +7470,14 @@
         "eda.nokia.com/role": "spine",
         "eda.nokia.com/pod": "pod-03",
         "eda.nokia.com/plane": "plane-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-04",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -7636,7 +7909,14 @@
             "eda.nokia.com/role": "spine",
             "eda.nokia.com/pod": "pod-03",
             "eda.nokia.com/plane": "plane-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-04",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -7655,8 +7935,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-01",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -7817,8 +8103,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-01",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -7843,8 +8135,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-01",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -8005,8 +8303,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-01",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -8031,8 +8335,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-02",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -8193,8 +8503,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-02",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -8219,8 +8535,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-02",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -8381,8 +8703,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-02",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -8407,8 +8735,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-04",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-03",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -8569,8 +8903,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-04",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-03",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -8595,8 +8935,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-05",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-03",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -8757,8 +9103,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-05",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-03",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -8783,8 +9135,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-06",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-04",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -8945,8 +9303,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-06",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-04",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -8971,8 +9335,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-07",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-04",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -9133,8 +9503,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-07",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-04",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -9159,8 +9535,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-08",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-05",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -9321,8 +9703,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-08",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-05",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -9347,8 +9735,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-09",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-05",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -9509,8 +9903,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-09",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-05",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -9535,8 +9935,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-10",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-06",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -9697,8 +10103,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-10",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-06",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -9723,8 +10135,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-11",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-06",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -9885,8 +10303,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-11",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-06",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -9911,8 +10335,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-12",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-07",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -10073,8 +10503,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-12",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-07",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -10099,8 +10535,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-13",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-07",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -10261,8 +10703,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-13",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-07",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -10287,8 +10735,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-14",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-08",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -10429,8 +10883,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-14",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-08",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -10449,8 +10909,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-15",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-08",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -10591,8 +11057,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-15",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-08",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -10611,8 +11083,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-16",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-09",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -10753,8 +11231,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-16",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-09",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -10773,8 +11257,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-17",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-09",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -10915,8 +11405,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-17",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-09",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -10935,8 +11431,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-18",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-10",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -11077,8 +11579,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-18",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-10",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -11097,8 +11605,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-19",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-01-10",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -11239,8 +11753,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-19",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-01-10",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -11259,8 +11779,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-01",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -11401,8 +11927,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-01",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -11421,8 +11953,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-01",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -11563,8 +12101,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-01",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -11583,8 +12127,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-02",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -11725,8 +12275,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-02",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -11745,8 +12301,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-02",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -11887,8 +12449,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-02",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -11907,8 +12475,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-04",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-03",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -12048,8 +12622,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-04",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-03",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -12068,8 +12648,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-05",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-03",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -12210,8 +12796,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-05",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-03",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -12230,8 +12822,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-06",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-04",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -12372,8 +12970,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-06",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-04",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -12392,8 +12996,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-07",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-04",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -12534,8 +13144,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-07",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-04",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -12554,8 +13170,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-08",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-05",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -12696,8 +13318,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-08",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-05",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -12716,8 +13344,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-09",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-05",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -12858,8 +13492,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-09",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-05",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -12878,8 +13518,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-10",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-06",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -13020,8 +13666,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-10",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-06",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -13040,8 +13692,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-11",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-06",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -13182,8 +13840,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-11",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-06",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -13202,8 +13866,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-12",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-07",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -13344,8 +14014,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-12",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-07",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -13364,8 +14040,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-13",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-07",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -13506,8 +14188,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-13",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-07",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -13526,8 +14214,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-14",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-08",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -13668,8 +14362,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-14",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-08",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -13688,8 +14388,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-15",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-08",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -13830,8 +14536,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-15",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-08",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -13850,8 +14562,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-16",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-09",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -13992,8 +14710,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-16",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-09",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -14012,8 +14736,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-17",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-09",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -14154,8 +14884,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-17",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-09",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -14174,8 +14910,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-18",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-10",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -14316,8 +15058,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-18",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-10",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -14336,8 +15084,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-01",
-        "eda.nokia.com/rack": "rack-19",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-02-10",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -14478,8 +15232,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-01",
-            "eda.nokia.com/rack": "rack-19",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-02-10",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -14498,8 +15258,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-01",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -14640,8 +15406,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-01",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -14660,8 +15432,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-01",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -14802,8 +15580,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-01",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -14822,8 +15606,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-02",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -14964,8 +15754,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-02",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -14984,8 +15780,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-02",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -15126,8 +15928,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-02",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -15146,8 +15954,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-04",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-03",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -15288,8 +16102,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-04",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-03",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -15308,8 +16128,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-05",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-03",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -15450,8 +16276,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-05",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-03",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -15470,8 +16302,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-06",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-04",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -15612,8 +16450,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-06",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-04",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -15632,8 +16476,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-07",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-04",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -15774,8 +16624,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-07",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-04",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -15794,8 +16650,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-08",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-05",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -15935,8 +16797,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-08",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-05",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -15955,8 +16823,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-09",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-05",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -16097,8 +16971,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-09",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-05",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -16117,8 +16997,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-10",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-06",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -16259,8 +17145,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-10",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-06",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -16279,8 +17171,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-11",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-06",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -16421,8 +17319,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-11",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-06",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -16441,8 +17345,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-12",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-07",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -16583,8 +17493,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-12",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-07",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -16603,8 +17519,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-13",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-07",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -16745,8 +17667,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-13",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-07",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -16765,8 +17693,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-14",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-08",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -16907,8 +17841,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-14",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-08",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -16927,8 +17867,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-15",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-08",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -17069,8 +18015,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-15",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-08",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -17089,8 +18041,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-16",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-09",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -17231,8 +18189,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-16",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-09",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -17251,8 +18215,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-17",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-09",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -17393,8 +18363,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-17",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-09",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -17413,8 +18389,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-18",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-10",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -17555,8 +18537,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-18",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-10",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -17575,8 +18563,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-02",
-        "eda.nokia.com/rack": "rack-19",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-03-10",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -17717,8 +18711,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-02",
-            "eda.nokia.com/rack": "rack-19",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-03-10",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -17737,8 +18737,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-00",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-01",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -17879,8 +18885,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-00",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-01",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -17899,8 +18911,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-01",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-01",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -18041,8 +19059,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-01",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-01",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -18061,8 +19085,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-02",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-02",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -18203,8 +19233,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-02",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-02",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -18223,8 +19259,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-03",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-02",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -18365,8 +19407,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-03",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-02",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -18385,8 +19433,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-04",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-03",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -18527,8 +19581,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-04",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-03",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -18547,8 +19607,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-05",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-03",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -18689,8 +19755,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-05",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-03",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -18709,8 +19781,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-06",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-04",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -18851,8 +19929,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-06",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-04",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -18871,8 +19955,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-07",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-04",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -19013,8 +20103,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-07",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-04",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -19033,8 +20129,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-08",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-05",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -19175,8 +20277,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-08",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-05",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -19195,8 +20303,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-09",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-05",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -19337,8 +20451,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-09",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-05",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -19357,8 +20477,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-10",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-06",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -19499,8 +20625,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-10",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-06",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -19519,8 +20651,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-11",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-06",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -19661,8 +20799,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-11",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-06",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -19681,8 +20825,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-12",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-07",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -19822,8 +20972,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-12",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-07",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -19842,8 +20998,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-13",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-07",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -19984,8 +21146,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-13",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-07",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -20004,8 +21172,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-14",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-08",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -20146,8 +21320,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-14",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-08",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -20166,8 +21346,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-15",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-08",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -20308,8 +21494,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-15",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-08",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -20328,8 +21520,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-16",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-09",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -20470,8 +21668,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-16",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-09",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -20490,8 +21694,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-17",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-09",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -20632,8 +21842,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-17",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-09",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -20652,8 +21868,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-18",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-10",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -20794,8 +22016,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-18",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-10",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -20814,8 +22042,14 @@
       "labels": {
         "eda.nokia.com/role": "leaf",
         "eda.nokia.com/pod": "pod-03",
-        "eda.nokia.com/rack": "rack-19",
-        "eda.nokia.com/golden": "dev-fixture"
+        "eda.nokia.com/golden": "dev-fixture",
+        "eda.nokia.com/rack": "rack-04-10",
+        "eda.nokia.com/rack-row": "row-04",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "4",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -20956,8 +22190,14 @@
           "labels": {
             "eda.nokia.com/role": "leaf",
             "eda.nokia.com/pod": "pod-03",
-            "eda.nokia.com/rack": "rack-19",
-            "eda.nokia.com/golden": "dev-fixture"
+            "eda.nokia.com/golden": "dev-fixture",
+            "eda.nokia.com/rack": "rack-04-10",
+            "eda.nokia.com/rack-row": "row-04",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "4",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -38058,26 +39298,84 @@
       "pod-03"
     ],
     "eda.nokia.com/rack": [
-      "rack-00",
-      "rack-01",
-      "rack-02",
-      "rack-03",
-      "rack-04",
-      "rack-05",
-      "rack-06",
-      "rack-07",
-      "rack-08",
-      "rack-09",
-      "rack-10",
-      "rack-11",
-      "rack-12",
-      "rack-13",
-      "rack-14",
-      "rack-15",
-      "rack-16",
-      "rack-17",
-      "rack-18",
-      "rack-19"
+      "rack-01-01",
+      "rack-01-02",
+      "rack-01-03",
+      "rack-01-04",
+      "rack-01-05",
+      "rack-01-06",
+      "rack-01-07",
+      "rack-01-08",
+      "rack-01-09",
+      "rack-01-10",
+      "rack-02-01",
+      "rack-02-02",
+      "rack-02-03",
+      "rack-02-04",
+      "rack-02-05",
+      "rack-02-06",
+      "rack-02-07",
+      "rack-02-08",
+      "rack-02-09",
+      "rack-02-10",
+      "rack-03-01",
+      "rack-03-02",
+      "rack-03-03",
+      "rack-03-04",
+      "rack-03-05",
+      "rack-03-06",
+      "rack-03-07",
+      "rack-03-08",
+      "rack-03-09",
+      "rack-03-10",
+      "rack-04-01",
+      "rack-04-02",
+      "rack-04-03",
+      "rack-04-04",
+      "rack-04-05",
+      "rack-04-06",
+      "rack-04-07",
+      "rack-04-08",
+      "rack-04-09",
+      "rack-04-10"
+    ],
+    "eda.nokia.com/rack-position": [
+      "1",
+      "10",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "eda.nokia.com/rack-row": [
+      "row-01",
+      "row-02",
+      "row-03",
+      "row-04"
+    ],
+    "eda.nokia.com/rack-row-index": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "eda.nokia.com/rack-side": [
+      "front"
+    ],
+    "eda.nokia.com/rack-u": [
+      "20",
+      "25",
+      "34",
+      "37"
+    ],
+    "eda.nokia.com/rack-units": [
+      "1",
+      "4",
+      "5"
     ],
     "eda.nokia.com/role": [
       "leaf",

@@ -11,7 +11,14 @@
         "eda.nokia.com/role": "superspine",
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
-        "eda.nokia.com/plane": "plane-00"
+        "eda.nokia.com/plane": "plane-00",
+        "eda.nokia.com/rack": "rack-01-02",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "22",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -43,7 +50,14 @@
             "eda.nokia.com/role": "superspine",
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
-            "eda.nokia.com/plane": "plane-00"
+            "eda.nokia.com/plane": "plane-00",
+            "eda.nokia.com/rack": "rack-01-02",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "22",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -87,7 +101,14 @@
         "eda.nokia.com/os": "srl",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/plane": "plane-00"
+        "eda.nokia.com/plane": "plane-00",
+        "eda.nokia.com/rack": "rack-01-01",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "4"
       },
       "table": [
         {
@@ -291,7 +312,14 @@
             "eda.nokia.com/os": "srl",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/plane": "plane-00"
+            "eda.nokia.com/plane": "plane-00",
+            "eda.nokia.com/rack": "rack-01-01",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "4"
           }
         },
         "spec": {
@@ -318,7 +346,14 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/plane": "plane-01"
+        "eda.nokia.com/plane": "plane-01",
+        "eda.nokia.com/rack": "rack-01-03",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "25",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -533,7 +568,14 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/plane": "plane-01"
+            "eda.nokia.com/plane": "plane-01",
+            "eda.nokia.com/rack": "rack-01-03",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "25",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -572,7 +614,14 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/site": "dc-a",
-        "eda.nokia.com/pod": "edge"
+        "eda.nokia.com/pod": "edge",
+        "eda.nokia.com/rack": "rack-02-01",
+        "eda.nokia.com/rack-row": "row-02",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "2",
+        "eda.nokia.com/rack-u": "36",
+        "eda.nokia.com/rack-units": "2"
       },
       "table": [
         {
@@ -636,7 +685,14 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/site": "dc-a",
-            "eda.nokia.com/pod": "edge"
+            "eda.nokia.com/pod": "edge",
+            "eda.nokia.com/rack": "rack-02-01",
+            "eda.nokia.com/rack-row": "row-02",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "2",
+            "eda.nokia.com/rack-u": "36",
+            "eda.nokia.com/rack-units": "2"
           }
         },
         "spec": {
@@ -675,7 +731,13 @@
         "eda.nokia.com/os": "srl",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-01"
+        "eda.nokia.com/rack": "rack-01-01",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "37",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -717,7 +779,13 @@
             "eda.nokia.com/os": "srl",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-01"
+            "eda.nokia.com/rack": "rack-01-01",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "37",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -744,7 +812,13 @@
         "eda.nokia.com/os": "srl",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-02"
+        "eda.nokia.com/rack": "rack-01-01",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "35",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -787,7 +861,13 @@
             "eda.nokia.com/os": "srl",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-02"
+            "eda.nokia.com/rack": "rack-01-01",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "35",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -814,7 +894,13 @@
         "eda.nokia.com/os": "srl",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-03"
+        "eda.nokia.com/rack": "rack-01-02",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "35",
+        "eda.nokia.com/rack-units": "3"
       },
       "table": [
         {
@@ -847,7 +933,13 @@
             "eda.nokia.com/os": "srl",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-03"
+            "eda.nokia.com/rack": "rack-01-02",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "35",
+            "eda.nokia.com/rack-units": "3"
           }
         },
         "spec": {
@@ -874,7 +966,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-04"
+        "eda.nokia.com/rack": "rack-01-02",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "30",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -917,7 +1015,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-04"
+            "eda.nokia.com/rack": "rack-01-02",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "30",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -957,7 +1061,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-05"
+        "eda.nokia.com/rack": "rack-01-03",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "36",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -990,7 +1100,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-05"
+            "eda.nokia.com/rack": "rack-01-03",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "36",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1024,7 +1140,13 @@
         "eda.nokia.com/os": "srl",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "pod-00",
-        "eda.nokia.com/rack": "rack-06"
+        "eda.nokia.com/rack": "rack-01-03",
+        "eda.nokia.com/rack-row": "row-01",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "1",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1057,7 +1179,13 @@
             "eda.nokia.com/os": "srl",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "pod-00",
-            "eda.nokia.com/rack": "rack-06"
+            "eda.nokia.com/rack": "rack-01-03",
+            "eda.nokia.com/rack-row": "row-01",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "1",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1084,7 +1212,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1-46s"
+        "eda.nokia.com/rack": "rack-03-01",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "1",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1117,7 +1251,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1-46s"
+            "eda.nokia.com/rack": "rack-03-01",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "1",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1151,7 +1291,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1-92s"
+        "eda.nokia.com/rack": "rack-03-02",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "2",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1184,7 +1330,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1-92s"
+            "eda.nokia.com/rack": "rack-03-02",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "2",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1218,7 +1370,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1x-48d"
+        "eda.nokia.com/rack": "rack-03-03",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "3",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1251,7 +1409,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1x-48d"
+            "eda.nokia.com/rack": "rack-03-03",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "3",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1285,7 +1449,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1x-92s"
+        "eda.nokia.com/rack": "rack-03-04",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "4",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1318,7 +1488,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1x-92s"
+            "eda.nokia.com/rack": "rack-03-04",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "4",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1352,7 +1528,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1se-imm"
+        "eda.nokia.com/rack": "rack-03-05",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "5",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1385,7 +1567,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1se-imm"
+            "eda.nokia.com/rack": "rack-03-05",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "5",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1419,7 +1607,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1-mda-me12-me6"
+        "eda.nokia.com/rack": "rack-03-06",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "6",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1452,7 +1646,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1-mda-me12-me6"
+            "eda.nokia.com/rack": "rack-03-06",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "6",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1491,7 +1691,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1-iom-me6"
+        "eda.nokia.com/rack": "rack-03-07",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "7",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1524,7 +1730,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1-iom-me6"
+            "eda.nokia.com/rack": "rack-03-07",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "7",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1583,7 +1795,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1se-direct"
+        "eda.nokia.com/rack": "rack-03-08",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "8",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1616,7 +1834,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1se-direct"
+            "eda.nokia.com/rack": "rack-03-08",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "8",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1643,7 +1867,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1s-s18"
+        "eda.nokia.com/rack": "rack-03-09",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "9",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1676,7 +1906,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1s-s18"
+            "eda.nokia.com/rack": "rack-03-09",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "9",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1710,7 +1946,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr1s-s36"
+        "eda.nokia.com/rack": "rack-03-10",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "10",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1743,7 +1985,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr1s-s36"
+            "eda.nokia.com/rack": "rack-03-10",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "10",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1777,7 +2025,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr2s-ms16-ms8"
+        "eda.nokia.com/rack": "rack-03-11",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "11",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1810,7 +2064,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr2s-ms16-ms8"
+            "eda.nokia.com/rack": "rack-03-11",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "11",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1849,7 +2109,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr2se-x2-mse6"
+        "eda.nokia.com/rack": "rack-03-12",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "12",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1882,7 +2148,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr2se-x2-mse6"
+            "eda.nokia.com/rack": "rack-03-12",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "12",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -1921,7 +2193,13 @@
         "eda.nokia.com/os": "sros",
         "eda.nokia.com/dev-fixture": "mixed-sros",
         "eda.nokia.com/pod": "sros-variants",
-        "eda.nokia.com/rack": "mix-sros-sr2se-m36-mse24"
+        "eda.nokia.com/rack": "rack-03-13",
+        "eda.nokia.com/rack-row": "row-03",
+        "eda.nokia.com/rack-position": "13",
+        "eda.nokia.com/rack-side": "front",
+        "eda.nokia.com/rack-row-index": "3",
+        "eda.nokia.com/rack-u": "34",
+        "eda.nokia.com/rack-units": "1"
       },
       "table": [
         {
@@ -1954,7 +2232,13 @@
             "eda.nokia.com/os": "sros",
             "eda.nokia.com/dev-fixture": "mixed-sros",
             "eda.nokia.com/pod": "sros-variants",
-            "eda.nokia.com/rack": "mix-sros-sr2se-m36-mse24"
+            "eda.nokia.com/rack": "rack-03-13",
+            "eda.nokia.com/rack-row": "row-03",
+            "eda.nokia.com/rack-position": "13",
+            "eda.nokia.com/rack-side": "front",
+            "eda.nokia.com/rack-row-index": "3",
+            "eda.nokia.com/rack-u": "34",
+            "eda.nokia.com/rack-units": "1"
           }
         },
         "spec": {
@@ -2429,25 +2713,66 @@
       "sros-variants"
     ],
     "eda.nokia.com/rack": [
-      "mix-sros-sr1-46s",
-      "mix-sros-sr1-92s",
-      "mix-sros-sr1-iom-me6",
-      "mix-sros-sr1-mda-me12-me6",
-      "mix-sros-sr1s-s18",
-      "mix-sros-sr1s-s36",
-      "mix-sros-sr1se-direct",
-      "mix-sros-sr1se-imm",
-      "mix-sros-sr1x-48d",
-      "mix-sros-sr1x-92s",
-      "mix-sros-sr2s-ms16-ms8",
-      "mix-sros-sr2se-m36-mse24",
-      "mix-sros-sr2se-x2-mse6",
-      "rack-01",
-      "rack-02",
-      "rack-03",
-      "rack-04",
-      "rack-05",
-      "rack-06"
+      "rack-01-01",
+      "rack-01-02",
+      "rack-01-03",
+      "rack-02-01",
+      "rack-03-01",
+      "rack-03-02",
+      "rack-03-03",
+      "rack-03-04",
+      "rack-03-05",
+      "rack-03-06",
+      "rack-03-07",
+      "rack-03-08",
+      "rack-03-09",
+      "rack-03-10",
+      "rack-03-11",
+      "rack-03-12",
+      "rack-03-13"
+    ],
+    "eda.nokia.com/rack-position": [
+      "1",
+      "10",
+      "11",
+      "12",
+      "13",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "eda.nokia.com/rack-row": [
+      "row-01",
+      "row-02",
+      "row-03"
+    ],
+    "eda.nokia.com/rack-row-index": [
+      "1",
+      "2",
+      "3"
+    ],
+    "eda.nokia.com/rack-side": [
+      "front"
+    ],
+    "eda.nokia.com/rack-u": [
+      "22",
+      "25",
+      "30",
+      "34",
+      "35",
+      "36",
+      "37"
+    ],
+    "eda.nokia.com/rack-units": [
+      "1",
+      "2",
+      "3",
+      "4"
     ],
     "eda.nokia.com/role": [
       "borderleaf",
