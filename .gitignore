@@ -20,3 +20,6 @@ build/
 .mk/*.tmp
 
 stencils/
+
+# edk
+edk/
