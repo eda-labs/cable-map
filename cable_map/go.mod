@@ -74,6 +74,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.1 // indirect
 )
 
-// EDK is not reachable from its canonical Nokia GitLab here; use the local checkout.
-// Replace with a proper submodule/version when the source is available.
-replace eda.dev/edk => ../../edk
+// EDK is an ignored submodule in this repo; to get it use
+// git clone git@somepath/edk.git edk
+replace eda.dev/edk => ../edk
