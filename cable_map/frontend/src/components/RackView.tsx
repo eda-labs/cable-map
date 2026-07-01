@@ -44,6 +44,10 @@ const CABLE_LINEWIDTH_IDLE = 1.2;
 const CABLE_LINEWIDTH_CLOSE = 3.25;
 const CABLE_LINEWIDTH_TRACE = 2.8;
 const CABLE_LINEWIDTH_TRACE_CLOSE = 5.5;
+const OCCUPIED_PORT_COLOR = '#37CC73';
+const OCCUPIED_PORT_OPACITY = 0.44;
+const OCCUPIED_PORT_Z = -DEVICE_DEPTH / 2 - 0.014;
+const CABLE_ENTRY_Z = OCCUPIED_PORT_Z - 0.006;
 
 type DeviceMesh = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> & {
   userData: {
@@ -91,6 +95,13 @@ type CableEndpoint = {
 type RackCableRoute = {
   id: string;
   positions: number[];
+};
+
+type OccupiedRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
 type HoverState = {
@@ -157,7 +168,8 @@ function chassisColor(mode: Mode): string {
   return mode === 'dark' ? '#202B38' : '#CED7E1';
 }
 
-function panelHeightForStencil(stencil: string, fallbackHeight: number): number {
+function panelHeightForStencil(stencil: string, fallbackHeight: number, measured?: FrontPanelMeasuredLayout | null): number {
+  if (measured?.aspect) return Math.max(0.06, DEVICE_WIDTH / measured.aspect);
   const meta = frontPanelMetaOf(stencil);
   return meta ? Math.max(0.06, DEVICE_WIDTH / meta.aspect) : fallbackHeight;
 }
@@ -172,7 +184,18 @@ type FrontPanelTexture = {
   aspect: number;
 };
 
+type FrontPanelMeasuredLayout = {
+  aspect: number;
+  layout: Map<string, FrontPanelPortPos>;
+};
+
+type FrontPanelMeasureEntry =
+  | { state: 'pending'; promise: Promise<FrontPanelMeasuredLayout | null> }
+  | { state: 'ready'; layout: FrontPanelMeasuredLayout }
+  | { state: 'missing' };
+
 const frontPanelTextureCache = new Map<string, FrontPanelTextureEntry>();
+const frontPanelMeasureCache = new Map<string, FrontPanelMeasureEntry>();
 const frontPanelLoader = new THREE.TextureLoader();
 
 function frontPanelUrl(stencil: string): string {
@@ -212,6 +235,112 @@ function loadFrontPanelTexture(stencil: string): Promise<FrontPanelTexture | nul
   });
   frontPanelTextureCache.set(stencil, { state: 'pending', promise });
   return promise;
+}
+
+function measureFrontPanelSvg(svgText: string): FrontPanelMeasuredLayout | null {
+  const host = document.createElement('div');
+  host.style.position = 'absolute';
+  host.style.left = '-100000px';
+  host.style.top = '-100000px';
+  host.style.visibility = 'hidden';
+  host.style.pointerEvents = 'none';
+  host.style.lineHeight = '0';
+  host.innerHTML = svgText;
+
+  const svg = host.querySelector('svg') as SVGSVGElement | null;
+  if (!svg) return null;
+
+  (document.body ?? document.documentElement).appendChild(host);
+  try {
+    if (!svg.getAttribute('viewBox')) {
+      const bounds = svg.getBBox();
+      if (bounds.width > 0 && bounds.height > 0) svg.setAttribute('viewBox', `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`);
+    }
+    if (!svg.getAttribute('width') || !svg.getAttribute('height')) {
+      const viewBox = svg.viewBox.baseVal;
+      if (!svg.getAttribute('width') && viewBox.width > 0) svg.setAttribute('width', String(viewBox.width));
+      if (!svg.getAttribute('height') && viewBox.height > 0) svg.setAttribute('height', String(viewBox.height));
+    }
+
+    const panel = svg.getBoundingClientRect();
+    if (panel.width <= 0 || panel.height <= 0) return null;
+
+    const boxes = new Map<string, { x0: number; y0: number; x1: number; y1: number }>();
+    for (const path of Array.from(svg.querySelectorAll<SVGGraphicsElement>('path[data-port]'))) {
+      const port = path.getAttribute('data-port')?.trim();
+      if (!port) continue;
+      const rect = path.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) continue;
+      const x0 = (rect.left - panel.left) / panel.width;
+      const y0 = (rect.top - panel.top) / panel.height;
+      const x1 = (rect.right - panel.left) / panel.width;
+      const y1 = (rect.bottom - panel.top) / panel.height;
+      const existing = boxes.get(port);
+      boxes.set(port, existing ? {
+        x0: Math.min(existing.x0, x0),
+        y0: Math.min(existing.y0, y0),
+        x1: Math.max(existing.x1, x1),
+        y1: Math.max(existing.y1, y1),
+      } : { x0, y0, x1, y1 });
+    }
+
+    const layout = new Map<string, FrontPanelPortPos>();
+    for (const [port, box] of boxes) {
+      const width = box.x1 - box.x0;
+      const height = box.y1 - box.y0;
+      if (width <= 0 || height <= 0) continue;
+      layout.set(port, {
+        p: port,
+        x: box.x0 + width / 2,
+        y: box.y0 + height / 2,
+        w: width,
+        h: height,
+      });
+    }
+
+    return { aspect: panel.width / panel.height, layout };
+  } catch {
+    return null;
+  } finally {
+    host.remove();
+  }
+}
+
+function loadFrontPanelMeasuredLayout(stencil: string): Promise<FrontPanelMeasuredLayout | null> {
+  const cached = frontPanelMeasureCache.get(stencil);
+  if (cached?.state === 'ready') return Promise.resolve(cached.layout);
+  if (cached?.state === 'missing') return Promise.resolve(null);
+  if (cached?.state === 'pending') return cached.promise;
+
+  const promise = fetch(frontPanelUrl(stencil))
+    .then((response) => {
+      if (!response.ok) throw new Error('missing front panel');
+      return response.text();
+    })
+    .then((svg) => measureFrontPanelSvg(svg))
+    .then((layout) => {
+      if (layout) frontPanelMeasureCache.set(stencil, { state: 'ready', layout });
+      else frontPanelMeasureCache.set(stencil, { state: 'missing' });
+      return layout;
+    })
+    .catch(() => {
+      frontPanelMeasureCache.set(stencil, { state: 'missing' });
+      return null;
+    });
+
+  frontPanelMeasureCache.set(stencil, { state: 'pending', promise });
+  return promise;
+}
+
+async function loadFrontPanelMeasuredLayouts(racks: RackGroup[]): Promise<Map<string, FrontPanelMeasuredLayout | null>> {
+  const stencils = new Set<string>();
+  for (const rack of racks) {
+    for (const device of rack.devices) {
+      stencils.add(stencilFor(device.node.platform, componentsOf(device.node.raw)));
+    }
+  }
+  const entries = await Promise.all([...stencils].map(async (stencil) => [stencil, await loadFrontPanelMeasuredLayout(stencil)] as const));
+  return new Map(entries);
 }
 
 function frontPanelGeometry(width: number, height: number): THREE.BufferGeometry {
@@ -403,6 +532,13 @@ function breakoutOffset(breakout: Breakout | undefined, channel: number | null, 
   };
 }
 
+function panelLocalOffset(normalizedX: number, normalizedY: number, panelHeight: number): { x: number; y: number } {
+  return {
+    x: (0.5 - normalizedX) * DEVICE_WIDTH,
+    y: (0.5 - normalizedY) * panelHeight,
+  };
+}
+
 function portOffset(anchor: DeviceAnchor, port: string): { x: number; y: number } {
   const cage = cageKey(port, anchor.slotted);
   const panelPort = cage ? anchor.layout?.get(cage) : undefined;
@@ -412,16 +548,13 @@ function portOffset(anchor: DeviceAnchor, port: string): { x: number; y: number 
   const offset = breakoutOffset(cage ? anchor.breakouts?.[cage] : undefined, channel, panelPort.w, panelPort.h);
   const normalizedX = panelPort.x + offset.x;
   const normalizedY = panelPort.y + offset.y;
-  return {
-    x: (0.5 - normalizedX) * DEVICE_WIDTH,
-    y: (0.5 - normalizedY) * anchor.panelHeight,
-  };
+  return panelLocalOffset(normalizedX, normalizedY, anchor.panelHeight);
 }
 
 function cableEndpoint(root: THREE.Group, anchor: DeviceAnchor, port: string): CableEndpoint {
   const { x, y } = portOffset(anchor, port);
-  const frontLocal = new THREE.Vector3(x, y, -DEVICE_DEPTH / 2 - 0.012);
-  const frontOutLocal = new THREE.Vector3(x, y, -DEVICE_DEPTH / 2 - 1);
+  const frontLocal = new THREE.Vector3(x, y, CABLE_ENTRY_Z);
+  const frontOutLocal = new THREE.Vector3(x, y, CABLE_ENTRY_Z - 1);
   const worldPoint = anchor.mesh.localToWorld(frontLocal);
   const worldFront = anchor.mesh.localToWorld(frontOutLocal).sub(worldPoint).normalize();
   const point = root.worldToLocal(worldPoint.clone());
@@ -739,7 +872,158 @@ function addRackFrame(group: THREE.Group, rack: RackGroup, mode: Mode) {
   group.add(base);
 }
 
-function addDevice(group: THREE.Group, rack: RackGroup, deviceIndex: number, mode: Mode): DeviceMesh {
+function occupiedCages(node: Topology['nodes'][number], slotted: boolean): Map<string, Set<number> | null> {
+  const occupied = new Map<string, Set<number> | null>();
+  for (const row of node.table ?? []) {
+    if (row.type !== 'interSwitch' && row.type !== 'edge') continue;
+    const cage = cageKey(row.label, slotted);
+    if (!cage) continue;
+    const channel = breakoutChannel(row.label);
+    if (!channel) {
+      occupied.set(cage, null);
+      continue;
+    }
+    if (occupied.get(cage) === null) continue;
+    const channels = occupied.get(cage) ?? new Set<number>();
+    channels.add(channel);
+    occupied.set(cage, channels);
+  }
+  return occupied;
+}
+
+function occupiedFallbackRect(cage: string, panelHeight: number): OccupiedRect {
+  const center = fallbackPortOffset(cage);
+  return {
+    x: center.x,
+    y: center.y,
+    width: DEVICE_WIDTH / 40,
+    height: Math.max(0.018, panelHeight * 0.22),
+  };
+}
+
+function occupiedLayoutRects(
+  node: Topology['nodes'][number],
+  stencil: string,
+  panelHeight: number,
+  measured?: FrontPanelMeasuredLayout | null,
+): OccupiedRect[] {
+  const slotted = slottedOf(stencil);
+  const byCage = occupiedCages(node, slotted);
+  if (byCage.size === 0) return [];
+
+  const layout = layoutOf(stencil);
+  const positions = measured?.layout.size ? measured.layout : layout ? new Map(layout.map((port) => [port.p, port])) : undefined;
+  const rects: OccupiedRect[] = [];
+  for (const [cage, channels] of byCage) {
+    const port = positions?.get(cage);
+    const breakout = node.breakouts?.[cage];
+    if (!port) {
+      rects.push(occupiedFallbackRect(cage, panelHeight));
+      continue;
+    }
+
+    const addRect = (offsetX: number, offsetY: number, width: number, height: number) => {
+      const normalizedX = port.x + offsetX;
+      const normalizedY = port.y + offsetY;
+      const center = panelLocalOffset(normalizedX, normalizedY, panelHeight);
+      rects.push({
+        x: center.x,
+        y: center.y,
+        width: width * DEVICE_WIDTH,
+        height: height * panelHeight,
+      });
+    };
+
+    if (!breakout || channels === null) {
+      addRect(0, 0, port.w, port.h);
+      continue;
+    }
+
+    const channelSet = channels.size > 0 ? channels : new Set(Array.from({ length: breakout.channels }, (_, index) => index + 1));
+    for (const channel of channelSet) {
+      const channelsCount = Math.max(1, breakout.channels);
+      const rows = channelsCount > 4 ? 2 : 1;
+      const columns = Math.ceil(channelsCount / rows);
+      const safeChannel = Math.max(1, Math.min(channelsCount, channel));
+      const column = (safeChannel - 1) % columns;
+      const row = Math.floor((safeChannel - 1) / columns);
+      const width = port.w / columns;
+      const height = port.h / rows;
+      addRect(
+        -port.w / 2 + column * width + width / 2,
+        -port.h / 2 + row * height + height / 2,
+        width,
+        height,
+      );
+    }
+  }
+  return rects;
+}
+
+function occupancyGeometry(rects: OccupiedRect[]): THREE.BufferGeometry {
+  const positions: number[] = [];
+  for (const rect of rects) {
+    const x0 = rect.x - rect.width / 2;
+    const x1 = rect.x + rect.width / 2;
+    const y0 = rect.y - rect.height / 2;
+    const y1 = rect.y + rect.height / 2;
+    positions.push(
+      x0, y0, 0,
+      x1, y0, 0,
+      x1, y1, 0,
+      x0, y0, 0,
+      x1, y1, 0,
+      x0, y1, 0,
+    );
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  return geometry;
+}
+
+function removeOccupancyOverlay(mesh: DeviceMesh) {
+  while (true) {
+    const overlay = mesh.children.find((child) => child.userData.occupancyOverlay);
+    if (!overlay) return;
+    mesh.remove(overlay);
+    disposeObject(overlay);
+  }
+}
+
+function addOccupancyOverlay(
+  mesh: DeviceMesh,
+  node: Topology['nodes'][number],
+  stencil: string,
+  panelHeight: number,
+  measured?: FrontPanelMeasuredLayout | null,
+) {
+  removeOccupancyOverlay(mesh);
+  const rects = occupiedLayoutRects(node, stencil, panelHeight, measured);
+  if (rects.length === 0) return;
+  const overlay = new THREE.Mesh(
+    occupancyGeometry(rects),
+    new THREE.MeshBasicMaterial({
+      color: OCCUPIED_PORT_COLOR,
+      transparent: true,
+      opacity: OCCUPIED_PORT_OPACITY,
+      depthWrite: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
+    }),
+  );
+  overlay.position.set(0, 0, OCCUPIED_PORT_Z);
+  overlay.renderOrder = 7;
+  overlay.userData.occupancyOverlay = true;
+  mesh.add(overlay);
+}
+
+function addDevice(
+  group: THREE.Group,
+  rack: RackGroup,
+  deviceIndex: number,
+  mode: Mode,
+  measured?: FrontPanelMeasuredLayout | null,
+): DeviceMesh {
   const device = rack.devices[deviceIndex];
   const visibleStart = Math.min(device.uStart, 42);
   const visibleEnd = Math.min(device.uEnd, 42);
@@ -748,7 +1032,7 @@ function addDevice(group: THREE.Group, rack: RackGroup, deviceIndex: number, mod
   const bottom = (visibleStart - 1) * UNIT_HEIGHT;
   const color = roleColor(device.node.role, mode);
   const stencil = stencilFor(device.node.platform, componentsOf(device.node.raw));
-  const height = panelHeightForStencil(stencil, fallbackHeight);
+  const height = panelHeightForStencil(stencil, fallbackHeight, measured);
   const material = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.5,
@@ -769,13 +1053,19 @@ function addDevice(group: THREE.Group, rack: RackGroup, deviceIndex: number, mod
     baseColor: color,
   };
   group.add(mesh);
+  addOccupancyOverlay(mesh, device.node, stencil, height, measured);
 
   void loadFrontPanelTexture(stencil).then((panelTexture) => {
-    if (!panelTexture || !mesh.parent || !group.parent?.parent) return;
-    const panelHeight = Math.max(0.06, DEVICE_WIDTH / panelTexture.aspect);
+    if (!mesh.parent || !group.parent?.parent) return;
+    if (!panelTexture) {
+      addOccupancyOverlay(mesh, device.node, stencil, height, measured);
+      return;
+    }
+    const panelHeight = panelHeightForStencil(stencil, fallbackHeight, measured ?? { aspect: panelTexture.aspect, layout: new Map() });
     mesh.geometry.dispose();
     mesh.geometry = new THREE.BoxGeometry(DEVICE_WIDTH, panelHeight, DEVICE_DEPTH);
     mesh.position.y = bottom + panelHeight / 2;
+    addOccupancyOverlay(mesh, device.node, stencil, panelHeight, measured);
     const panel = new THREE.Mesh(
       frontPanelGeometry(DEVICE_WIDTH, panelHeight),
       new THREE.MeshBasicMaterial({
@@ -800,6 +1090,7 @@ function setDeviceOpacity(mesh: DeviceMesh, opacity: number) {
   mesh.material.opacity = opacity;
   mesh.traverse((child) => {
     if (child === mesh) return;
+    if (child.userData.occupancyOverlay) return;
     const material = (child as THREE.Mesh).material;
     if (material instanceof THREE.MeshBasicMaterial) {
       material.opacity = opacity;
@@ -835,7 +1126,18 @@ function resetRoot(state: RackSceneState) {
   state.scene.add(state.root);
 }
 
-function buildScene(state: RackSceneState, topo: Topology, racks: RackGroup[], shown: Set<string> | null, mode: Mode, labelsVisible: boolean) {
+async function buildScene(
+  state: RackSceneState,
+  topo: Topology,
+  racks: RackGroup[],
+  shown: Set<string> | null,
+  mode: Mode,
+  labelsVisible: boolean,
+  isCancelled: () => boolean,
+) {
+  const measuredLayouts = await loadFrontPanelMeasuredLayouts(racks);
+  if (isCancelled()) return;
+
   resetRoot(state);
   const palette = scenePalette(mode);
   state.scene.background = new THREE.Color(palette.background);
@@ -888,15 +1190,16 @@ function buildScene(state: RackSceneState, topo: Topology, racks: RackGroup[], s
       const device = rack.devices[deviceIndex];
       const stencil = stencilFor(device.node.platform, componentsOf(device.node.raw));
       const panelLayout = layoutOf(stencil);
-      const mesh = addDevice(rackGroup, rack, deviceIndex, mode);
+      const measured = measuredLayouts.get(stencil);
+      const mesh = addDevice(rackGroup, rack, deviceIndex, mode, measured);
       state.devices.push(mesh);
       anchors.set(mesh.userData.nodeName, {
         mesh,
         rack: rack.label,
         role: mesh.userData.role,
         slotted: slottedOf(stencil),
-        panelHeight: panelHeightForStencil(stencil, mesh.geometry.parameters.height),
-        layout: panelLayout ? new Map(panelLayout.map((port) => [port.p, port])) : undefined,
+        panelHeight: panelHeightForStencil(stencil, mesh.geometry.parameters.height, measured),
+        layout: measured?.layout.size ? measured.layout : panelLayout ? new Map(panelLayout.map((port) => [port.p, port])) : undefined,
         breakouts: device.node.breakouts,
       });
     }
@@ -1247,7 +1550,9 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
   useEffect(() => {
     const state = sceneRef.current;
     if (!state) return;
-    buildScene(state, topo, racks, shown, mode, labelsVisible);
+    let cancelled = false;
+    void buildScene(state, topo, racks, shown, mode, labelsVisible, () => cancelled);
+    return () => { cancelled = true; };
   }, [topo, racks, shown, mode, labelsVisible]);
 
   useEffect(() => {
