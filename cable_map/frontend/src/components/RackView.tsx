@@ -16,6 +16,7 @@ import type { FrontPanelPortPos } from '../domain/ports/frontPanelMeta';
 import { frontPanelMetaOf, layoutOf, slottedOf } from '../domain/ports/frontPanelMeta';
 import { breakoutChannel, cageKey, portIdx } from '../domain/ports/interfaceNames';
 import { buildRackGroups, rackLabelOf, roleRank, type RackGroup } from '../domain/topology/racks';
+import type { CableKind } from '../graph';
 import { trace, useTrace } from '../trace';
 import { type Mode } from '../theme';
 import { type OpenNodeHandler } from './NodeActionsContext';
@@ -48,6 +49,19 @@ const OCCUPIED_PORT_COLOR = '#37CC73';
 const OCCUPIED_PORT_OPACITY = 0.44;
 const OCCUPIED_PORT_Z = -DEVICE_DEPTH / 2 - 0.014;
 const CABLE_ENTRY_Z = OCCUPIED_PORT_Z - 0.006;
+const OCCUPANCY_KIND_ORDER = ['isl', 'edge', 'lag', 'mlag'] as const satisfies readonly CableKind[];
+const OCCUPANCY_KIND_COLORS: Record<CableKind, string> = {
+  isl: OCCUPIED_PORT_COLOR,
+  edge: '#23ABB6',
+  lag: '#F7B737',
+  mlag: '#9765FE',
+};
+const OCCUPANCY_KIND_LABELS: Record<CableKind, string> = {
+  isl: 'Fabric',
+  edge: 'Edge',
+  lag: 'Local LAG',
+  mlag: 'Multihome LAG',
+};
 
 type DeviceMesh = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> & {
   userData: {
@@ -102,6 +116,7 @@ type OccupiedRect = {
   y: number;
   width: number;
   height: number;
+  kind: CableKind;
 };
 
 type HoverState = {
@@ -872,32 +887,58 @@ function addRackFrame(group: THREE.Group, rack: RackGroup, mode: Mode) {
   group.add(base);
 }
 
-function occupiedCages(node: Topology['nodes'][number], slotted: boolean): Map<string, Set<number> | null> {
-  const occupied = new Map<string, Set<number> | null>();
+function rowOccupancyKind(row: Topology['nodes'][number]['table'][number], lags: Topology['lags']): CableKind | null {
+  if (row.type === 'interSwitch') return 'isl';
+  if (row.type !== 'edge') return null;
+  const lag = row.lag ? lags[row.lag] : undefined;
+  if (lag?.multihomed) return 'mlag';
+  if (row.lag) return 'lag';
+  return 'edge';
+}
+
+function addOccupiedCage(
+  occupied: Map<string, Map<CableKind, Set<number> | null>>,
+  cage: string,
+  kind: CableKind,
+  channel: number | null,
+) {
+  const byKind = occupied.get(cage) ?? new Map<CableKind, Set<number> | null>();
+  occupied.set(cage, byKind);
+  if (!channel) {
+    byKind.set(kind, null);
+    return;
+  }
+  if (byKind.get(kind) === null) return;
+  const channels = byKind.get(kind) ?? new Set<number>();
+  channels.add(channel);
+  byKind.set(kind, channels);
+}
+
+function occupiedCages(
+  node: Topology['nodes'][number],
+  slotted: boolean,
+  lags: Topology['lags'],
+): Map<string, Map<CableKind, Set<number> | null>> {
+  const occupied = new Map<string, Map<CableKind, Set<number> | null>>();
   for (const row of node.table ?? []) {
-    if (row.type !== 'interSwitch' && row.type !== 'edge') continue;
+    const kind = rowOccupancyKind(row, lags);
+    if (!kind) continue;
     const cage = cageKey(row.label, slotted);
     if (!cage) continue;
     const channel = breakoutChannel(row.label);
-    if (!channel) {
-      occupied.set(cage, null);
-      continue;
-    }
-    if (occupied.get(cage) === null) continue;
-    const channels = occupied.get(cage) ?? new Set<number>();
-    channels.add(channel);
-    occupied.set(cage, channels);
+    addOccupiedCage(occupied, cage, kind, channel);
   }
   return occupied;
 }
 
-function occupiedFallbackRect(cage: string, panelHeight: number): OccupiedRect {
+function occupiedFallbackRect(cage: string, panelHeight: number, kind: CableKind): OccupiedRect {
   const center = fallbackPortOffset(cage);
   return {
     x: center.x,
     y: center.y,
     width: DEVICE_WIDTH / 40,
     height: Math.max(0.018, panelHeight * 0.22),
+    kind,
   };
 }
 
@@ -905,24 +946,25 @@ function occupiedLayoutRects(
   node: Topology['nodes'][number],
   stencil: string,
   panelHeight: number,
+  lags: Topology['lags'],
   measured?: FrontPanelMeasuredLayout | null,
 ): OccupiedRect[] {
   const slotted = slottedOf(stencil);
-  const byCage = occupiedCages(node, slotted);
+  const byCage = occupiedCages(node, slotted, lags);
   if (byCage.size === 0) return [];
 
   const layout = layoutOf(stencil);
   const positions = measured?.layout.size ? measured.layout : layout ? new Map(layout.map((port) => [port.p, port])) : undefined;
   const rects: OccupiedRect[] = [];
-  for (const [cage, channels] of byCage) {
+  for (const [cage, byKind] of byCage) {
     const port = positions?.get(cage);
     const breakout = node.breakouts?.[cage];
     if (!port) {
-      rects.push(occupiedFallbackRect(cage, panelHeight));
+      for (const kind of byKind.keys()) rects.push(occupiedFallbackRect(cage, panelHeight, kind));
       continue;
     }
 
-    const addRect = (offsetX: number, offsetY: number, width: number, height: number) => {
+    const addRect = (kind: CableKind, offsetX: number, offsetY: number, width: number, height: number) => {
       const normalizedX = port.x + offsetX;
       const normalizedY = port.y + offsetY;
       const center = panelLocalOffset(normalizedX, normalizedY, panelHeight);
@@ -931,30 +973,34 @@ function occupiedLayoutRects(
         y: center.y,
         width: width * DEVICE_WIDTH,
         height: height * panelHeight,
+        kind,
       });
     };
 
-    if (!breakout || channels === null) {
-      addRect(0, 0, port.w, port.h);
-      continue;
-    }
+    for (const [kind, channels] of byKind) {
+      if (!breakout || channels === null) {
+        addRect(kind, 0, 0, port.w, port.h);
+        continue;
+      }
 
-    const channelSet = channels.size > 0 ? channels : new Set(Array.from({ length: breakout.channels }, (_, index) => index + 1));
-    for (const channel of channelSet) {
-      const channelsCount = Math.max(1, breakout.channels);
-      const rows = channelsCount > 4 ? 2 : 1;
-      const columns = Math.ceil(channelsCount / rows);
-      const safeChannel = Math.max(1, Math.min(channelsCount, channel));
-      const column = (safeChannel - 1) % columns;
-      const row = Math.floor((safeChannel - 1) / columns);
-      const width = port.w / columns;
-      const height = port.h / rows;
-      addRect(
-        -port.w / 2 + column * width + width / 2,
-        -port.h / 2 + row * height + height / 2,
-        width,
-        height,
-      );
+      const channelSet = channels.size > 0 ? channels : new Set(Array.from({ length: breakout.channels }, (_, index) => index + 1));
+      for (const channel of channelSet) {
+        const channelsCount = Math.max(1, breakout.channels);
+        const rows = channelsCount > 4 ? 2 : 1;
+        const columns = Math.ceil(channelsCount / rows);
+        const safeChannel = Math.max(1, Math.min(channelsCount, channel));
+        const column = (safeChannel - 1) % columns;
+        const row = Math.floor((safeChannel - 1) / columns);
+        const width = port.w / columns;
+        const height = port.h / rows;
+        addRect(
+          kind,
+          -port.w / 2 + column * width + width / 2,
+          -port.h / 2 + row * height + height / 2,
+          width,
+          height,
+        );
+      }
     }
   }
   return rects;
@@ -995,26 +1041,31 @@ function addOccupancyOverlay(
   node: Topology['nodes'][number],
   stencil: string,
   panelHeight: number,
+  lags: Topology['lags'],
   measured?: FrontPanelMeasuredLayout | null,
 ) {
   removeOccupancyOverlay(mesh);
-  const rects = occupiedLayoutRects(node, stencil, panelHeight, measured);
+  const rects = occupiedLayoutRects(node, stencil, panelHeight, lags, measured);
   if (rects.length === 0) return;
-  const overlay = new THREE.Mesh(
-    occupancyGeometry(rects),
-    new THREE.MeshBasicMaterial({
-      color: OCCUPIED_PORT_COLOR,
-      transparent: true,
-      opacity: OCCUPIED_PORT_OPACITY,
-      depthWrite: false,
-      depthTest: true,
-      side: THREE.DoubleSide,
-    }),
-  );
-  overlay.position.set(0, 0, OCCUPIED_PORT_Z);
-  overlay.renderOrder = 7;
-  overlay.userData.occupancyOverlay = true;
-  mesh.add(overlay);
+  for (const kind of OCCUPANCY_KIND_ORDER) {
+    const kindRects = rects.filter((rect) => rect.kind === kind);
+    if (kindRects.length === 0) continue;
+    const overlay = new THREE.Mesh(
+      occupancyGeometry(kindRects),
+      new THREE.MeshBasicMaterial({
+        color: OCCUPANCY_KIND_COLORS[kind],
+        transparent: true,
+        opacity: OCCUPIED_PORT_OPACITY,
+        depthWrite: false,
+        depthTest: true,
+        side: THREE.DoubleSide,
+      }),
+    );
+    overlay.position.set(0, 0, OCCUPIED_PORT_Z);
+    overlay.renderOrder = 7;
+    overlay.userData.occupancyOverlay = true;
+    mesh.add(overlay);
+  }
 }
 
 function addDevice(
@@ -1022,6 +1073,7 @@ function addDevice(
   rack: RackGroup,
   deviceIndex: number,
   mode: Mode,
+  lags: Topology['lags'],
   measured?: FrontPanelMeasuredLayout | null,
 ): DeviceMesh {
   const device = rack.devices[deviceIndex];
@@ -1053,19 +1105,19 @@ function addDevice(
     baseColor: color,
   };
   group.add(mesh);
-  addOccupancyOverlay(mesh, device.node, stencil, height, measured);
+  addOccupancyOverlay(mesh, device.node, stencil, height, lags, measured);
 
   void loadFrontPanelTexture(stencil).then((panelTexture) => {
     if (!mesh.parent || !group.parent?.parent) return;
     if (!panelTexture) {
-      addOccupancyOverlay(mesh, device.node, stencil, height, measured);
+      addOccupancyOverlay(mesh, device.node, stencil, height, lags, measured);
       return;
     }
     const panelHeight = panelHeightForStencil(stencil, fallbackHeight, measured ?? { aspect: panelTexture.aspect, layout: new Map() });
     mesh.geometry.dispose();
     mesh.geometry = new THREE.BoxGeometry(DEVICE_WIDTH, panelHeight, DEVICE_DEPTH);
     mesh.position.y = bottom + panelHeight / 2;
-    addOccupancyOverlay(mesh, device.node, stencil, panelHeight, measured);
+    addOccupancyOverlay(mesh, device.node, stencil, panelHeight, lags, measured);
     const panel = new THREE.Mesh(
       frontPanelGeometry(DEVICE_WIDTH, panelHeight),
       new THREE.MeshBasicMaterial({
@@ -1191,7 +1243,7 @@ async function buildScene(
       const stencil = stencilFor(device.node.platform, componentsOf(device.node.raw));
       const panelLayout = layoutOf(stencil);
       const measured = measuredLayouts.get(stencil);
-      const mesh = addDevice(rackGroup, rack, deviceIndex, mode, measured);
+      const mesh = addDevice(rackGroup, rack, deviceIndex, mode, topo.lags, measured);
       state.devices.push(mesh);
       anchors.set(mesh.userData.nodeName, {
         mesh,
@@ -1325,6 +1377,18 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     for (const rack of racks) for (const device of rack.devices) roles.add(device.node.role || 'node');
     return [...roles].toSorted((left, right) => roleRank(left) - roleRank(right) || left.localeCompare(right)).slice(0, 6);
   }, [racks]);
+  const legendPortKinds = useMemo(() => {
+    const kinds = new Set<CableKind>();
+    for (const rack of racks) {
+      for (const device of rack.devices) {
+        for (const row of device.node.table ?? []) {
+          const kind = rowOccupancyKind(row, topo.lags);
+          if (kind && kind !== 'isl') kinds.add(kind);
+        }
+      }
+    }
+    return OCCUPANCY_KIND_ORDER.filter((kind) => kind !== 'isl' && kinds.has(kind));
+  }, [racks, topo.lags]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -1603,18 +1667,35 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         </Tooltip>
       </Box>
 
-      {legendRoles.length > 0 && (
+      {(legendRoles.length > 0 || legendPortKinds.length > 0) && (
         <Box sx={{ position: 'absolute', bottom: { xs: 68, sm: 12 }, left: 12, zIndex: 1, px: 1.25, py: 1,
           bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 2 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75 }}>Roles</Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxWidth: 360 }}>
-            {legendRoles.map((role) => (
-              <Box key={role} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box sx={{ width: 10, height: 10, bgcolor: roleColor(role, mode), border: 1, borderColor: 'divider' }} />
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>{role}</Typography>
+          {legendRoles.length > 0 && (
+            <>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75 }}>Roles</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxWidth: 360 }}>
+                {legendRoles.map((role) => (
+                  <Box key={role} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 10, height: 10, bgcolor: roleColor(role, mode), border: 1, borderColor: 'divider' }} />
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{role}</Typography>
+                  </Box>
+                ))}
               </Box>
-            ))}
-          </Box>
+            </>
+          )}
+          {legendPortKinds.length > 0 && (
+            <>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: legendRoles.length ? 1 : 0, mb: 0.75 }}>Ports</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxWidth: 360 }}>
+                {legendPortKinds.map((kind) => (
+                  <Box key={kind} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ width: 10, height: 10, bgcolor: OCCUPANCY_KIND_COLORS[kind], border: 1, borderColor: 'divider' }} />
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{OCCUPANCY_KIND_LABELS[kind]}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </>
+          )}
         </Box>
       )}
 
