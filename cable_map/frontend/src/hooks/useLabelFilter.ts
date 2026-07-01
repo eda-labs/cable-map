@@ -81,6 +81,7 @@ export function useLabelFilter(
     const target = shownRef.current;
     const handle = window.setTimeout(() => {
       if (!target || target.size === 0) {
+        if (largeTopology) return;
         fitNodes(nodesRef.current, { padding: 0.12, duration: 400, maxZoom: largeTopology ? 0.5 : undefined });
         return;
       }

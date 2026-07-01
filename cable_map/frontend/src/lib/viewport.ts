@@ -11,17 +11,17 @@ export type FlowBounds = { x: number; y: number; width: number; height: number }
 export type FitNodesOptions = { padding: number; duration: number; maxZoom?: number };
 export type CenterNodeOptions = { duration: number; zoom?: number; minZoom?: number; bottomInset?: number };
 
-export function nodeIntersectsViewport(node: RFNode, viewport: Viewport, width: number, height: number): boolean {
+export function nodeIntersectsViewport(node: RFNode, viewport: Viewport, width: number, height: number, pad = LARGE_VIEWPORT_PAD): boolean {
   const nodeWidth = node.width ?? node.measured?.width ?? 160;
   const nodeHeight = node.height ?? node.measured?.height ?? 80;
   const left = node.position.x * viewport.zoom + viewport.x;
   const top = node.position.y * viewport.zoom + viewport.y;
   const right = (node.position.x + nodeWidth) * viewport.zoom + viewport.x;
   const bottom = (node.position.y + nodeHeight) * viewport.zoom + viewport.y;
-  return right >= -LARGE_VIEWPORT_PAD &&
-    left <= width + LARGE_VIEWPORT_PAD &&
-    bottom >= -LARGE_VIEWPORT_PAD &&
-    top <= height + LARGE_VIEWPORT_PAD;
+  return right >= -pad &&
+    left <= width + pad &&
+    bottom >= -pad &&
+    top <= height + pad;
 }
 
 function nodeBounds(node: RFNode): FlowBounds {

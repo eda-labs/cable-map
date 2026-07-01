@@ -24,8 +24,14 @@ import { linkProgram } from '../webgl/program';
 
 type Data = { kind: CableKind; a?: string; b?: string; count?: number; lldp?: LldpStatus; forceOn?: boolean };
 type Pt = { x: number; y: number; pos: Position };
-type Hit = { id: string; pts: XY[] };
+type Hit = { id: string; pts: XY[]; minX: number; minY: number; maxX: number; maxY: number };
+type HitIndex = { cellSize: number; cells: Map<string, Hit[]>; byId: Map<string, Hit> };
 type PointerState = { active: boolean; x: number; y: number; overNode: boolean; lastHover: string | null };
+
+const HIT_CELL_SIZE = 360;
+const EMPTY_HIT_INDEX: HitIndex = { cellSize: HIT_CELL_SIZE, cells: new Map(), byId: new Map() };
+const LARGE_HOVER_EDGE_COUNT = 1000;
+const LARGE_HOVER_TRACE_DELAY_MS = 220;
 
 const VERT = `
 precision highp float;
@@ -124,6 +130,83 @@ function buildStemOffsets(handles: { id?: string | null; x: number; y: number; w
   return m;
 }
 
+function hitFor(id: string, pts: XY[]): Hit {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { id, pts, minX, minY, maxX, maxY };
+}
+
+function pointNearHitBox(hit: Hit, p: XY, tolerance: number): boolean {
+  return p.x >= hit.minX - tolerance &&
+    p.x <= hit.maxX + tolerance &&
+    p.y >= hit.minY - tolerance &&
+    p.y <= hit.maxY + tolerance;
+}
+
+function buildHitIndex(geometry: EdgeDrawGeometry[], lite: boolean): HitIndex {
+  if (lite || geometry.length === 0) return EMPTY_HIT_INDEX;
+  const cells = new Map<string, Hit[]>();
+  const byId = new Map<string, Hit>();
+  const put = (x: number, y: number, hit: Hit) => {
+    const key = `${x}:${y}`;
+    const list = cells.get(key);
+    if (list) list.push(hit);
+    else cells.set(key, [hit]);
+  };
+
+  for (const g of geometry) {
+    const hit = hitFor(g.id, g.pts);
+    byId.set(g.id, hit);
+    const x0 = Math.floor(hit.minX / HIT_CELL_SIZE);
+    const x1 = Math.floor(hit.maxX / HIT_CELL_SIZE);
+    const y0 = Math.floor(hit.minY / HIT_CELL_SIZE);
+    const y1 = Math.floor(hit.maxY / HIT_CELL_SIZE);
+    for (let x = x0; x <= x1; x += 1) {
+      for (let y = y0; y <= y1; y += 1) put(x, y, hit);
+    }
+  }
+
+  return { cellSize: HIT_CELL_SIZE, cells, byId };
+}
+
+function hitCandidates(index: HitIndex, p: XY, tolerance: number, current: string | null): Hit[] {
+  if (index.cells.size === 0) return [];
+  const cx = Math.floor(p.x / index.cellSize);
+  const cy = Math.floor(p.y / index.cellSize);
+  const r = Math.ceil(tolerance / index.cellSize) + 1;
+  const seen = new Set<Hit>();
+  for (let x = cx - r; x <= cx + r; x += 1) {
+    for (let y = cy - r; y <= cy + r; y += 1) {
+      const list = index.cells.get(`${x}:${y}`);
+      if (!list) continue;
+      for (const hit of list) seen.add(hit);
+    }
+  }
+  if (current) {
+    const hit = index.byId.get(current);
+    if (hit) seen.add(hit);
+  }
+  return [...seen];
+}
+
+function EdgeLabels({ labels }: { labels: EdgeDrawLabel[] }) {
+  const [vtx, vty, vzoom] = useStore((s) => s.transform);
+  return labels.map((lab) => (
+    <div key={lab.key} style={{
+      position: 'absolute', left: 0, top: 0, pointerEvents: 'none', zIndex: 5, whiteSpace: 'nowrap',
+      transform: `translate(-50%, -50%) translate(${lab.x * vzoom + vtx}px, ${lab.y * vzoom + vty}px)`,
+      ...(lab.badge
+        ? { fontSize: 9, fontWeight: 800, lineHeight: 1.4, padding: '0 5px', borderRadius: 8, background: lab.color, color: '#000', border: '1px solid rgba(0,0,0,0.35)' }
+        : { fontSize: 10, fontWeight: 600, lineHeight: 1.3, padding: '1px 6px', borderRadius: 4, background: 'var(--label-bg)', color: 'var(--fg)', border: `1px solid ${lab.color}` }),
+    }}>{lab.text}</div>
+  ));
+}
+
 // One WebGL cable layer for both regimes. Normal fabrics resolve endpoints from React Flow's measured
 // handles (exact, interactive). `lite` (large fabrics) computes endpoints from node data instead — so
 // it works for culled / overview nodes the store doesn't hold — and drops hover/click + labels.
@@ -134,7 +217,6 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const store = useStoreApi();
   const rf = useReactFlow();
-  const transform = useStore((s) => s.transform);
   const width = useStore((s) => s.width);
   const height = useStore((s) => s.height);
   // A complete signature of everything an edge endpoint depends on: node position AND handle
@@ -160,14 +242,20 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
 
   const gl = useRef<WebGLRenderingContext | null>(null);
   const prog = useRef<WebGLProgram | null>(null);
-  const buf = useRef<WebGLBuffer | null>(null);
+  const baseBuf = useRef<WebGLBuffer | null>(null);
+  const overlayBuf = useRef<WebGLBuffer | null>(null);
   const loc = useRef<Record<string, number | WebGLUniformLocation | null>>({});
-  const count = useRef(0);
-  const hitRef = useRef<Hit[]>([]);            // per-cable polylines for hover/click hit-testing
+  const baseCount = useRef(0);
+  const overlayCount = useRef(0);
+  const hitIndexRef = useRef<HitIndex>(EMPTY_HIT_INDEX); // spatial index over cable polylines for hover/click hit-testing
   // cached geometry: recomputed only when edges/positions/routing change (NOT on hover/trace)
   const geomCache = useRef<{ edges: RFEdge[]; nodes: RFNode[]; posHash: number; grouped: boolean; geom: EdgeDrawGeometry[] } | null>(null);
+  const baseDrawCache = useRef<{ geom: EdgeDrawGeometry[]; lldpOn: boolean; dark: boolean; lite: boolean; labels: EdgeDrawLabel[] } | null>(null);
+  const drawRafRef = useRef<number | null>(null);
   const pointerRef = useRef<PointerState>({ active: false, x: 0, y: 0, overNode: false, lastHover: null });
   const repickRef = useRef<(() => void) | null>(null);
+  const hoverTraceTimerRef = useRef<number | null>(null);
+  const activeTraceHoverRef = useRef<string | null>(null);
   const [labels, setLabels] = useState<EdgeDrawLabel[]>([]);  // ×N + traced-endpoint labels (HTML overlay)
 
   // one-time GL init
@@ -185,7 +273,8 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
       return;
     }
     prog.current = p;
-    buf.current = context.createBuffer();
+    baseBuf.current = context.createBuffer();
+    overlayBuf.current = context.createBuffer();
     loc.current = {
       a_pos: context.getAttribLocation(p, 'a_pos'),
       a_norm: context.getAttribLocation(p, 'a_norm'),
@@ -198,7 +287,11 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     };
     context.enable(context.BLEND);
     context.blendFunc(context.ONE, context.ONE_MINUS_SRC_ALPHA); // premultiplied
-    return () => { context.deleteProgram(p); if (buf.current) context.deleteBuffer(buf.current); };
+    return () => {
+      context.deleteProgram(p);
+      if (baseBuf.current) context.deleteBuffer(baseBuf.current);
+      if (overlayBuf.current) context.deleteBuffer(overlayBuf.current);
+    };
   }, [onUnavailable]);
 
   const rebuild = useCallback(() => {
@@ -250,24 +343,68 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
         }
         geom.push({ id: e.id, pts, n, mnx, mny, ml, kind: d?.kind, lldp: d?.lldp, cnt: d?.count ?? 1, forceOn: !!d?.forceOn, a: d?.a, b: d?.b });
       }
-      hitRef.current = lite ? [] : geom.map((g) => ({ id: g.id, pts: g.pts }));
+      hitIndexRef.current = buildHitIndex(geom, lite);
       geomCache.current = { edges, nodes, posHash, grouped, geom };
     }
     const geom = geomCache.current!.geom;
 
-    // --- APPEARANCE pass (runs on every hover — cheap: colour/alpha/width + buffer write only) ---
-    const { vertices, vertexCount, labels: labelOut } = buildEdgeVertices({
-      geometry: geom,
-      tracedEdges,
-      traceAny,
-      lldpOn,
-      dark,
-      lite,
-    });
-    setLabels((prev) => sameEdgeLabels(prev, labelOut) ? prev : labelOut);
-    count.current = vertexCount;
-    context.bindBuffer(context.ARRAY_BUFFER, buf.current);
-    context.bufferData(context.ARRAY_BUFFER, vertices, context.DYNAMIC_DRAW);
+    // --- APPEARANCE pass -----------------------------------------------------------------------
+    // Small fabrics keep the original full-buffer dim/highlight behavior. Large fabrics keep the
+    // full edge buffer stable and upload only a tiny overlay for the active trace; otherwise hovering
+    // one cable in an 8k-edge topology rebuilds and uploads the whole map.
+    if (geom.length <= LARGE_HOVER_EDGE_COUNT) {
+      const { vertices, vertexCount, labels: labelOut } = buildEdgeVertices({
+        geometry: geom,
+        tracedEdges,
+        traceAny,
+        lldpOn,
+        dark,
+        lite,
+      });
+      setLabels((prev) => sameEdgeLabels(prev, labelOut) ? prev : labelOut);
+      baseCount.current = vertexCount;
+      overlayCount.current = 0;
+      context.bindBuffer(context.ARRAY_BUFFER, baseBuf.current);
+      context.bufferData(context.ARRAY_BUFFER, vertices, context.DYNAMIC_DRAW);
+      return;
+    }
+
+    let baseLabels = baseDrawCache.current?.labels ?? [];
+    const base = baseDrawCache.current;
+    if (!base || base.geom !== geom || base.lldpOn !== lldpOn || base.dark !== dark || base.lite !== lite) {
+      const built = buildEdgeVertices({
+        geometry: geom,
+        tracedEdges: new Set(),
+        traceAny: false,
+        lldpOn,
+        dark,
+        lite,
+      });
+      baseCount.current = built.vertexCount;
+      baseLabels = built.labels;
+      baseDrawCache.current = { geom, lldpOn, dark, lite, labels: baseLabels };
+      context.bindBuffer(context.ARRAY_BUFFER, baseBuf.current);
+      context.bufferData(context.ARRAY_BUFFER, built.vertices, context.STATIC_DRAW);
+    }
+
+    const activeGeometry = traceAny
+      ? geom.filter((g) => tracedEdges.has(g.id) || g.forceOn)
+      : [];
+    const overlay = activeGeometry.length
+      ? buildEdgeVertices({
+        geometry: activeGeometry,
+        tracedEdges,
+        traceAny: false,
+        lldpOn,
+        dark,
+        lite,
+      })
+      : { vertices: new Float32Array(), vertexCount: 0, labels: [] };
+    overlayCount.current = overlay.vertexCount;
+    context.bindBuffer(context.ARRAY_BUFFER, overlayBuf.current);
+    context.bufferData(context.ARRAY_BUFFER, overlay.vertices, context.DYNAMIC_DRAW);
+    const nextLabels = overlay.labels.length ? [...baseLabels, ...overlay.labels] : baseLabels;
+    setLabels((prev) => sameEdgeLabels(prev, nextLabels) ? prev : nextLabels);
     // posHash isn't read directly (positions come from the live store) but retriggers rebuild on node move
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [edges, grouped, tracedEdges, traceAny, lldpOn, dark, posHash, nodesReady, store, nodes, nodesById, lite]);
@@ -282,40 +419,72 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     context.viewport(0, 0, bw, bh);
     context.clearColor(0, 0, 0, 0);
     context.clear(context.COLOR_BUFFER_BIT);
-    if (!count.current) return;
+    if (!baseCount.current && !overlayCount.current) return;
     context.useProgram(p);
-    context.bindBuffer(context.ARRAY_BUFFER, buf.current);
     const stride = EDGE_VERTEX_STRIDE * Float32Array.BYTES_PER_ELEMENT;
     const a = l as Record<string, number>;
-    context.enableVertexAttribArray(a.a_pos); context.vertexAttribPointer(a.a_pos, 2, context.FLOAT, false, stride, 0);
-    context.enableVertexAttribArray(a.a_norm); context.vertexAttribPointer(a.a_norm, 2, context.FLOAT, false, stride, 8);
-    context.enableVertexAttribArray(a.a_color); context.vertexAttribPointer(a.a_color, 4, context.FLOAT, false, stride, 16);
-    context.enableVertexAttribArray(a.a_half); context.vertexAttribPointer(a.a_half, 1, context.FLOAT, false, stride, 32);
     context.uniform2f(l.u_translate as WebGLUniformLocation, tx, ty);
     context.uniform1f(l.u_zoom as WebGLUniformLocation, zoom);
     context.uniform1f(l.u_dpr as WebGLUniformLocation, dpr);
     context.uniform2f(l.u_resolution as WebGLUniformLocation, bw, bh);
-    context.drawArrays(context.TRIANGLES, 0, count.current);
+    const drawBuffer = (buffer: WebGLBuffer | null, vertexCount: number) => {
+      if (!buffer || !vertexCount) return;
+      context.bindBuffer(context.ARRAY_BUFFER, buffer);
+      context.enableVertexAttribArray(a.a_pos); context.vertexAttribPointer(a.a_pos, 2, context.FLOAT, false, stride, 0);
+      context.enableVertexAttribArray(a.a_norm); context.vertexAttribPointer(a.a_norm, 2, context.FLOAT, false, stride, 8);
+      context.enableVertexAttribArray(a.a_color); context.vertexAttribPointer(a.a_color, 4, context.FLOAT, false, stride, 16);
+      context.enableVertexAttribArray(a.a_half); context.vertexAttribPointer(a.a_half, 1, context.FLOAT, false, stride, 32);
+      context.drawArrays(context.TRIANGLES, 0, vertexCount);
+    };
+    drawBuffer(baseBuf.current, baseCount.current);
+    drawBuffer(overlayBuf.current, overlayCount.current);
   }, [width, height, store]);
+
+  const scheduleDraw = useCallback(() => {
+    if (drawRafRef.current != null) return;
+    drawRafRef.current = window.requestAnimationFrame(() => {
+      drawRafRef.current = null;
+      draw();
+    });
+  }, [draw]);
 
   // rebuild geometry exactly when geometry deps change (data / drag / route / trace / theme), then draw.
   // Layout timing keeps hover highlights in the same paint as the trace state update.
   useLayoutEffect(() => { rebuild(); draw(); repickRef.current?.(); }, [rebuild, draw]);
-  // pan/zoom (and resize): geometry is current, just re-issue uniforms + one draw call
-  useEffect(() => { draw(); }, [transform, draw]);
+  // Pan/zoom is not React state for this layer: geometry is current, so coalesce transform changes to
+  // one RAF draw that only updates uniforms. This avoids re-rendering the whole edge component on
+  // every wheel tick; labels subscribe separately only when labels exist.
+  useEffect(() => {
+    let prev = store.getState().transform;
+    const unsubscribe = store.subscribe((state) => {
+      const next = state.transform;
+      if (next[0] === prev[0] && next[1] === prev[1] && next[2] === prev[2]) return;
+      prev = next;
+      scheduleDraw();
+    });
+    return () => {
+      unsubscribe();
+      if (drawRafRef.current != null) {
+        window.cancelAnimationFrame(drawRafRef.current);
+        drawRafRef.current = null;
+      }
+    };
+  }, [scheduleDraw, store]);
 
   // cable hover/click: the canvas is pointerEvents:none, so hit-test the pointer against the polylines
   // on React Flow's pane (which receives events over empty space — exactly where cables live).
   useEffect(() => {
     const pane = ref.current?.closest('.react-flow')?.querySelector<HTMLElement>('.react-flow__pane');
     if (!pane) return;
+    const hoverPickEnabled = edges.length <= LARGE_HOVER_EDGE_COUNT;
     const pick = (clientX: number, clientY: number): string | null => {
       const p = rf.screenToFlowPosition({ x: clientX, y: clientY }, { snapToGrid: false });
       const zoom = store.getState().transform[2];
       const tolerance = 8 / zoom; // ~8px tolerance (matches the SVG interactionWidth)
       const current = pointerRef.current.lastHover;
       let best: string | null = null, bestD = tolerance, currentD = Number.POSITIVE_INFINITY;
-      for (const h of hitRef.current) {
+      for (const h of hitCandidates(hitIndexRef.current, p, tolerance, current)) {
+        if (!pointNearHitBox(h, p, tolerance)) continue;
         const d = distToPolyline(h.pts, p.x, p.y);
         if (h.id === current) currentD = d;
         if (d < bestD) { bestD = d; best = h.id; }
@@ -327,13 +496,52 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
       const p = pointerRef.current;
       if (id === p.lastHover) return;
       p.lastHover = id;
-      trace.hover(id ? `cable:${id}` : null);
+      const cancelPendingTrace = () => {
+        if (hoverTraceTimerRef.current != null) {
+          window.clearTimeout(hoverTraceTimerRef.current);
+          hoverTraceTimerRef.current = null;
+        }
+      };
+      const clearTraceHover = () => {
+        cancelPendingTrace();
+        if (activeTraceHoverRef.current == null) return;
+        activeTraceHoverRef.current = null;
+        trace.hover(null);
+      };
+      const commitTraceHover = (next: string) => {
+        if (activeTraceHoverRef.current === next) return;
+        activeTraceHoverRef.current = next;
+        trace.hover(`cable:${next}`);
+      };
+
+      if (!id) {
+        clearTraceHover();
+        return;
+      }
+      if (edges.length > LARGE_HOVER_EDGE_COUNT) {
+        clearTraceHover();
+        hoverTraceTimerRef.current = window.setTimeout(() => {
+          hoverTraceTimerRef.current = null;
+          if (pointerRef.current.lastHover === id && !trace.isHoverSuspended()) commitTraceHover(id);
+        }, LARGE_HOVER_TRACE_DELAY_MS);
+        return;
+      }
+      cancelPendingTrace();
+      commitTraceHover(id);
     };
     // ports/nodes own the hover when the pointer is on them — never let a cable under a port win
     const overNode = (t: EventTarget | null) => !!(t as Element | null)?.closest?.('.react-flow__node');
     const clearLocalHover = () => {
       pointerRef.current.lastHover = null;
       pane.style.cursor = '';
+      if (hoverTraceTimerRef.current != null) {
+        window.clearTimeout(hoverTraceTimerRef.current);
+        hoverTraceTimerRef.current = null;
+      }
+      if (activeTraceHoverRef.current != null) {
+        activeTraceHoverRef.current = null;
+        trace.hover(null);
+      }
     };
     let raf = 0;
     const onMove = (e: PointerEvent) => {
@@ -345,6 +553,11 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
       p.overNode = overNode(e.target);
       if (p.overNode) { pane.style.cursor = ''; setHover(null); return; }
       if (e.buttons) { pane.style.cursor = ''; setHover(null); return; } // panning: let React Flow own the cursor
+      if (!hoverPickEnabled) {
+        if (p.lastHover) setHover(null);
+        pane.style.cursor = '';
+        return;
+      }
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
@@ -362,7 +575,18 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
       pane.style.cursor = '';
       setHover(null);
     };
-    const onClick = (e: MouseEvent) => { if (overNode(e.target)) return; const id = pick(e.clientX, e.clientY); if (id) { e.stopPropagation(); trace.pin(`cable:${id}`); } };
+    const onClick = (e: MouseEvent) => {
+      if (overNode(e.target)) return;
+      const id = pick(e.clientX, e.clientY);
+      if (id) {
+        if (hoverTraceTimerRef.current != null) {
+          window.clearTimeout(hoverTraceTimerRef.current);
+          hoverTraceTimerRef.current = null;
+        }
+        e.stopPropagation();
+        trace.pin(`cable:${id}`);
+      }
+    };
     repickRef.current = () => {
       const p = pointerRef.current;
       if (trace.isHoverSuspended()) { clearLocalHover(); return; }
@@ -377,28 +601,22 @@ export default function GLEdges({ edges, dark, nodes, lite = false, onUnavailabl
     return () => {
       if (raf) cancelAnimationFrame(raf);
       pane.style.cursor = '';
-      if (pointerRef.current.lastHover) trace.hover(null);
+      if (hoverTraceTimerRef.current != null) window.clearTimeout(hoverTraceTimerRef.current);
+      hoverTraceTimerRef.current = null;
+      if (activeTraceHoverRef.current != null) trace.hover(null);
+      activeTraceHoverRef.current = null;
       pointerRef.current = { active: false, x: 0, y: 0, overNode: false, lastHover: null };
       repickRef.current = null;
       pane.removeEventListener('pointermove', onMove);
       pane.removeEventListener('pointerleave', onLeave);
       pane.removeEventListener('click', onClick, true);
     };
-  }, [store, rf]);
+  }, [store, rf, edges.length]);
 
-  const [vtx, vty, vzoom] = transform;
   return (
     <>
       <canvas ref={ref} style={{ position: 'absolute', inset: 0, width, height, pointerEvents: 'none', zIndex: 0 }} />
-      {labels.map((lab) => (
-        <div key={lab.key} style={{
-          position: 'absolute', left: 0, top: 0, pointerEvents: 'none', zIndex: 5, whiteSpace: 'nowrap',
-          transform: `translate(-50%, -50%) translate(${lab.x * vzoom + vtx}px, ${lab.y * vzoom + vty}px)`,
-          ...(lab.badge
-            ? { fontSize: 9, fontWeight: 800, lineHeight: 1.4, padding: '0 5px', borderRadius: 8, background: lab.color, color: '#000', border: '1px solid rgba(0,0,0,0.35)' }
-            : { fontSize: 10, fontWeight: 600, lineHeight: 1.3, padding: '1px 6px', borderRadius: 4, background: 'var(--label-bg)', color: 'var(--fg)', border: `1px solid ${lab.color}` }),
-        }}>{lab.text}</div>
-      ))}
+      {labels.length > 0 && <EdgeLabels labels={labels} />}
     </>
   );
 }

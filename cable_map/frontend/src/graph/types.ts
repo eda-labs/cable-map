@@ -18,6 +18,8 @@ export type PortInfo = {
   lldp?: LldpStatus;    // LLDP cross-check vs the configured remote
 };
 
+export type SwitchDetailLevel = 'full' | 'labeled' | 'summary';
+
 export type SwitchData = {
   name: string; role: string; platform: string;
   nodeState?: string;
@@ -29,6 +31,8 @@ export type SwitchData = {
   aspect?: number;                   // cage-box w/h, to size the layout panel
   breakouts?: Record<string, Breakout>;  // cage id -> breakout split (channels + speed)
   compact?: boolean;                 // large-topology mode: draw a cheap aggregate switch node
+  renderHandles?: boolean;           // false when WebGL computes cable endpoints from node data
+  detailLevel?: SwitchDetailLevel;   // adaptive detail: labeled/summary draw the panel into one canvas
   selected?: boolean;                // programmatic focus/selection mirrored outside React Flow's transient selection store
   showEdgeStubs?: boolean;           // draw short local downlink stubs instead of remote endpoint chips
   activeEdgeStubPorts?: string[];     // "node:port" ids whose stubs are expanded to full cables
@@ -42,6 +46,7 @@ export type EndpointData = {
   lacp?: boolean;         // LACP vs static (LAGs only)
   mode?: string;          // multihoming mode, e.g. AllActive (ESI only)
   lldp?: LldpStatus;      // worst LLDP status across the bond's member ports
+  renderHandles?: boolean;
 };
 
 export type GraphEndpoint = { id: string; leaves: string[]; data: EndpointData };

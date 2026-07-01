@@ -9,6 +9,7 @@ import { useLldp } from './lldp';
 // fan up to every leaf it homes to, so the dual-homing reads at a glance.
 function EndpointNode({ id, data }: NodeProps) {
   const d = data as EndpointData;
+  const renderHandles = d.renderHandles !== false;
   const lldpOn = useLldp();
   const color = lldpOn ? LLDP_COLOR[d.lldp ?? 'none'] : CABLE_COLOR[d.kind];
   const mode = useTrace(modeFor((s) => s.nodes.has(id)));
@@ -33,8 +34,10 @@ function EndpointNode({ id, data }: NodeProps) {
         cursor: 'pointer',
       }}
     >
-      <Handle type="target" id="in" position={Position.Top} isConnectable={false}
-        style={{ width: 6, height: 6, background: color, border: 0, top: -2 }} />
+      {renderHandles && (
+        <Handle type="target" id="in" position={Position.Top} isConnectable={false}
+          style={{ width: 6, height: 6, background: color, border: 0, top: -2 }} />
+      )}
       <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.label}</span>
       <span style={{ flex: 1 }} />
       {d.kind === 'edge'

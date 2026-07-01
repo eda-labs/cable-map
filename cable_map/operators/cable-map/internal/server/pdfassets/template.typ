@@ -9,9 +9,12 @@
   text(size: 9.75pt, fill: rgb("#333333"), tracking: 0.225pt)[Cable Map],
 )
 
+#let bookmark(title) = place(hide(heading(level: 1, outlined: false, bookmarked: true)[#title]))
+
 // one node per page: header, front panel, cable table
 #let node-page(node) = {
   current.update(node.name)
+  bookmark(node.name)
   [#metadata((name: node.name, platform: node.platform)) <cm-toc>]
   grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
     [#text(size: 15pt, weight: 700)[#node.name]#h(4.5pt)#text(size: 9.75pt, weight: 400, fill: rgb("#666666"))[#node.platform]],
@@ -33,6 +36,7 @@
 
 #let toc-page() = {
   current.update("Contents")
+  bookmark("Contents")
   grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
     text(size: 15pt, weight: 700)[Contents],
     stamp,
@@ -46,11 +50,14 @@
       stroke: 0.4pt + rgb("#dddddd"),
       fill: (_, row) => if row == 0 { rgb("#e9edf2") } else if calc.odd(row) { rgb("#f6f8fa") } else { white },
       table.header([*Node*], [*Model*], [*Page*]),
-      ..items.map(it => (
-        link(it.location())[#it.value.name],
-        text(fill: rgb("#666666"))[#it.value.platform],
-        [#counter(page).at(it.location()).first()],
-      )).flatten(),
+      ..items.map(it => {
+        let loc = it.location()
+        (
+          link(loc)[#text(fill: rgb("#1a66c2"))[#it.value.name]],
+          link(loc)[#text(fill: rgb("#666666"))[#it.value.platform]],
+          link(loc)[#text(fill: rgb("#1a66c2"))[#counter(page).at(loc).first()]],
+        )
+      }).flatten(),
     )
   }
 }
