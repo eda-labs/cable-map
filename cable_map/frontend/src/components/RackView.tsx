@@ -1,6 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -31,7 +34,16 @@ const ROW_SPACING = 2.75;
 const ROW_SIDE_OFFSET = 0.82;
 const CABLE_FRONT_CLEARANCE = 0.34;
 const CABLE_TRAY_HEIGHT = RACK_HEIGHT + 0.34;
-const CABLE_ROUTE_POINTS = 8;
+const KEYBOARD_MOVE_SPEED_MIN = 2.4;
+const KEYBOARD_MOVE_SPEED_MAX = 48;
+const KEYBOARD_FAST_MULTIPLIER = 2.4;
+const FPS_MOUSE_SENSITIVITY = 0.0023;
+const FPS_PITCH_MIN = 0.12;
+const FPS_PITCH_MAX = Math.PI - 0.14;
+const CABLE_LINEWIDTH_IDLE = 1.2;
+const CABLE_LINEWIDTH_CLOSE = 3.25;
+const CABLE_LINEWIDTH_TRACE = 2.8;
+const CABLE_LINEWIDTH_TRACE_CLOSE = 5.5;
 
 type DeviceMesh = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> & {
   userData: {
@@ -53,8 +65,9 @@ type RackSceneState = {
   root: THREE.Group;
   devices: DeviceMesh[];
   labels: THREE.Sprite[];
-  cableLayer: THREE.LineSegments | null;
-  cableHighlightLayer: THREE.LineSegments | null;
+  cableLayer: LineSegments2 | null;
+  cableHighlightLayer: LineSegments2 | null;
+  cableEndpointLayer: THREE.Points | null;
   cableRoutes: RackCableRoute[];
 };
 
@@ -416,6 +429,15 @@ function cableEndpoint(root: THREE.Group, anchor: DeviceAnchor, port: string): C
   return { point, front, rack: anchor.rack, role: anchor.role };
 }
 
+function compactRoutePoints(points: THREE.Vector3[]): THREE.Vector3[] {
+  const out: THREE.Vector3[] = [];
+  for (const point of points) {
+    const last = out.at(-1);
+    if (!last || last.distanceToSquared(point) > 0.0001) out.push(point);
+  }
+  return out;
+}
+
 function cableRoutePoints(link: Topology['links'][number], source: CableEndpoint, target: CableEndpoint): THREE.Vector3[] {
   const hash = stringHash(link.id);
   const sameRack = source.rack === target.rack;
@@ -423,7 +445,7 @@ function cableRoutePoints(link: Topology['links'][number], source: CableEndpoint
   const sourceOut = source.point.clone().addScaledVector(source.front, clearance);
   const targetOut = target.point.clone().addScaledVector(target.front, clearance);
   const delta = targetOut.clone().sub(sourceOut);
-  const lane = ((hash % 11) - 5) * (sameRack ? 0.012 : 0.022);
+  const lane = ((hash % 11) - 5) * (sameRack ? 0.014 : 0.024);
   const lateral = new THREE.Vector3(delta.z, 0, -delta.x);
   if (lateral.lengthSq() > 0.0001) lateral.normalize().multiplyScalar(lane);
   else lateral.set(lane, 0, 0);
@@ -434,17 +456,24 @@ function cableRoutePoints(link: Topology['links'][number], source: CableEndpoint
     : CABLE_TRAY_HEIGHT + laneY;
   const sourceLane = sourceOut.clone().add(lateral);
   const targetLane = targetOut.clone().add(lateral);
-  const sourceLift = sourceLane.clone();
-  sourceLift.y = routeY;
-  const targetLift = targetLane.clone();
-  targetLift.y = routeY;
-  const mid = sourceLift.clone().lerp(targetLift, 0.5);
-  mid.y += sameRack ? 0 : 0.08;
+  const sourceLift = new THREE.Vector3(sourceLane.x, routeY, sourceLane.z);
+  const targetLift = new THREE.Vector3(targetLane.x, routeY, targetLane.z);
+  const runXFirst = Math.abs(targetLift.x - sourceLift.x) >= Math.abs(targetLift.z - sourceLift.z);
+  const trayCorner = runXFirst
+    ? new THREE.Vector3(targetLift.x, routeY, sourceLift.z)
+    : new THREE.Vector3(sourceLift.x, routeY, targetLift.z);
 
-  const controls = sameRack
-    ? [source.point, sourceLane, mid, targetLane, target.point]
-    : [source.point, sourceLane, sourceLift, mid, targetLift, targetLane, target.point];
-  return new THREE.CatmullRomCurve3(controls, false, 'catmullrom', 0.42).getPoints(CABLE_ROUTE_POINTS);
+  return compactRoutePoints([
+    source.point,
+    sourceOut,
+    sourceLane,
+    sourceLift,
+    trayCorner,
+    targetLift,
+    targetLane,
+    targetOut,
+    target.point,
+  ]);
 }
 
 function routePositions(points: THREE.Vector3[]): number[] {
@@ -457,9 +486,60 @@ function routePositions(points: THREE.Vector3[]): number[] {
   return positions;
 }
 
+function lineSegmentsGeometry(positions: number[]): LineSegmentsGeometry {
+  const geometry = new LineSegmentsGeometry();
+  geometry.setPositions(positions);
+  return geometry;
+}
+
+function setLineMaterialResolution(material: LineMaterial, renderer: THREE.WebGLRenderer) {
+  const size = renderer.getSize(new THREE.Vector2());
+  material.resolution.set(size.x, size.y);
+}
+
+function setCableLayerResolutions(state: RackSceneState) {
+  if (state.cableLayer) setLineMaterialResolution(state.cableLayer.material as LineMaterial, state.renderer);
+  if (state.cableHighlightLayer) setLineMaterialResolution(state.cableHighlightLayer.material as LineMaterial, state.renderer);
+}
+
+function cableCloseFactor(state: RackSceneState): number {
+  const zoomDistance = state.camera.position.distanceTo(state.controls.target);
+  let factor = THREE.MathUtils.clamp((18 - zoomDistance) / 12, 0, 1);
+  let nearestDeviceSquared = Number.POSITIVE_INFINITY;
+  const worldPosition = new THREE.Vector3();
+  for (const device of state.devices) {
+    device.getWorldPosition(worldPosition);
+    nearestDeviceSquared = Math.min(nearestDeviceSquared, state.camera.position.distanceToSquared(worldPosition));
+  }
+  if (Number.isFinite(nearestDeviceSquared)) {
+    const nearestDevice = Math.sqrt(nearestDeviceSquared);
+    factor = Math.max(factor, THREE.MathUtils.clamp((5.5 - nearestDevice) / 4, 0, 1));
+  }
+  return factor;
+}
+
+function updateCableScaleForDistance(state: RackSceneState) {
+  const factor = cableCloseFactor(state);
+  if (state.cableLayer) {
+    const material = state.cableLayer.material as LineMaterial;
+    material.linewidth = THREE.MathUtils.lerp(CABLE_LINEWIDTH_IDLE, CABLE_LINEWIDTH_CLOSE, factor);
+  }
+  if (state.cableHighlightLayer) {
+    const material = state.cableHighlightLayer.material as LineMaterial;
+    material.linewidth = THREE.MathUtils.lerp(CABLE_LINEWIDTH_TRACE, CABLE_LINEWIDTH_TRACE_CLOSE, factor);
+  }
+  if (state.cableEndpointLayer) {
+    const material = state.cableEndpointLayer.material as THREE.PointsMaterial;
+    material.opacity = factor * 0.72;
+    material.size = THREE.MathUtils.lerp(0.025, 0.075, factor);
+    state.cableEndpointLayer.visible = factor > 0.08;
+  }
+}
+
 function addCableLayer(state: RackSceneState, topo: Topology, shown: Set<string> | null, anchors: Map<string, DeviceAnchor>, mode: Mode) {
   const palette = scenePalette(mode);
   const allPositions: number[] = [];
+  const endpointPositions: number[] = [];
   const routes: RackCableRoute[] = [];
 
   for (const link of topo.links) {
@@ -467,55 +547,78 @@ function addCableLayer(state: RackSceneState, topo: Topology, shown: Set<string>
     const sourceAnchor = anchors.get(link.source);
     const targetAnchor = anchors.get(link.target);
     if (!sourceAnchor || !targetAnchor) continue;
-    const points = cableRoutePoints(
-      link,
-      cableEndpoint(state.root, sourceAnchor, link.sourcePort),
-      cableEndpoint(state.root, targetAnchor, link.targetPort),
-    );
+    const sourceEndpoint = cableEndpoint(state.root, sourceAnchor, link.sourcePort);
+    const targetEndpoint = cableEndpoint(state.root, targetAnchor, link.targetPort);
+    const points = cableRoutePoints(link, sourceEndpoint, targetEndpoint);
     const positions = routePositions(points);
     routes.push({ id: link.id, positions });
     allPositions.push(...positions);
+    endpointPositions.push(
+      sourceEndpoint.point.x, sourceEndpoint.point.y, sourceEndpoint.point.z,
+      targetEndpoint.point.x, targetEndpoint.point.y, targetEndpoint.point.z,
+    );
   }
 
   state.cableRoutes = routes;
   if (allPositions.length === 0) return;
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(allPositions, 3));
+  const geometry = lineSegmentsGeometry(allPositions);
   const idleOpacity = routes.length > 6000 ? 0.05 : routes.length > 3500 ? 0.085 : routes.length > 1200 ? 0.16 : 0.3;
-  const material = new THREE.LineBasicMaterial({
+  const material = new LineMaterial({
     color: palette.cable,
+    linewidth: CABLE_LINEWIDTH_IDLE,
     transparent: true,
     opacity: idleOpacity,
     depthWrite: false,
   });
+  setLineMaterialResolution(material, state.renderer);
   material.userData.idleOpacity = idleOpacity;
 
-  const layer = new THREE.LineSegments(geometry, material);
+  const layer = new LineSegments2(geometry, material);
   layer.frustumCulled = false;
   layer.renderOrder = 8;
   state.root.add(layer);
   state.cableLayer = layer;
 
-  const highlightGeometry = new THREE.BufferGeometry();
-  highlightGeometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
-  const highlightMaterial = new THREE.LineBasicMaterial({
+  const highlightGeometry = lineSegmentsGeometry([]);
+  const highlightMaterial = new LineMaterial({
     color: palette.cableTrace,
+    linewidth: CABLE_LINEWIDTH_TRACE,
     transparent: true,
     opacity: 0,
     depthWrite: false,
     depthTest: false,
   });
-  const highlightLayer = new THREE.LineSegments(highlightGeometry, highlightMaterial);
+  setLineMaterialResolution(highlightMaterial, state.renderer);
+  const highlightLayer = new LineSegments2(highlightGeometry, highlightMaterial);
   highlightLayer.frustumCulled = false;
   highlightLayer.renderOrder = 30;
   state.root.add(highlightLayer);
   state.cableHighlightLayer = highlightLayer;
+
+  const endpointGeometry = new THREE.BufferGeometry();
+  endpointGeometry.setAttribute('position', new THREE.Float32BufferAttribute(endpointPositions, 3));
+  const endpointMaterial = new THREE.PointsMaterial({
+    color: palette.cable,
+    size: 0.025,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    depthTest: false,
+    sizeAttenuation: true,
+  });
+  const endpoints = new THREE.Points(endpointGeometry, endpointMaterial);
+  endpoints.frustumCulled = false;
+  endpoints.renderOrder = 29;
+  endpoints.visible = false;
+  state.root.add(endpoints);
+  state.cableEndpointLayer = endpoints;
+  updateCableScaleForDistance(state);
 }
 
 function updateCableTrace(state: RackSceneState, tracedEdges: Set<string>, traceAny: boolean, mode: Mode) {
   if (state.cableLayer) {
-    const material = state.cableLayer.material as THREE.LineBasicMaterial;
+    const material = state.cableLayer.material as LineMaterial;
     const idleOpacity = typeof material.userData.idleOpacity === 'number' ? material.userData.idleOpacity : 0.2;
     material.opacity = traceAny ? idleOpacity * 0.38 : idleOpacity;
     material.needsUpdate = true;
@@ -529,12 +632,11 @@ function updateCableTrace(state: RackSceneState, tracedEdges: Set<string>, trace
     }
   }
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  const geometry = lineSegmentsGeometry(positions);
   state.cableHighlightLayer.geometry.dispose();
   state.cableHighlightLayer.geometry = geometry;
 
-  const material = state.cableHighlightLayer.material as THREE.LineBasicMaterial;
+  const material = state.cableHighlightLayer.material as LineMaterial;
   material.color.set(scenePalette(mode).cableTrace);
   material.opacity = positions.length > 0 ? 0.95 : 0;
   material.needsUpdate = true;
@@ -728,6 +830,7 @@ function resetRoot(state: RackSceneState) {
   state.labels = [];
   state.cableLayer = null;
   state.cableHighlightLayer = null;
+  state.cableEndpointLayer = null;
   state.cableRoutes = [];
   state.scene.add(state.root);
 }
@@ -810,6 +913,57 @@ function buildScene(state: RackSceneState, topo: Topology, racks: RackGroup[], s
   frameCamera(state);
 }
 
+function isKeyboardInputTarget(target: EventTarget | null): boolean {
+  const element = target instanceof HTMLElement ? target : null;
+  return !!element?.closest('input, textarea, select, button, a[href], [contenteditable="true"], [role="textbox"], [role="menu"], [role="listbox"], [role="option"]');
+}
+
+function navigationKey(event: KeyboardEvent): 'forward' | 'back' | 'left' | 'right' | null {
+  if (event.code === 'KeyW' || event.key === 'ArrowUp') return 'forward';
+  if (event.code === 'KeyS' || event.key === 'ArrowDown') return 'back';
+  if (event.code === 'KeyA' || event.key === 'ArrowLeft') return 'left';
+  if (event.code === 'KeyD' || event.key === 'ArrowRight') return 'right';
+  return null;
+}
+
+function applyMouseLook(state: RackSceneState, deltaX: number, deltaY: number) {
+  const offset = state.controls.target.clone().sub(state.camera.position);
+  const distance = Math.max(1, offset.length());
+  const spherical = new THREE.Spherical().setFromVector3(offset);
+  spherical.theta -= deltaX * FPS_MOUSE_SENSITIVITY;
+  spherical.phi = THREE.MathUtils.clamp(spherical.phi + deltaY * FPS_MOUSE_SENSITIVITY, FPS_PITCH_MIN, FPS_PITCH_MAX);
+  offset.setFromSpherical(spherical).setLength(distance);
+  state.controls.target.copy(state.camera.position).add(offset);
+}
+
+function applyKeyboardNavigation(state: RackSceneState, pressedKeys: Set<string>, deltaSeconds: number, fast: boolean) {
+  let forwardAmount = 0;
+  let rightAmount = 0;
+  if (pressedKeys.has('forward')) forwardAmount += 1;
+  if (pressedKeys.has('back')) forwardAmount -= 1;
+  if (pressedKeys.has('right')) rightAmount += 1;
+  if (pressedKeys.has('left')) rightAmount -= 1;
+  if (forwardAmount === 0 && rightAmount === 0) return;
+
+  const forward = state.camera.getWorldDirection(new THREE.Vector3());
+  forward.y = 0;
+  if (forward.lengthSq() < 0.0001) forward.set(0, 0, -1);
+  forward.normalize();
+  const right = new THREE.Vector3().crossVectors(forward, state.camera.up).setY(0);
+  if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
+  right.normalize();
+
+  const move = forward.multiplyScalar(forwardAmount).add(right.multiplyScalar(rightAmount));
+  if (move.lengthSq() < 0.0001) return;
+  move.normalize();
+
+  const distance = state.camera.position.distanceTo(state.controls.target);
+  const speed = Math.max(KEYBOARD_MOVE_SPEED_MIN, Math.min(KEYBOARD_MOVE_SPEED_MAX, distance * 0.45));
+  move.multiplyScalar(speed * (fast ? KEYBOARD_FAST_MULTIPLIER : 1) * deltaSeconds);
+  state.camera.position.add(move);
+  state.controls.target.add(move);
+}
+
 function pickDevice(state: RackSceneState, event: MouseEvent | PointerEvent): DeviceMesh | null {
   const rect = state.renderer.domElement.getBoundingClientRect();
   if (!rect.width || !rect.height) return null;
@@ -880,6 +1034,8 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
     renderer.domElement.style.touchAction = 'none';
+    renderer.domElement.tabIndex = 0;
+    renderer.domElement.setAttribute('aria-label', '3D rack view');
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -887,9 +1043,12 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
+    controls.enableRotate = false;
+    controls.enablePan = false;
     controls.minDistance = 5;
     controls.maxDistance = 220;
-    controls.maxPolarAngle = Math.PI * 0.48;
+    controls.minPolarAngle = FPS_PITCH_MIN;
+    controls.maxPolarAngle = FPS_PITCH_MAX;
     controls.target.set(0, 2.5, 0);
 
     scene.add(new THREE.HemisphereLight('#FFFFFF', '#233247', 1.55));
@@ -914,6 +1073,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       labels: [],
       cableLayer: null,
       cableHighlightLayer: null,
+      cableEndpointLayer: null,
       cableRoutes: [],
     };
     sceneRef.current = state;
@@ -925,13 +1085,21 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      setCableLayerResolutions(state);
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
     resize();
 
+    const pressedKeys = new Set<string>();
+    let keyboardFast = false;
     let frame = 0;
-    const render = () => {
+    let lastFrameTime = performance.now();
+    const render = (time = performance.now()) => {
+      const deltaSeconds = Math.min(0.06, Math.max(0, (time - lastFrameTime) / 1000));
+      lastFrameTime = time;
+      applyKeyboardNavigation(state, pressedKeys, deltaSeconds, keyboardFast);
+      updateCableScaleForDistance(state);
       controls.update();
       renderer.render(scene, camera);
       frame = window.requestAnimationFrame(render);
@@ -940,11 +1108,57 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
 
     let lastHover: string | null = null;
     const pointerDown = { x: 0, y: 0 };
+    const mouseLook = { down: false, active: false, lastX: 0, lastY: 0, pointerId: -1 };
     const onPointerDown = (event: PointerEvent) => {
+      renderer.domElement.focus({ preventScroll: true });
       pointerDown.x = event.clientX;
       pointerDown.y = event.clientY;
+      if (event.button === 0) {
+        mouseLook.down = true;
+        mouseLook.active = false;
+        mouseLook.lastX = event.clientX;
+        mouseLook.lastY = event.clientY;
+        mouseLook.pointerId = event.pointerId;
+        renderer.domElement.setPointerCapture(event.pointerId);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || isKeyboardInputTarget(event.target)) return;
+      const key = navigationKey(event);
+      if (!key) return;
+      event.preventDefault();
+      pressedKeys.add(key);
+      keyboardFast = event.shiftKey;
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      const key = navigationKey(event);
+      if (!key) return;
+      event.preventDefault();
+      pressedKeys.delete(key);
+      keyboardFast = event.shiftKey;
+    };
+    const clearPressedKeys = () => {
+      pressedKeys.clear();
+      keyboardFast = false;
     };
     const onPointerMove = (event: PointerEvent) => {
+      if (mouseLook.down && (event.buttons & 1) === 1) {
+        const deltaX = event.clientX - mouseLook.lastX;
+        const deltaY = event.clientY - mouseLook.lastY;
+        mouseLook.lastX = event.clientX;
+        mouseLook.lastY = event.clientY;
+        const moved = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
+        if (mouseLook.active || moved > POINTER_CLICK_TOLERANCE) {
+          mouseLook.active = true;
+          event.preventDefault();
+          renderer.domElement.style.cursor = 'grabbing';
+          lastHover = null;
+          trace.hover(null);
+          setHover(null);
+          applyMouseLook(state, deltaX, deltaY);
+          return;
+        }
+      }
       const hit = pickDevice(state, event);
       const nodeName = hit?.userData.nodeName ?? null;
       renderer.domElement.style.cursor = nodeName ? 'pointer' : 'grab';
@@ -961,7 +1175,16 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         setHover(null);
       }
     };
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerId !== mouseLook.pointerId) return;
+      mouseLook.down = false;
+      mouseLook.active = false;
+      mouseLook.pointerId = -1;
+      if (renderer.domElement.hasPointerCapture(event.pointerId)) renderer.domElement.releasePointerCapture(event.pointerId);
+      renderer.domElement.style.cursor = 'grab';
+    };
     const onPointerLeave = () => {
+      if (mouseLook.active) return;
       lastHover = null;
       renderer.domElement.style.cursor = 'grab';
       trace.hover(null);
@@ -991,16 +1214,26 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
 
     renderer.domElement.addEventListener('pointerdown', onPointerDown);
     renderer.domElement.addEventListener('pointermove', onPointerMove);
+    renderer.domElement.addEventListener('pointerup', onPointerUp);
+    renderer.domElement.addEventListener('pointercancel', onPointerUp);
     renderer.domElement.addEventListener('pointerleave', onPointerLeave);
     renderer.domElement.addEventListener('click', onClick);
     renderer.domElement.addEventListener('dblclick', onDoubleClick);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearPressedKeys);
 
     return () => {
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
+      renderer.domElement.removeEventListener('pointerup', onPointerUp);
+      renderer.domElement.removeEventListener('pointercancel', onPointerUp);
       renderer.domElement.removeEventListener('pointerleave', onPointerLeave);
       renderer.domElement.removeEventListener('click', onClick);
       renderer.domElement.removeEventListener('dblclick', onDoubleClick);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearPressedKeys);
       observer.disconnect();
       window.cancelAnimationFrame(frame);
       controls.dispose();
