@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -19,11 +20,15 @@ import LabelOffIcon from '@mui/icons-material/LabelOffOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
-import type { Breakout, Topology } from '../domain/topology/contract';
+import type { Breakout, Row, Topology } from '../domain/topology/contract';
 import type { FrontPanelPortPos } from '../domain/ports/frontPanelMeta';
 import { frontPanelMetaOf, layoutOf, slottedOf } from '../domain/ports/frontPanelMeta';
-import { breakoutChannel, cageKey, portIdx } from '../domain/ports/interfaceNames';
+import { breakoutChannel, cageKey, portIdx, shortPortLabel } from '../domain/ports/interfaceNames';
 import { buildRackGroups, rackLabelOf, roleRank, type RackGroup } from '../domain/topology/racks';
+import {
+  buildLinkIndex, endKey, islTraceIdFromRow, stubTraceId,
+  type LinkIndex,
+} from '../domain/topology/linkIndex';
 import type { CableKind } from '../graph';
 import { trace, useTrace } from '../trace';
 import { type Mode } from '../theme';
@@ -55,6 +60,13 @@ const CABLE_LINEWIDTH_IDLE = 1.2;
 const CABLE_LINEWIDTH_CLOSE = 3.25;
 const CABLE_LINEWIDTH_TRACE = 2.8;
 const CABLE_LINEWIDTH_TRACE_CLOSE = 5.5;
+// hover hit-testing: pick radius grows with camera distance; above the route limit the
+// per-segment sweep is skipped entirely (matches the 2D canvas's large-topology cutoff)
+const CABLE_PICK_ROUTE_LIMIT = 5000;
+const CABLE_PICK_MIN_THRESHOLD = 0.035;
+const CABLE_PICK_MAX_THRESHOLD = 0.17;
+// demand rendering: how long one interaction keeps frames flowing before the loop idles
+const RENDER_ACTIVE_MS = 400;
 const OCCUPIED_PORT_COLOR = '#37CC73';
 const OCCUPIED_PORT_OPACITY = 0.44;
 const OCCUPIED_PORT_Z = -DEVICE_DEPTH / 2 - 0.014;
@@ -92,11 +104,14 @@ type RackSceneState = {
   pointer: THREE.Vector2;
   root: THREE.Group;
   devices: DeviceMesh[];
+  deviceCenters: Float32Array;
+  anchors: Map<string, DeviceAnchor>;
   labels: THREE.Sprite[];
   cableLayer: LineSegments2 | null;
   cableHighlightLayer: LineSegments2 | null;
   cableEndpointLayer: THREE.Points | null;
   cableRoutes: RackCableRoute[];
+  requestRender: (ms?: number) => void;
 };
 
 type DeviceAnchor = {
@@ -119,6 +134,8 @@ type CableEndpoint = {
 type RackCableRoute = {
   id: string;
   positions: number[];
+  center: THREE.Vector3;  // bounding sphere over the route, culls the pick sweep
+  radius: number;
 };
 
 type OccupiedRect = {
@@ -129,11 +146,38 @@ type OccupiedRect = {
   kind: CableKind;
 };
 
+type PortHit = {
+  cage: string;
+  channel: number | null;
+};
+
+type HoverTarget =
+  | { type: 'device'; nodeName: string; port?: PortHit }
+  | { type: 'cable'; linkId: string };
+
 type HoverState = {
-  nodeName: string;
+  target: HoverTarget;
   x: number;
   y: number;
 };
+
+type HoverPick = {
+  key: string;      // dedupe key for pointermove
+  traceKey: string; // trace-store key to light up (node:… / cable:…)
+  target: HoverTarget;
+};
+
+type DevicePlacement = {
+  rack: string;
+  uStart: number;
+  uEnd: number;
+};
+
+function formatRackU(placement: DevicePlacement | undefined): string | null {
+  if (!placement) return null;
+  const units = placement.uStart === placement.uEnd ? `U${placement.uStart}` : `U${placement.uStart}–${placement.uEnd}`;
+  return `${placement.rack} · ${units}`;
+}
 
 type NavDirection = 'forward' | 'back' | 'left' | 'right' | 'up' | 'down';
 
@@ -455,11 +499,51 @@ function rackSort(left: RackGroup, right: RackGroup): number {
   return left.placement.rackIndex - right.placement.rackIndex || left.label.localeCompare(right.label);
 }
 
-function addBox(group: THREE.Group, geometry: THREE.BoxGeometry, material: THREE.Material, x: number, y: number, z: number) {
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  group.add(mesh);
-  return mesh;
+// All static rack furniture (posts, panels, rails, markers…) is collected per material and
+// merged into one mesh each, so a hall of hundreds of cabinets stays a handful of draw calls.
+type FurnitureCollector = {
+  metal: THREE.BufferGeometry[];
+  panel: THREE.BufferGeometry[];
+  rail: THREE.BufferGeometry[];
+  glass: THREE.BufferGeometry[];
+  back: THREE.BufferGeometry[];
+  base: Map<string, THREE.BufferGeometry[]>; // fill color -> slabs
+  markerLines: THREE.BufferGeometry[];
+  doorLines: THREE.BufferGeometry[];
+  frameLines: THREE.BufferGeometry[];
+};
+
+function createFurnitureCollector(): FurnitureCollector {
+  return {
+    metal: [], panel: [], rail: [], glass: [], back: [],
+    base: new Map(), markerLines: [], doorLines: [], frameLines: [],
+  };
+}
+
+function collectBox(
+  list: THREE.BufferGeometry[],
+  width: number, height: number, depth: number,
+  x: number, y: number, z: number,
+  matrix: THREE.Matrix4,
+) {
+  const geometry = new THREE.BoxGeometry(width, height, depth);
+  geometry.translate(x, y, z);
+  geometry.applyMatrix4(matrix);
+  list.push(geometry);
+}
+
+function collectLines(list: THREE.BufferGeometry[], points: number[], matrix: THREE.Matrix4) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  geometry.applyMatrix4(matrix);
+  list.push(geometry);
+}
+
+function mergeCollected(geometries: THREE.BufferGeometry[]): THREE.BufferGeometry | null {
+  if (geometries.length === 0) return null;
+  const merged = mergeGeometries(geometries);
+  for (const geometry of geometries) geometry.dispose();
+  return merged;
 }
 
 function layoutRackRows(racks: RackGroup[]): { racks: RackLayout[]; rows: RackRowLayout[] } {
@@ -665,11 +749,17 @@ function setCableLayerResolutions(state: RackSceneState) {
 function cableCloseFactor(state: RackSceneState): number {
   const zoomDistance = state.camera.position.distanceTo(state.controls.target);
   let factor = THREE.MathUtils.clamp((18 - zoomDistance) / 12, 0, 1);
+  // device positions are static after a build; scan the cached centers instead of
+  // recomputing world matrices every frame
+  const centers = state.deviceCenters;
+  const { x, y, z } = state.camera.position;
   let nearestDeviceSquared = Number.POSITIVE_INFINITY;
-  const worldPosition = new THREE.Vector3();
-  for (const device of state.devices) {
-    device.getWorldPosition(worldPosition);
-    nearestDeviceSquared = Math.min(nearestDeviceSquared, state.camera.position.distanceToSquared(worldPosition));
+  for (let index = 0; index + 2 < centers.length; index += 3) {
+    const dx = x - centers[index];
+    const dy = y - centers[index + 1];
+    const dz = z - centers[index + 2];
+    const distanceSquared = dx * dx + dy * dy + dz * dz;
+    if (distanceSquared < nearestDeviceSquared) nearestDeviceSquared = distanceSquared;
   }
   if (Number.isFinite(nearestDeviceSquared)) {
     const nearestDevice = Math.sqrt(nearestDeviceSquared);
@@ -711,7 +801,8 @@ function addCableLayer(state: RackSceneState, topo: Topology, shown: Set<string>
     const targetEndpoint = cableEndpoint(state.root, targetAnchor, link.targetPort);
     const points = cableRoutePoints(link, sourceEndpoint, targetEndpoint);
     const positions = routePositions(points);
-    routes.push({ id: link.id, positions });
+    const sphere = new THREE.Box3().setFromPoints(points).getBoundingSphere(new THREE.Sphere());
+    routes.push({ id: link.id, positions, center: sphere.center, radius: sphere.radius });
     allPositions.push(...positions);
     endpointPositions.push(
       sourceEndpoint.point.x, sourceEndpoint.point.y, sourceEndpoint.point.z,
@@ -802,47 +893,29 @@ function updateCableTrace(state: RackSceneState, tracedEdges: Set<string>, trace
   material.needsUpdate = true;
 }
 
-function addRackFrame(group: THREE.Group, rack: RackGroup, mode: Mode) {
-  const palette = scenePalette(mode);
-  const metal = new THREE.MeshStandardMaterial({ color: palette.cabinetMetal, roughness: 0.48, metalness: 0.38 });
-  const panel = new THREE.MeshStandardMaterial({ color: palette.cabinetPanel, roughness: 0.74, metalness: 0.12 });
-  const rail = new THREE.MeshStandardMaterial({ color: palette.cabinetRail, roughness: 0.42, metalness: 0.46 });
-  const glass = new THREE.MeshStandardMaterial({
-    color: palette.cabinetGlass,
-    roughness: 0.18,
-    metalness: 0,
-    transparent: true,
-    opacity: mode === 'dark' ? 0.16 : 0.2,
-    depthWrite: false,
-  });
-  const postGeometry = new THREE.BoxGeometry(0.055, RACK_HEIGHT, 0.055);
-  const frontCrossGeometry = new THREE.BoxGeometry(RACK_WIDTH + 0.13, 0.06, 0.06);
-  const sideCrossGeometry = new THREE.BoxGeometry(0.06, 0.06, RACK_DEPTH + 0.12);
-  const railGeometry = new THREE.BoxGeometry(0.036, RACK_HEIGHT - 0.22, 0.036);
-  const sidePanelGeometry = new THREE.BoxGeometry(0.018, RACK_HEIGHT - 0.24, RACK_DEPTH - 0.18);
-
+function collectRackFrame(collector: FurnitureCollector, rack: RackGroup, matrix: THREE.Matrix4) {
   for (const x of [-RACK_WIDTH / 2, RACK_WIDTH / 2]) {
     for (const z of [-RACK_DEPTH / 2, RACK_DEPTH / 2]) {
-      addBox(group, postGeometry, metal, x, RACK_HEIGHT / 2, z);
+      collectBox(collector.metal, 0.055, RACK_HEIGHT, 0.055, x, RACK_HEIGHT / 2, z, matrix);
     }
   }
   for (const y of [0.07, RACK_HEIGHT - 0.03]) {
     for (const z of [-RACK_DEPTH / 2, RACK_DEPTH / 2]) {
-      addBox(group, frontCrossGeometry, metal, 0, y, z);
+      collectBox(collector.metal, RACK_WIDTH + 0.13, 0.06, 0.06, 0, y, z, matrix);
     }
     for (const x of [-RACK_WIDTH / 2, RACK_WIDTH / 2]) {
-      addBox(group, sideCrossGeometry, metal, x, y, 0);
+      collectBox(collector.metal, 0.06, 0.06, RACK_DEPTH + 0.12, x, y, 0, matrix);
     }
   }
 
-  addBox(group, new THREE.BoxGeometry(RACK_WIDTH + 0.1, 0.08, RACK_DEPTH + 0.1), panel, 0, RACK_HEIGHT + 0.04, 0);
-  addBox(group, new THREE.BoxGeometry(RACK_WIDTH + 0.16, 0.09, RACK_DEPTH + 0.16), metal, 0, 0.015, 0);
-  addBox(group, new THREE.BoxGeometry(RACK_WIDTH - 0.12, RACK_HEIGHT - 0.24, 0.035), panel, 0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.006);
-  addBox(group, sidePanelGeometry, glass, -RACK_WIDTH / 2 - 0.012, RACK_HEIGHT / 2, 0.02);
-  addBox(group, sidePanelGeometry, glass, RACK_WIDTH / 2 + 0.012, RACK_HEIGHT / 2, 0.02);
+  collectBox(collector.panel, RACK_WIDTH + 0.1, 0.08, RACK_DEPTH + 0.1, 0, RACK_HEIGHT + 0.04, 0, matrix);
+  collectBox(collector.metal, RACK_WIDTH + 0.16, 0.09, RACK_DEPTH + 0.16, 0, 0.015, 0, matrix);
+  collectBox(collector.panel, RACK_WIDTH - 0.12, RACK_HEIGHT - 0.24, 0.035, 0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.006, matrix);
+  collectBox(collector.glass, 0.018, RACK_HEIGHT - 0.24, RACK_DEPTH - 0.18, -RACK_WIDTH / 2 - 0.012, RACK_HEIGHT / 2, 0.02, matrix);
+  collectBox(collector.glass, 0.018, RACK_HEIGHT - 0.24, RACK_DEPTH - 0.18, RACK_WIDTH / 2 + 0.012, RACK_HEIGHT / 2, 0.02, matrix);
 
   for (const x of [-DEVICE_WIDTH / 2 - 0.045, DEVICE_WIDTH / 2 + 0.045]) {
-    addBox(group, railGeometry, rail, x, RACK_HEIGHT / 2, -RACK_DEPTH / 2 + 0.045);
+    collectBox(collector.rail, 0.036, RACK_HEIGHT - 0.22, 0.036, x, RACK_HEIGHT / 2, -RACK_DEPTH / 2 + 0.045, matrix);
   }
 
   const markerPoints: number[] = [];
@@ -852,51 +925,60 @@ function addRackFrame(group: THREE.Group, rack: RackGroup, mode: Mode) {
       markerPoints.push(x - 0.036, y, -RACK_DEPTH / 2 - 0.006, x + 0.036, y, -RACK_DEPTH / 2 - 0.006);
     }
   }
-  const markerGeometry = new THREE.BufferGeometry();
-  markerGeometry.setAttribute('position', new THREE.Float32BufferAttribute(markerPoints, 3));
-  const markerMaterial = new THREE.LineBasicMaterial({ color: palette.frame, transparent: true, opacity: 0.42 });
-  group.add(new THREE.LineSegments(markerGeometry, markerMaterial));
+  collectLines(collector.markerLines, markerPoints, matrix);
 
-  const doorOutlineGeometry = new THREE.BufferGeometry();
   const doorX = RACK_WIDTH / 2 + 0.035;
   const doorZ = -RACK_DEPTH / 2 - 0.015;
-  doorOutlineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+  collectLines(collector.doorLines, [
     -doorX, 0.08, doorZ, doorX, 0.08, doorZ,
     doorX, 0.08, doorZ, doorX, RACK_HEIGHT - 0.08, doorZ,
     doorX, RACK_HEIGHT - 0.08, doorZ, -doorX, RACK_HEIGHT - 0.08, doorZ,
     -doorX, RACK_HEIGHT - 0.08, doorZ, -doorX, 0.08, doorZ,
-  ], 3));
-  group.add(new THREE.LineSegments(
-    doorOutlineGeometry,
-    new THREE.LineBasicMaterial({ color: palette.frame, transparent: true, opacity: 0.45 }),
-  ));
+  ], matrix);
 
-  const back = new THREE.Mesh(
-    new THREE.BoxGeometry(RACK_WIDTH, RACK_HEIGHT, 0.04),
-    new THREE.MeshStandardMaterial({ color: palette.rackBack, roughness: 0.74, metalness: 0.04 }),
-  );
-  back.position.set(0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.022);
-  group.add(back);
+  collectBox(collector.back, RACK_WIDTH, RACK_HEIGHT, 0.04, 0, RACK_HEIGHT / 2, RACK_DEPTH / 2 + 0.022, matrix);
 
-  const frame = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(RACK_WIDTH, RACK_HEIGHT, RACK_DEPTH)),
-    new THREE.LineBasicMaterial({ color: palette.frame, transparent: true, opacity: 0.62 }),
-  );
-  frame.position.set(0, RACK_HEIGHT / 2, 0);
-  group.add(frame);
+  const frameEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(RACK_WIDTH, RACK_HEIGHT, RACK_DEPTH));
+  frameEdges.translate(0, RACK_HEIGHT / 2, 0);
+  frameEdges.applyMatrix4(matrix);
+  collector.frameLines.push(frameEdges);
 
   const fill = Math.min(1, rack.ruUsed / rack.ruCapacity);
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(RACK_WIDTH + 0.16, 0.06, RACK_DEPTH + 0.18),
-    new THREE.MeshStandardMaterial({
-      color: fill > 0.8 ? '#F47F31' : fill > 0.55 ? '#F7B737' : '#37CC73',
-      roughness: 0.68,
-      transparent: true,
-      opacity: 0.55,
-    }),
-  );
-  base.position.set(0, -0.045, 0);
-  group.add(base);
+  const baseColor = fill > 0.8 ? '#F47F31' : fill > 0.55 ? '#F7B737' : '#37CC73';
+  const baseList = collector.base.get(baseColor) ?? [];
+  collector.base.set(baseColor, baseList);
+  collectBox(baseList, RACK_WIDTH + 0.16, 0.06, RACK_DEPTH + 0.18, 0, -0.045, 0, matrix);
+}
+
+function addRackFurniture(root: THREE.Group, collector: FurnitureCollector, mode: Mode) {
+  const palette = scenePalette(mode);
+  const addMerged = (geometries: THREE.BufferGeometry[], material: THREE.Material) => {
+    const merged = mergeCollected(geometries);
+    if (merged) root.add(new THREE.Mesh(merged, material));
+  };
+  const addMergedLines = (geometries: THREE.BufferGeometry[], opacity: number) => {
+    const merged = mergeCollected(geometries);
+    if (merged) root.add(new THREE.LineSegments(merged, new THREE.LineBasicMaterial({ color: palette.frame, transparent: true, opacity })));
+  };
+
+  addMerged(collector.metal, new THREE.MeshStandardMaterial({ color: palette.cabinetMetal, roughness: 0.48, metalness: 0.38 }));
+  addMerged(collector.panel, new THREE.MeshStandardMaterial({ color: palette.cabinetPanel, roughness: 0.74, metalness: 0.12 }));
+  addMerged(collector.rail, new THREE.MeshStandardMaterial({ color: palette.cabinetRail, roughness: 0.42, metalness: 0.46 }));
+  addMerged(collector.back, new THREE.MeshStandardMaterial({ color: palette.rackBack, roughness: 0.74, metalness: 0.04 }));
+  addMerged(collector.glass, new THREE.MeshStandardMaterial({
+    color: palette.cabinetGlass,
+    roughness: 0.18,
+    metalness: 0,
+    transparent: true,
+    opacity: mode === 'dark' ? 0.16 : 0.2,
+    depthWrite: false,
+  }));
+  for (const [color, geometries] of collector.base) {
+    addMerged(geometries, new THREE.MeshStandardMaterial({ color, roughness: 0.68, transparent: true, opacity: 0.55 }));
+  }
+  addMergedLines(collector.markerLines, 0.42);
+  addMergedLines(collector.doorLines, 0.45);
+  addMergedLines(collector.frameLines, 0.62);
 }
 
 function rowOccupancyKind(row: Topology['nodes'][number]['table'][number], lags: Topology['lags']): CableKind | null {
@@ -1086,7 +1168,8 @@ function addDevice(
   deviceIndex: number,
   mode: Mode,
   lags: Topology['lags'],
-  measured?: FrontPanelMeasuredLayout | null,
+  measured: FrontPanelMeasuredLayout | null | undefined,
+  onUpdate: () => void,
 ): DeviceMesh {
   const device = rack.devices[deviceIndex];
   const visibleStart = Math.min(device.uStart, 42);
@@ -1146,6 +1229,7 @@ function addDevice(
     mesh.material.color.set(mesh.userData.baseColor);
     mesh.material.opacity = 0.72;
     mesh.material.needsUpdate = true;
+    onUpdate();
   });
   return mesh;
 }
@@ -1182,6 +1266,8 @@ function resetRoot(state: RackSceneState) {
   disposeObject(state.root);
   state.root = new THREE.Group();
   state.devices = [];
+  state.deviceCenters = new Float32Array(0);
+  state.anchors = new Map();
   state.labels = [];
   state.cableLayer = null;
   state.cableHighlightLayer = null;
@@ -1197,6 +1283,7 @@ async function buildScene(
   shown: Set<string> | null,
   mode: Mode,
   labelsVisible: boolean,
+  frame: boolean,
   isCancelled: () => boolean,
 ) {
   const measuredLayouts = await loadFrontPanelMeasuredLayouts(racks);
@@ -1235,29 +1322,30 @@ async function buildScene(
     band.rotation.x = -Math.PI / 2;
     band.position.set((row.minX + row.maxX) / 2, -0.052, row.z);
     state.root.add(band);
-    if (labelsVisible) {
-      const rowLabel = makeLabelSprite(row.row, mode);
-      rowLabel.scale.set(1.25, 0.32, 1);
-      rowLabel.position.set(row.minX - 1.7, 0.35, row.z);
-      state.root.add(rowLabel);
-      state.labels.push(rowLabel);
-    }
+    const rowLabel = makeLabelSprite(row.row, mode);
+    rowLabel.scale.set(1.25, 0.32, 1);
+    rowLabel.position.set(row.minX - 1.7, 0.35, row.z);
+    rowLabel.visible = labelsVisible;
+    state.root.add(rowLabel);
+    state.labels.push(rowLabel);
   }
 
-  const anchors = new Map<string, DeviceAnchor>();
+  const furniture = createFurnitureCollector();
+  const rackMatrix = new THREE.Matrix4();
   racks.forEach((rack, index) => {
     const rackGroup = new THREE.Group();
     rackGroup.position.copy(layout.racks[index].position);
     rackGroup.rotation.y = layout.racks[index].rotationY;
-    addRackFrame(rackGroup, rack, mode);
+    rackMatrix.makeRotationY(layout.racks[index].rotationY).setPosition(layout.racks[index].position);
+    collectRackFrame(furniture, rack, rackMatrix);
     for (let deviceIndex = 0; deviceIndex < rack.devices.length; deviceIndex += 1) {
       const device = rack.devices[deviceIndex];
       const stencil = stencilFor(device.node.platform, componentsOf(device.node.raw));
       const panelLayout = layoutOf(stencil);
       const measured = measuredLayouts.get(stencil);
-      const mesh = addDevice(rackGroup, rack, deviceIndex, mode, topo.lags, measured);
+      const mesh = addDevice(rackGroup, rack, deviceIndex, mode, topo.lags, measured, () => state.requestRender());
       state.devices.push(mesh);
-      anchors.set(mesh.userData.nodeName, {
+      state.anchors.set(mesh.userData.nodeName, {
         mesh,
         rack: rack.label,
         role: mesh.userData.role,
@@ -1267,17 +1355,27 @@ async function buildScene(
         breakouts: device.node.breakouts,
       });
     }
-    if (labelsVisible) {
-      const label = makeLabelSprite(rack.label, mode);
-      label.position.set(0, RACK_HEIGHT + 0.44, -RACK_DEPTH / 2 - 0.08);
-      rackGroup.add(label);
-      state.labels.push(label);
-    }
+    const label = makeLabelSprite(rack.label, mode);
+    label.position.set(0, RACK_HEIGHT + 0.44, -RACK_DEPTH / 2 - 0.08);
+    label.visible = labelsVisible;
+    rackGroup.add(label);
+    state.labels.push(label);
     state.root.add(rackGroup);
   });
+  addRackFurniture(state.root, furniture, mode);
   state.root.updateMatrixWorld(true);
-  addCableLayer(state, topo, shown, anchors, mode);
-  frameCamera(state);
+  const centers = new Float32Array(state.devices.length * 3);
+  const worldPosition = new THREE.Vector3();
+  state.devices.forEach((device, index) => {
+    device.getWorldPosition(worldPosition);
+    centers[index * 3] = worldPosition.x;
+    centers[index * 3 + 1] = worldPosition.y;
+    centers[index * 3 + 2] = worldPosition.z;
+  });
+  state.deviceCenters = centers;
+  addCableLayer(state, topo, shown, state.anchors, mode);
+  if (frame) frameCamera(state);
+  state.requestRender();
 }
 
 function isKeyboardInputTarget(target: EventTarget | null): boolean {
@@ -1366,15 +1464,239 @@ function zoomView(state: RackSceneState, zoomIn: boolean) {
   state.camera.position.copy(state.controls.target).addScaledVector(offset.normalize(), nextDistance);
 }
 
-function pickDevice(state: RackSceneState, event: MouseEvent | PointerEvent): DeviceMesh | null {
+function updatePointerRay(state: RackSceneState, event: MouseEvent | PointerEvent): boolean {
   const rect = state.renderer.domElement.getBoundingClientRect();
-  if (!rect.width || !rect.height) return null;
+  if (!rect.width || !rect.height) return false;
   state.pointer.set(
     ((event.clientX - rect.left) / rect.width) * 2 - 1,
     -((event.clientY - rect.top) / rect.height) * 2 + 1,
   );
   state.raycaster.setFromCamera(state.pointer, state.camera);
-  return (state.raycaster.intersectObjects(state.devices, false)[0]?.object as DeviceMesh | undefined) ?? null;
+  return true;
+}
+
+function pickDevice(state: RackSceneState): THREE.Intersection | null {
+  return state.raycaster.intersectObjects(state.devices, false)[0] ?? null;
+}
+
+type CablePick = {
+  linkId: string;
+  rayDistance: number; // along the ray, to arbitrate against a device hit behind the cable
+};
+
+function cablePickThreshold(state: RackSceneState): number {
+  const distance = state.camera.position.distanceTo(state.controls.target);
+  return THREE.MathUtils.clamp(distance * 0.009, CABLE_PICK_MIN_THRESHOLD, CABLE_PICK_MAX_THRESHOLD);
+}
+
+const pickSegmentStart = new THREE.Vector3();
+const pickSegmentEnd = new THREE.Vector3();
+const pickPointOnRay = new THREE.Vector3();
+const pickPointOnSegment = new THREE.Vector3();
+
+function pickCable(state: RackSceneState, maxRayDistance: number): CablePick | null {
+  const routes = state.cableRoutes;
+  if (routes.length === 0 || routes.length > CABLE_PICK_ROUTE_LIMIT) return null;
+  const ray = state.raycaster.ray;
+  const threshold = cablePickThreshold(state);
+  let best: CablePick | null = null;
+  let bestDistanceSq = threshold * threshold;
+  for (const route of routes) {
+    const reach = route.radius + threshold;
+    if (ray.distanceSqToPoint(route.center) > reach * reach) continue;
+    const positions = route.positions;
+    for (let index = 0; index + 5 < positions.length; index += 6) {
+      pickSegmentStart.set(positions[index], positions[index + 1], positions[index + 2]);
+      pickSegmentEnd.set(positions[index + 3], positions[index + 4], positions[index + 5]);
+      const distanceSq = ray.distanceSqToSegment(pickSegmentStart, pickSegmentEnd, pickPointOnRay, pickPointOnSegment);
+      if (distanceSq >= bestDistanceSq) continue;
+      const rayDistance = pickPointOnRay.distanceTo(ray.origin);
+      if (rayDistance > maxRayDistance) continue;
+      bestDistanceSq = distanceSq;
+      best = { linkId: route.id, rayDistance };
+    }
+  }
+  return best;
+}
+
+// Maps a raycast hit on a device's front face back to the front-panel cage (and breakout
+// channel) under the cursor, so hover can name the exact port a tech is looking at.
+function pickDevicePort(anchor: DeviceAnchor, worldPoint: THREE.Vector3): PortHit | null {
+  if (!anchor.layout?.size) return null;
+  const local = anchor.mesh.worldToLocal(worldPoint.clone());
+  if (local.z > -DEVICE_DEPTH / 2 + 0.02) return null; // ports live on the front face only
+  const normalizedX = 0.5 - local.x / DEVICE_WIDTH;
+  const normalizedY = 0.5 - local.y / anchor.panelHeight;
+  let best: FrontPanelPortPos | null = null;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (const port of anchor.layout.values()) {
+    const dx = Math.abs(normalizedX - port.x);
+    const dy = Math.abs(normalizedY - port.y);
+    if (dx > port.w / 2 + 0.004 || dy > port.h / 2 + 0.008) continue;
+    const score = dx / Math.max(port.w, 0.001) + dy / Math.max(port.h, 0.001);
+    if (score < bestScore) {
+      bestScore = score;
+      best = port;
+    }
+  }
+  if (!best) return null;
+
+  const breakout = anchor.breakouts?.[best.p];
+  if (!breakout || breakout.channels <= 1) return { cage: best.p, channel: null };
+  const channels = Math.max(1, breakout.channels);
+  const rows = channels > 4 ? 2 : 1;
+  const columns = Math.ceil(channels / rows);
+  const relX = THREE.MathUtils.clamp((normalizedX - (best.x - best.w / 2)) / best.w, 0, 0.999);
+  const relY = THREE.MathUtils.clamp((normalizedY - (best.y - best.h / 2)) / best.h, 0, 0.999);
+  const channel = Math.min(channels, Math.floor(relY * rows) * columns + Math.floor(relX * columns) + 1);
+  return { cage: best.p, channel };
+}
+
+// The table row a cage+channel hit lands on: exact breakout channel first, else the
+// cage's only row. Ambiguous multi-row cages return null (hover falls back to the node).
+function portHitRow(linkIndex: LinkIndex, nodeName: string, port: PortHit): Row | null {
+  const rows = linkIndex.rowsByCage.get(endKey(nodeName, port.cage));
+  if (!rows?.length) return null;
+  if (port.channel != null) {
+    const exact = rows.find((row) => breakoutChannel(row.label) === port.channel);
+    if (exact) return exact;
+  }
+  return rows.length === 1 ? rows[0] : null;
+}
+
+// Trace-store key for a port hover/click: the cable trace when the port terminates one
+// (kept in the 2D graph's id scheme so both views light up), else the whole node.
+function portTraceKey(linkIndex: LinkIndex, nodeName: string, port: PortHit): string | null {
+  const row = portHitRow(linkIndex, nodeName, port);
+  if (!row) return null;
+  const link = linkIndex.linkByEnd.get(endKey(nodeName, row.label));
+  if (link) return `cable:${linkIndex.traceIdByLinkId.get(link.id) ?? link.id}`;
+  if (row.type === 'edge') return `cable:${stubTraceId(nodeName, port.cage, breakoutChannel(row.label))}`;
+  if (row.type === 'interSwitch' && row.remoteNode) return `cable:${islTraceIdFromRow(nodeName, row)}`;
+  return null;
+}
+
+function placementSuffix(placement: DevicePlacement | undefined): string {
+  const formatted = formatRackU(placement);
+  return formatted ? ` (${formatted})` : '';
+}
+
+// Cursor-following card naming exactly what's under the pointer: a cable (both ends with
+// rack + U position), a front-panel port (peer, LAG, LLDP, breakout channel) or a device.
+function HoverCard({ hover, nodeByName, placements, linkIndex, lags }: {
+  hover: HoverState;
+  nodeByName: Map<string, Topology['nodes'][number]>;
+  placements: Map<string, DevicePlacement>;
+  linkIndex: LinkIndex;
+  lags: Topology['lags'];
+}) {
+  const flipX = hover.x > window.innerWidth - 360;
+  const flipY = hover.y > window.innerHeight - 280;
+  const style = {
+    left: flipX ? hover.x - 14 : hover.x + 14,
+    top: flipY ? hover.y - 12 : hover.y + 14,
+    transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
+  };
+  const frameSx = {
+    position: 'fixed', zIndex: 2, pointerEvents: 'none', px: 1.25, py: 1, maxWidth: 320,
+    bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 4,
+  } as const;
+
+  if (hover.target.type === 'cable') {
+    const link = linkIndex.linkById.get(hover.target.linkId);
+    if (!link) return null;
+    const row = linkIndex.rowByEnd.get(endKey(link.source, link.sourcePort))
+      ?? linkIndex.rowByEnd.get(endKey(link.target, link.targetPort));
+    const kind = (row && rowOccupancyKind(row, lags)) || 'isl';
+    const ends = [
+      { node: link.source, port: link.sourcePort },
+      { node: link.target, port: link.targetPort },
+    ];
+    return (
+      <Box sx={frameSx} style={style}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <Box sx={{ width: 8, height: 8, flex: 'none', bgcolor: OCCUPANCY_KIND_COLORS[kind] }} />
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{OCCUPANCY_KIND_LABELS[kind]} cable</Typography>
+        </Box>
+        {ends.map((end) => (
+          <Box key={`${end.node}|${end.port}`} sx={{ mt: 0.5 }}>
+            <Typography variant="body2">{end.node} · {shortPortLabel(end.port)}</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              {formatRackU(placements.get(end.node)) ?? 'not racked'}
+            </Typography>
+          </Box>
+        ))}
+        {row?.lag && (
+          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>LAG {row.lag}</Typography>
+        )}
+        {row?.lldpStatus === 'mismatch' && (
+          <Typography variant="caption" sx={{ color: 'warning.main', display: 'block' }}>
+            LLDP mismatch{row.lldpPeer ? ` · sees ${row.lldpPeer}` : ''}
+          </Typography>
+        )}
+        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5 }}>Click to pin this cable</Typography>
+      </Box>
+    );
+  }
+
+  const node = nodeByName.get(hover.target.nodeName);
+  if (!node) return null;
+  const placement = formatRackU(placements.get(node.name));
+  const port = hover.target.port;
+  const cageRows = port ? linkIndex.rowsByCage.get(endKey(node.name, port.cage)) ?? [] : [];
+  const exact = port ? portHitRow(linkIndex, node.name, port) : null;
+  const portRows = exact ? [exact] : cageRows.slice(0, 4);
+  const breakout = port ? node.breakouts?.[port.cage] : undefined;
+  const connected = (node.table ?? []).filter((row) => row.type === 'interSwitch' || row.type === 'edge').length;
+  return (
+    <Box sx={frameSx} style={style}>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>{node.name}</Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+        {placement ?? 'Inferred rack'} · {node.role || 'node'}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+        {node.platform}{!port ? ` · ${connected} cabled port${connected === 1 ? '' : 's'}` : ''}
+      </Typography>
+      {port && (
+        <Box sx={{ mt: 0.75, pt: 0.75, borderTop: 1, borderColor: 'divider' }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
+            Port {port.cage}
+            {breakout ? ` · ${breakout.channels}×${breakout.speed}${port.channel ? ` · ch ${port.channel}` : ''}` : ''}
+          </Typography>
+          {portRows.length === 0 && (
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>not cabled</Typography>
+          )}
+          {portRows.map((row) => {
+            const kind = rowOccupancyKind(row, lags);
+            const remote = row.remoteNode || row.peer || '—';
+            const remotePlacement = row.remoteNode ? formatRackU(placements.get(row.remoteNode)) : null;
+            return (
+              <Box key={row.label} sx={{ mt: 0.25 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {kind && <Box sx={{ width: 8, height: 8, flex: 'none', bgcolor: OCCUPANCY_KIND_COLORS[kind] }} />}
+                  <Typography variant="caption">
+                    {shortPortLabel(row.label)} → {remote}{row.remotePort ? ` · ${shortPortLabel(row.remotePort)}` : ''}
+                  </Typography>
+                </Box>
+                {remotePlacement && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', pl: kind ? 1.5 : 0 }}>
+                    {remotePlacement}
+                  </Typography>
+                )}
+              </Box>
+            );
+          })}
+          {exact?.lag && <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>LAG {exact.lag}</Typography>}
+          {exact?.lldpStatus === 'mismatch' && (
+            <Typography variant="caption" sx={{ color: 'warning.main', display: 'block' }}>
+              LLDP mismatch{exact.lldpPeer ? ` · sees ${exact.lldpPeer}` : ''}
+            </Typography>
+          )}
+          {exact?.desc && <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>{exact.desc}</Typography>}
+        </Box>
+      )}
+    </Box>
+  );
 }
 
 function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }: RackViewProps) {
@@ -1386,6 +1708,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
   const traceAny = useTrace((s) => s.any);
   const tracedNodes = useTrace((s) => s.nodes);
   const tracedEdges = useTrace((s) => s.edges);
+  const pinnedTraceKey = useTrace((s) => (s.pinned ? s.key : null));
 
   useEffect(() => {
     callbacksRef.current = { onOpenNode, onClearSelection };
@@ -1393,6 +1716,24 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
 
   const racks = useMemo(() => buildRackGroups(topo, shown), [topo, shown]);
   const nodeByName = useMemo(() => new Map(topo.nodes.map((node) => [node.name, node])), [topo]);
+  const linkIndex = useMemo(
+    () => buildLinkIndex(topo, (node) => slottedOf(stencilFor(node.platform, componentsOf(node.raw)))),
+    [topo],
+  );
+  const placements = useMemo(() => {
+    const byName = new Map<string, DevicePlacement>();
+    for (const rack of racks) {
+      for (const device of rack.devices) {
+        byName.set(device.node.name, { rack: rack.label, uStart: device.uStart, uEnd: device.uEnd });
+      }
+    }
+    return byName;
+  }, [racks]);
+  // the pointer handlers live in the mount effect; they read the current index through this ref
+  const linkIndexRef = useRef(linkIndex);
+  useEffect(() => { linkIndexRef.current = linkIndex; }, [linkIndex]);
+  const labelsVisibleRef = useRef(labelsVisible);
+  labelsVisibleRef.current = labelsVisible;
   const totalRackLabels = useMemo(() => {
     const labels = new Set<string>();
     for (const node of topo.nodes) {
@@ -1413,12 +1754,27 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     return ids;
   }, [topo.links, selectedSet]);
   const highlightedCableIds = useMemo(() => {
-    if (selectedCableIds.size === 0) return tracedEdges;
-    const ids = new Set(tracedEdges);
-    for (const id of selectedCableIds) ids.add(id);
+    // trace ids come from the 2D graph (isl|…, isllag|…, stub|…); expand them into the
+    // backend link ids the rack routes are keyed by
+    const ids = new Set(selectedCableIds);
+    for (const traceId of tracedEdges) {
+      ids.add(traceId);
+      for (const linkId of linkIndex.linkIdsByTraceId.get(traceId) ?? []) ids.add(linkId);
+    }
     return ids;
-  }, [selectedCableIds, tracedEdges]);
+  }, [selectedCableIds, tracedEdges, linkIndex]);
   const cableHighlightAny = traceAny || selectedCableIds.size > 0;
+  const pinnedCable = useMemo(() => {
+    if (!pinnedTraceKey?.startsWith('cable:')) return null;
+    const traceId = pinnedTraceKey.slice(6);
+    const linkIds = linkIndex.linkIdsByTraceId.get(traceId);
+    const link = linkIndex.linkById.get(linkIds?.[0] ?? traceId);
+    if (!link) return null;
+    const row = linkIndex.rowByEnd.get(endKey(link.source, link.sourcePort))
+      ?? linkIndex.rowByEnd.get(endKey(link.target, link.targetPort));
+    const kind = (row && rowOccupancyKind(row, topo.lags)) || 'isl';
+    return { link, kind, bundleSize: linkIds?.length ?? 1 };
+  }, [pinnedTraceKey, linkIndex, topo.lags]);
   const legendRoles = useMemo(() => {
     const roles = new Set<string>();
     for (const rack of racks) for (const device of rack.devices) roles.add(device.node.role || 'node');
@@ -1475,6 +1831,9 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
 
     const root = new THREE.Group();
     scene.add(root);
+    // demand rendering: the rAF loop stays alive but only draws while an interaction,
+    // damping tail, async texture load or style change keeps the window open
+    let renderUntil = performance.now() + 2000;
     const state: RackSceneState = {
       renderer,
       scene,
@@ -1484,13 +1843,19 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       pointer: new THREE.Vector2(),
       root,
       devices: [],
+      deviceCenters: new Float32Array(0),
+      anchors: new Map(),
       labels: [],
       cableLayer: null,
       cableHighlightLayer: null,
       cableEndpointLayer: null,
       cableRoutes: [],
+      requestRender: (ms = RENDER_ACTIVE_MS) => {
+        renderUntil = Math.max(renderUntil, performance.now() + ms);
+      },
     };
     sceneRef.current = state;
+    controls.addEventListener('change', () => state.requestRender());
 
     const resize = () => {
       const rect = host.getBoundingClientRect();
@@ -1500,6 +1865,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       setCableLayerResolutions(state);
+      state.requestRender();
     };
     const observer = new ResizeObserver(resize);
     observer.observe(host);
@@ -1510,13 +1876,15 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     let frame = 0;
     let lastFrameTime = performance.now();
     const render = (time = performance.now()) => {
+      frame = window.requestAnimationFrame(render);
       const deltaSeconds = Math.min(0.06, Math.max(0, (time - lastFrameTime) / 1000));
       lastFrameTime = time;
+      if (pressedKeys.size > 0) state.requestRender();
+      if (time > renderUntil) return;
       applyKeyboardNavigation(state, pressedKeys, deltaSeconds, keyboardFast);
       updateCableScaleForDistance(state);
       controls.update();
       renderer.render(scene, camera);
-      frame = window.requestAnimationFrame(render);
     };
     render();
 
@@ -1525,6 +1893,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     const mouseLook = { down: false, active: false, lastX: 0, lastY: 0, pointerId: -1 };
     const onPointerDown = (event: PointerEvent) => {
       renderer.domElement.focus({ preventScroll: true });
+      state.requestRender();
       pointerDown.x = event.clientX;
       pointerDown.y = event.clientY;
       if (event.button === 0) {
@@ -1538,11 +1907,18 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || isKeyboardInputTarget(event.target)) return;
+      if (event.key === 'Escape') {
+        trace.clear();
+        callbacksRef.current.onClearSelection();
+        callbacksRef.current.onOpenNode(null);
+        return;
+      }
       const key = navigationKey(event);
       if (!key) return;
       event.preventDefault();
       pressedKeys.add(key);
       keyboardFast = event.shiftKey;
+      state.requestRender();
     };
     const onKeyUp = (event: KeyboardEvent) => {
       keyboardFast = event.shiftKey;
@@ -1554,6 +1930,37 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     const clearPressedKeys = () => {
       pressedKeys.clear();
       keyboardFast = false;
+    };
+    // What's under the cursor, most specific first: a cable in front of everything, then a
+    // front-panel port, then the device. Every pick carries its trace key so hover and click
+    // light the same thing in both the rack and topology views.
+    const resolveHover = (event: PointerEvent | MouseEvent): HoverPick | null => {
+      if (!updatePointerRay(state, event)) return null;
+      const deviceHit = pickDevice(state);
+      const cable = pickCable(state, deviceHit ? deviceHit.distance + 0.02 : Number.POSITIVE_INFINITY);
+      // a cable wins over a device only when clearly in front of it, so the short stub
+      // leaving a port never steals hover from the port itself
+      if (cable && (!deviceHit || cable.rayDistance < deviceHit.distance - 0.06)) {
+        const traceId = linkIndexRef.current.traceIdByLinkId.get(cable.linkId) ?? cable.linkId;
+        return {
+          key: `cable:${cable.linkId}`,
+          traceKey: `cable:${traceId}`,
+          target: { type: 'cable', linkId: cable.linkId },
+        };
+      }
+      if (!deviceHit) return null;
+      const mesh = deviceHit.object as DeviceMesh;
+      const nodeName = mesh.userData.nodeName;
+      const anchor = state.anchors.get(nodeName);
+      const port = anchor ? pickDevicePort(anchor, deviceHit.point) : null;
+      if (port) {
+        return {
+          key: `port:${nodeName}:${port.cage}:${port.channel ?? ''}`,
+          traceKey: portTraceKey(linkIndexRef.current, nodeName, port) ?? `node:${nodeName}`,
+          target: { type: 'device', nodeName, port },
+        };
+      }
+      return { key: `node:${nodeName}`, traceKey: `node:${nodeName}`, target: { type: 'device', nodeName } };
     };
     const onPointerMove = (event: PointerEvent) => {
       if (mouseLook.down && (event.buttons & 1) === 1) {
@@ -1570,20 +1977,20 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
           trace.hover(null);
           setHover(null);
           applyMouseLook(state, deltaX, deltaY);
+          state.requestRender();
           return;
         }
       }
-      const hit = pickDevice(state, event);
-      const nodeName = hit?.userData.nodeName ?? null;
-      renderer.domElement.style.cursor = nodeName ? 'pointer' : 'grab';
-      if (nodeName === lastHover) {
-        if (nodeName) setHover({ nodeName, x: event.clientX, y: event.clientY });
+      const pick = resolveHover(event);
+      renderer.domElement.style.cursor = pick ? 'pointer' : 'grab';
+      if ((pick?.key ?? null) === lastHover) {
+        if (pick) setHover({ target: pick.target, x: event.clientX, y: event.clientY });
         return;
       }
-      lastHover = nodeName;
-      if (nodeName) {
-        trace.hover(`node:${nodeName}`);
-        setHover({ nodeName, x: event.clientX, y: event.clientY });
+      lastHover = pick?.key ?? null;
+      if (pick) {
+        trace.hover(pick.traceKey);
+        setHover({ target: pick.target, x: event.clientX, y: event.clientY });
       } else {
         trace.hover(null);
         setHover(null);
@@ -1607,11 +2014,15 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     const onClick = (event: MouseEvent) => {
       const moved = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
       if (moved > POINTER_CLICK_TOLERANCE) return;
-      const hit = pickDevice(state, event);
-      if (hit) {
-        const nodeName = hit.userData.nodeName;
-        trace.pin(`node:${nodeName}`);
-        callbacksRef.current.onOpenNode(nodeName, { select: true });
+      const pick = resolveHover(event);
+      if (pick?.target.type === 'cable') {
+        trace.pin(pick.traceKey);
+        return;
+      }
+      if (pick?.target.type === 'device') {
+        // a port click pins just that cable; a chassis click pins the whole node's cables
+        trace.pin(pick.traceKey);
+        callbacksRef.current.onOpenNode(pick.target.nodeName, { select: true });
         return;
       }
       trace.clear();
@@ -1619,13 +2030,13 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       callbacksRef.current.onOpenNode(null);
     };
     const onDoubleClick = (event: MouseEvent) => {
-      const hit = pickDevice(state, event);
-      if (!hit) return;
-      const nodeName = hit.userData.nodeName;
-      trace.pin(`node:${nodeName}`, true);
-      callbacksRef.current.onOpenNode(nodeName, { expand: true, select: true });
+      const pick = resolveHover(event);
+      if (pick?.target.type !== 'device') return;
+      trace.pin(`node:${pick.target.nodeName}`, true);
+      callbacksRef.current.onOpenNode(pick.target.nodeName, { expand: true, select: true });
     };
 
+    const onWheel = () => state.requestRender();
     renderer.domElement.addEventListener('pointerdown', onPointerDown);
     renderer.domElement.addEventListener('pointermove', onPointerMove);
     renderer.domElement.addEventListener('pointerup', onPointerUp);
@@ -1633,11 +2044,13 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     renderer.domElement.addEventListener('pointerleave', onPointerLeave);
     renderer.domElement.addEventListener('click', onClick);
     renderer.domElement.addEventListener('dblclick', onDoubleClick);
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: true });
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('blur', clearPressedKeys);
 
     return () => {
+      renderer.domElement.removeEventListener('wheel', onWheel);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
@@ -1658,35 +2071,57 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     };
   }, []);
 
+  // Selection/trace styling is kept in a ref so a finished (async) scene build can re-apply
+  // the current highlight state to the freshly created meshes.
+  const applyStylesRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    applyStylesRef.current = () => {
+      const state = sceneRef.current;
+      if (!state) return;
+      for (const mesh of state.devices) {
+        const isSelected = selectedSet.has(mesh.userData.nodeName);
+        const isTraced = tracedNodes.has(mesh.userData.nodeName);
+        const dim = traceAny && !isTraced && !isSelected;
+        mesh.material.color.set(mesh.userData.baseColor);
+        setDeviceOpacity(mesh, dim ? 0.2 : isSelected || isTraced ? 1 : mesh.userData.hasFrontPanel ? 0.72 : 0.92);
+        mesh.material.emissive.set(isSelected ? '#FFD568' : isTraced ? '#4092FF' : '#000000');
+        mesh.material.emissiveIntensity = isSelected ? 0.35 : isTraced ? 0.22 : 0;
+        mesh.scale.z = isSelected || isTraced ? 1.28 : 1;
+      }
+      updateCableTrace(state, highlightedCableIds, cableHighlightAny, mode);
+      state.requestRender();
+    };
+    applyStylesRef.current();
+  }, [selectedSet, traceAny, tracedNodes, highlightedCableIds, cableHighlightAny, mode]);
+
+  const framedRacksRef = useRef<RackGroup[] | null>(null);
   useEffect(() => {
     const state = sceneRef.current;
     if (!state) return;
     let cancelled = false;
-    void buildScene(state, topo, racks, shown, mode, labelsVisible, () => cancelled);
+    // reframe the camera only when the rack layout itself changed; a theme flip keeps the view
+    const frame = framedRacksRef.current !== racks;
+    void buildScene(state, topo, racks, shown, mode, labelsVisibleRef.current, frame, () => cancelled).then(() => {
+      if (cancelled) return;
+      framedRacksRef.current = racks;
+      applyStylesRef.current();
+    });
     return () => { cancelled = true; };
-  }, [topo, racks, shown, mode, labelsVisible]);
+  }, [topo, racks, shown, mode]);
 
   useEffect(() => {
     const state = sceneRef.current;
     if (!state) return;
-    for (const mesh of state.devices) {
-      const isSelected = selectedSet.has(mesh.userData.nodeName);
-      const isTraced = tracedNodes.has(mesh.userData.nodeName);
-      const dim = traceAny && !isTraced && !isSelected;
-      mesh.material.color.set(mesh.userData.baseColor);
-      setDeviceOpacity(mesh, dim ? 0.2 : isSelected || isTraced ? 1 : mesh.userData.hasFrontPanel ? 0.72 : 0.92);
-      mesh.material.emissive.set(isSelected ? '#FFD568' : isTraced ? '#4092FF' : '#000000');
-      mesh.material.emissiveIntensity = isSelected ? 0.35 : isTraced ? 0.22 : 0;
-      mesh.scale.z = isSelected || isTraced ? 1.28 : 1;
-    }
-    updateCableTrace(state, highlightedCableIds, cableHighlightAny, mode);
-  }, [selectedSet, traceAny, tracedNodes, highlightedCableIds, cableHighlightAny, mode, racks, labelsVisible]);
+    for (const label of state.labels) label.visible = labelsVisible;
+    state.requestRender();
+  }, [labelsVisible]);
 
   const nudgeLook = useCallback((deltaX: number, deltaY: number) => {
     const state = sceneRef.current;
     if (!state) return;
     applyMouseLook(state, deltaX, deltaY);
     state.controls.update();
+    state.requestRender();
   }, []);
 
   const nudgePan = useCallback((rightAmount: number, upAmount: number) => {
@@ -1694,6 +2129,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     if (!state) return;
     panView(state, rightAmount, upAmount);
     state.controls.update();
+    state.requestRender();
   }, []);
 
   const nudgeZoom = useCallback((zoomIn: boolean) => {
@@ -1701,6 +2137,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     if (!state) return;
     zoomView(state, zoomIn);
     state.controls.update();
+    state.requestRender();
   }, []);
 
   const resetCamera = useCallback(() => {
@@ -1708,10 +2145,10 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     if (state) {
       frameCamera(state);
       state.controls.update();
+      state.requestRender();
     }
   }, []);
 
-  const hoverNode = hover ? nodeByName.get(hover.nodeName) : undefined;
   const gizmoButtonSx = {
     width: 30,
     height: 30,
@@ -1729,8 +2166,11 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 2 }}>
         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Rack View</Typography>
         <Typography variant="body2" sx={{ fontWeight: 600 }}>{racks.length} racks · {visibleDevices} devices · {visibleCables} cables</Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
           {totalRackLabels > 0 ? `${totalRackLabels} rack labels in namespace` : 'No rack labels in namespace'}
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
+          Drag to look · WASD/QE move · hover ports &amp; cables
         </Typography>
       </Box>
 
@@ -1880,17 +2320,26 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         </Box>
       )}
 
-      {hover && hoverNode && (
-        <Box sx={{ position: 'fixed', left: hover.x + 14, top: hover.y + 14, zIndex: 2, pointerEvents: 'none',
-          px: 1.25, py: 1, maxWidth: 280, bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 4 }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>{hoverNode.name}</Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-            {rackLabelOf(hoverNode) ?? 'Inferred rack'} · {hoverNode.role || 'node'}
+      {pinnedCable && (
+        <Box sx={{ position: 'absolute', bottom: { xs: 68, sm: 48 }, left: '50%', zIndex: 1,
+          transform: 'translateX(-50%)', px: 1.5, py: 0.75, maxWidth: '72%',
+          bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 3,
+          display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ width: 8, height: 8, flex: 'none', bgcolor: OCCUPANCY_KIND_COLORS[pinnedCable.kind] }} />
+          <Typography variant="caption" noWrap sx={{ fontWeight: 600 }}>
+            {pinnedCable.link.source} {shortPortLabel(pinnedCable.link.sourcePort)}
+            {placementSuffix(placements.get(pinnedCable.link.source))}
+            {'  ⟷  '}
+            {pinnedCable.link.target} {shortPortLabel(pinnedCable.link.targetPort)}
+            {placementSuffix(placements.get(pinnedCable.link.target))}
+            {pinnedCable.bundleSize > 1 ? `  ·  ×${pinnedCable.bundleSize} bundle` : ''}
           </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-            {hoverNode.platform}
-          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.disabled', flex: 'none' }}>Esc to clear</Typography>
         </Box>
+      )}
+
+      {hover && (
+        <HoverCard hover={hover} nodeByName={nodeByName} placements={placements} linkIndex={linkIndex} lags={topo.lags} />
       )}
     </Box>
   );
