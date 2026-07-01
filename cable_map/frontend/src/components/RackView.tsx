@@ -8,9 +8,17 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import AddIcon from '@mui/icons-material/Add';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrongOutlined';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import LabelIcon from '@mui/icons-material/LabelOutlined';
 import LabelOffIcon from '@mui/icons-material/LabelOffOutlined';
+import RemoveIcon from '@mui/icons-material/Remove';
+import RotateLeftIcon from '@mui/icons-material/RotateLeft';
+import RotateRightIcon from '@mui/icons-material/RotateRight';
 import type { Breakout, Topology } from '../domain/topology/contract';
 import type { FrontPanelPortPos } from '../domain/ports/frontPanelMeta';
 import { frontPanelMetaOf, layoutOf, slottedOf } from '../domain/ports/frontPanelMeta';
@@ -41,6 +49,8 @@ const KEYBOARD_FAST_MULTIPLIER = 2.4;
 const FPS_MOUSE_SENSITIVITY = 0.0023;
 const FPS_PITCH_MIN = 0.12;
 const FPS_PITCH_MAX = Math.PI - 0.14;
+const GIZMO_ROTATE_STEP = 72;
+const GIZMO_TILT_STEP = 48;
 const CABLE_LINEWIDTH_IDLE = 1.2;
 const CABLE_LINEWIDTH_CLOSE = 3.25;
 const CABLE_LINEWIDTH_TRACE = 2.8;
@@ -124,6 +134,8 @@ type HoverState = {
   x: number;
   y: number;
 };
+
+type NavDirection = 'forward' | 'back' | 'left' | 'right' | 'up' | 'down';
 
 interface RackViewProps {
   topo: Topology;
@@ -1273,11 +1285,13 @@ function isKeyboardInputTarget(target: EventTarget | null): boolean {
   return !!element?.closest('input, textarea, select, button, a[href], [contenteditable="true"], [role="textbox"], [role="menu"], [role="listbox"], [role="option"]');
 }
 
-function navigationKey(event: KeyboardEvent): 'forward' | 'back' | 'left' | 'right' | null {
+function navigationKey(event: KeyboardEvent): NavDirection | null {
   if (event.code === 'KeyW' || event.key === 'ArrowUp') return 'forward';
   if (event.code === 'KeyS' || event.key === 'ArrowDown') return 'back';
   if (event.code === 'KeyA' || event.key === 'ArrowLeft') return 'left';
   if (event.code === 'KeyD' || event.key === 'ArrowRight') return 'right';
+  if (event.code === 'KeyE' || event.code === 'Space' || event.key === 'PageUp') return 'up';
+  if (event.code === 'KeyQ' || event.code === 'KeyC' || event.key === 'PageDown') return 'down';
   return null;
 }
 
@@ -1291,24 +1305,29 @@ function applyMouseLook(state: RackSceneState, deltaX: number, deltaY: number) {
   state.controls.target.copy(state.camera.position).add(offset);
 }
 
-function applyKeyboardNavigation(state: RackSceneState, pressedKeys: Set<string>, deltaSeconds: number, fast: boolean) {
+function applyKeyboardNavigation(state: RackSceneState, pressedKeys: Set<NavDirection>, deltaSeconds: number, fast: boolean) {
   let forwardAmount = 0;
   let rightAmount = 0;
+  let upAmount = 0;
   if (pressedKeys.has('forward')) forwardAmount += 1;
   if (pressedKeys.has('back')) forwardAmount -= 1;
   if (pressedKeys.has('right')) rightAmount += 1;
   if (pressedKeys.has('left')) rightAmount -= 1;
-  if (forwardAmount === 0 && rightAmount === 0) return;
+  if (pressedKeys.has('up')) upAmount += 1;
+  if (pressedKeys.has('down')) upAmount -= 1;
+  if (forwardAmount === 0 && rightAmount === 0 && upAmount === 0) return;
 
   const forward = state.camera.getWorldDirection(new THREE.Vector3());
-  forward.y = 0;
   if (forward.lengthSq() < 0.0001) forward.set(0, 0, -1);
   forward.normalize();
   const right = new THREE.Vector3().crossVectors(forward, state.camera.up).setY(0);
   if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
   right.normalize();
+  const up = new THREE.Vector3(0, 1, 0);
 
-  const move = forward.multiplyScalar(forwardAmount).add(right.multiplyScalar(rightAmount));
+  const move = forward.multiplyScalar(forwardAmount)
+    .add(right.multiplyScalar(rightAmount))
+    .add(up.multiplyScalar(upAmount));
   if (move.lengthSq() < 0.0001) return;
   move.normalize();
 
@@ -1317,6 +1336,34 @@ function applyKeyboardNavigation(state: RackSceneState, pressedKeys: Set<string>
   move.multiplyScalar(speed * (fast ? KEYBOARD_FAST_MULTIPLIER : 1) * deltaSeconds);
   state.camera.position.add(move);
   state.controls.target.add(move);
+}
+
+function panView(state: RackSceneState, rightAmount: number, upAmount: number) {
+  if (rightAmount === 0 && upAmount === 0) return;
+  const forward = state.camera.getWorldDirection(new THREE.Vector3());
+  if (forward.lengthSq() < 0.0001) forward.set(0, 0, -1);
+  forward.normalize();
+  const right = new THREE.Vector3().crossVectors(forward, state.camera.up).setY(0);
+  if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
+  right.normalize();
+  const move = right.multiplyScalar(rightAmount).add(new THREE.Vector3(0, upAmount, 0));
+  if (move.lengthSq() < 0.0001) return;
+  move.normalize();
+
+  const distance = state.camera.position.distanceTo(state.controls.target);
+  const step = THREE.MathUtils.clamp(distance * 0.16, 0.3, 4.2);
+  move.multiplyScalar(step);
+  state.camera.position.add(move);
+  state.controls.target.add(move);
+}
+
+function zoomView(state: RackSceneState, zoomIn: boolean) {
+  const offset = state.camera.position.clone().sub(state.controls.target);
+  const distance = offset.length();
+  if (distance < 0.001) return;
+  const scale = zoomIn ? 0.82 : 1.22;
+  const nextDistance = THREE.MathUtils.clamp(distance * scale, state.controls.minDistance, state.controls.maxDistance);
+  state.camera.position.copy(state.controls.target).addScaledVector(offset.normalize(), nextDistance);
 }
 
 function pickDevice(state: RackSceneState, event: MouseEvent | PointerEvent): DeviceMesh | null {
@@ -1458,7 +1505,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     observer.observe(host);
     resize();
 
-    const pressedKeys = new Set<string>();
+    const pressedKeys = new Set<NavDirection>();
     let keyboardFast = false;
     let frame = 0;
     let lastFrameTime = performance.now();
@@ -1498,11 +1545,11 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       keyboardFast = event.shiftKey;
     };
     const onKeyUp = (event: KeyboardEvent) => {
+      keyboardFast = event.shiftKey;
       const key = navigationKey(event);
       if (!key) return;
       event.preventDefault();
       pressedKeys.delete(key);
-      keyboardFast = event.shiftKey;
     };
     const clearPressedKeys = () => {
       pressedKeys.clear();
@@ -1635,12 +1682,46 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     updateCableTrace(state, highlightedCableIds, cableHighlightAny, mode);
   }, [selectedSet, traceAny, tracedNodes, highlightedCableIds, cableHighlightAny, mode, racks, labelsVisible]);
 
+  const nudgeLook = useCallback((deltaX: number, deltaY: number) => {
+    const state = sceneRef.current;
+    if (!state) return;
+    applyMouseLook(state, deltaX, deltaY);
+    state.controls.update();
+  }, []);
+
+  const nudgePan = useCallback((rightAmount: number, upAmount: number) => {
+    const state = sceneRef.current;
+    if (!state) return;
+    panView(state, rightAmount, upAmount);
+    state.controls.update();
+  }, []);
+
+  const nudgeZoom = useCallback((zoomIn: boolean) => {
+    const state = sceneRef.current;
+    if (!state) return;
+    zoomView(state, zoomIn);
+    state.controls.update();
+  }, []);
+
   const resetCamera = useCallback(() => {
     const state = sceneRef.current;
-    if (state) frameCamera(state);
+    if (state) {
+      frameCamera(state);
+      state.controls.update();
+    }
   }, []);
 
   const hoverNode = hover ? nodeByName.get(hover.nodeName) : undefined;
+  const gizmoButtonSx = {
+    width: 30,
+    height: 30,
+    minWidth: 30,
+    color: 'text.primary',
+    border: 1,
+    borderColor: 'divider',
+    bgcolor: 'background.paper',
+    '&:hover': { bgcolor: 'action.hover' },
+  };
 
   return (
     <Box ref={hostRef} sx={{ position: 'relative', height: '100%', width: '100%', overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -1665,6 +1746,98 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
             {labelsVisible ? <LabelIcon fontSize="small" /> : <LabelOffIcon fontSize="small" />}
           </IconButton>
         </Tooltip>
+      </Box>
+
+      <Box sx={{ position: 'absolute', right: 12, bottom: { xs: 68, sm: 12 }, zIndex: 1,
+        width: 132, px: 0.75, py: 0.75, bgcolor: 'background.paper', border: 1,
+        borderColor: 'divider', boxShadow: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '30px 30px 30px 30px', gridTemplateRows: '30px 30px',
+          gap: 0.5, alignItems: 'center', justifyContent: 'center' }}>
+          <Tooltip title="Tilt up">
+            <IconButton size="small" aria-label="Tilt rack view up" onClick={(event) => {
+              event.stopPropagation();
+              nudgeLook(0, -GIZMO_TILT_STEP);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 1 }}>
+              <KeyboardArrowUpIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Rotate left">
+            <IconButton size="small" aria-label="Rotate rack view left" onClick={(event) => {
+              event.stopPropagation();
+              nudgeLook(-GIZMO_ROTATE_STEP, 0);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 1, gridRow: 2 }}>
+              <RotateLeftIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Tilt down">
+            <IconButton size="small" aria-label="Tilt rack view down" onClick={(event) => {
+              event.stopPropagation();
+              nudgeLook(0, GIZMO_TILT_STEP);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 2 }}>
+              <KeyboardArrowDownIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Rotate right">
+            <IconButton size="small" aria-label="Rotate rack view right" onClick={(event) => {
+              event.stopPropagation();
+              nudgeLook(GIZMO_ROTATE_STEP, 0);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 3, gridRow: 2 }}>
+              <RotateRightIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Zoom in">
+            <IconButton size="small" aria-label="Zoom rack view in" onClick={(event) => {
+              event.stopPropagation();
+              nudgeZoom(true);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 4, gridRow: 1 }}>
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Zoom out">
+            <IconButton size="small" aria-label="Zoom rack view out" onClick={(event) => {
+              event.stopPropagation();
+              nudgeZoom(false);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 4, gridRow: 2 }}>
+              <RemoveIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Box sx={{ height: 1, bgcolor: 'divider', opacity: 0.72, my: 0.75 }} />
+        <Box sx={{ display: 'grid', gridTemplateColumns: '30px 30px 30px', gridTemplateRows: '30px 30px',
+          gap: 0.5, justifyContent: 'center' }}>
+          <Tooltip title="Pan up">
+            <IconButton size="small" aria-label="Pan rack view up" onClick={(event) => {
+              event.stopPropagation();
+              nudgePan(0, 1);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 1 }}>
+              <KeyboardArrowUpIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Pan left">
+            <IconButton size="small" aria-label="Pan rack view left" onClick={(event) => {
+              event.stopPropagation();
+              nudgePan(-1, 0);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 1, gridRow: 2 }}>
+              <KeyboardArrowLeftIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Pan down">
+            <IconButton size="small" aria-label="Pan rack view down" onClick={(event) => {
+              event.stopPropagation();
+              nudgePan(0, -1);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 2 }}>
+              <KeyboardArrowDownIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Pan right">
+            <IconButton size="small" aria-label="Pan rack view right" onClick={(event) => {
+              event.stopPropagation();
+              nudgePan(1, 0);
+            }} sx={{ ...gizmoButtonSx, gridColumn: 3, gridRow: 2 }}>
+              <KeyboardArrowRightIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {(legendRoles.length > 0 || legendPortKinds.length > 0) && (
