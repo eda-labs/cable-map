@@ -143,6 +143,7 @@ export default function App({ mode, onToggleMode }: { mode: Mode; onToggleMode: 
         query={search.query} onQueryChange={search.setQuery} searchError={search.searchError}
         nodeLabelOptions={filter.nodeLabelOptions}
         selectedLabels={filter.selectedLabels} onSelectedLabelsChange={filter.setSelectedLabels}
+        labelFilterText={filter.labelFilterText} onLabelFilterTextChange={filter.setLabelFilterText}
         namespaces={namespaces} namespace={namespace} onNamespaceChange={setNamespace}
         exportNodeIds={exportNodeIds} exportScope={exportScope}
         pdfLoading={pdfLoading} onExportPdf={pdf.openPdf}

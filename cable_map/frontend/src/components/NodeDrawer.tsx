@@ -12,10 +12,12 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUpOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDownOutlined';
 import SettingsEthernetIcon from '@mui/icons-material/SettingsEthernetOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import SvgGlyph from './SvgGlyph';
 import pdfIcon from '../assets/icons/pdf.svg?raw';
 import excelIcon from '../assets/icons/excel.svg?raw';
 import type { Node, Topology } from '../domain/topology/contract';
+import { installGuideForPlatform } from '../domain/platform/installGuides';
 import { exportXlsx } from '../xlsx';
 import NodeView from '../NodeView';
 import NodeDetails from '../NodeDetails';
@@ -47,6 +49,7 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
   const [drawerH, setDrawerH] = useState(defaultDrawerHeight);
   const [dragging, setDragging] = useState(false);          // suppresses the slide transition mid-drag
   const nodeName = node?.name;
+  const installGuide = node ? installGuideForPlatform(node.platform) : undefined;
   const openLinkedNode = useCallback((name: string) => onOpenNode(name, { pan: true, pin: true, select: true }), [onOpenNode]);
 
   useEffect(() => {
@@ -151,6 +154,14 @@ function NodeDrawer({ node, expanded, onExpandedChange, resetSizeSignal, onOpenN
                 <IconButton size="small" sx={{ color: 'text.primary' }}
                   onClick={() => { void exportXlsx(topo, [node.name]).catch(console.error); }}>
                   <SvgGlyph src={excelIcon} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {installGuide && (
+              <Tooltip title={`Open ${installGuide.family} installation guide`}>
+                <IconButton component="a" href={installGuide.url} target="_blank" rel="noopener noreferrer"
+                  aria-label={`Open ${installGuide.family} installation guide`} size="small" sx={{ color: 'text.primary' }}>
+                  <ArticleOutlinedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -15,6 +15,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import ListItemText from '@mui/material/ListItemText';
+import ListSubheader from '@mui/material/ListSubheader';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import LightModeIcon from '@mui/icons-material/LightModeOutlined';
@@ -41,6 +42,8 @@ interface AppToolbarProps {
   nodeLabelOptions: string[];
   selectedLabels: string[];
   onSelectedLabelsChange: (labels: string[]) => void;
+  labelFilterText: string;
+  onLabelFilterTextChange: (value: string) => void;
   namespaces: string[];
   namespace: string;
   onNamespaceChange: (ns: string) => void;
@@ -55,10 +58,25 @@ interface AppToolbarProps {
 // re-renders on each keystroke, as intended.
 function AppToolbar({
   mode, onToggleMode, ready, topo, query, onQueryChange, searchError,
-  nodeLabelOptions, selectedLabels, onSelectedLabelsChange,
+  nodeLabelOptions, selectedLabels, onSelectedLabelsChange, labelFilterText, onLabelFilterTextChange,
   namespaces, namespace, onNamespaceChange, exportNodeIds, exportScope, pdfLoading, onExportPdf,
 }: AppToolbarProps) {
   const lldpOn = useLldp();
+  const labelFilterTerms = useMemo(
+    () => labelFilterText.trim().toLowerCase().split(/\s+/).filter(Boolean),
+    [labelFilterText],
+  );
+  const selectedLabelSet = useMemo(() => new Set(selectedLabels), [selectedLabels]);
+  const visibleLabelOptions = useMemo(() => {
+    if (labelFilterTerms.length === 0) return nodeLabelOptions;
+    return nodeLabelOptions.filter((value) => {
+      if (selectedLabelSet.has(value)) return true;
+      const hay = value.toLowerCase();
+      return labelFilterTerms.every((term) => hay.includes(term));
+    });
+  }, [labelFilterTerms, nodeLabelOptions, selectedLabelSet]);
+  const labelFilterTextTrimmed = labelFilterText.trim();
+  const labelFilterActive = selectedLabels.length > 0 || labelFilterTextTrimmed.length > 0;
   const exportCount = exportScope === 'all' ? 0 : exportNodeIds.length;
   const pdfTitle = exportScope === 'selected'
     ? `Download PDF (${exportNodeIds.length} selected)`
@@ -105,31 +123,69 @@ function AppToolbar({
                 displayEmpty
                 value={selectedLabels}
                 onChange={(e) => onSelectedLabelsChange(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                renderValue={(sel) => sel.length === 0
-                  ? <Box component="span" sx={{ color: 'text.secondary' }}>Label filter</Box>
-                  : sel.length === 1 ? sel[0] : `${sel.length} labels`}
+                renderValue={(sel) => {
+                  const selectedText = sel.length === 0 ? '' : sel.length === 1 ? sel[0] : `${sel.length} labels`;
+                  if (!selectedText && !labelFilterTextTrimmed) {
+                    return <Box component="span" sx={{ color: 'text.secondary' }}>Label filter</Box>;
+                  }
+                  return selectedText && labelFilterTextTrimmed
+                    ? `${selectedText} · ${labelFilterTextTrimmed}`
+                    : selectedText || labelFilterTextTrimmed;
+                }}
                 inputProps={{ 'aria-label': 'Label filter' }}
                 MenuProps={{ slotProps: { paper: { sx: { maxHeight: 360 } } } }}
                 sx={{
                   height: 31,
                   width: '100%',
-                  '& .MuiSelect-select': selectedLabels.length > 0 ? { pr: '64px !important' } : undefined,
+                  '& .MuiSelect-select': labelFilterActive ? { pr: '64px !important' } : undefined,
                 }}
               >
-                {nodeLabelOptions.map((value) => (
+                <ListSubheader
+                  sx={{ bgcolor: 'background.paper', lineHeight: 'normal', px: 1, py: 1 }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={labelFilterText}
+                    onChange={(e) => onLabelFilterTextChange(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    placeholder="Search labels"
+                    slotProps={{ input: { startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      </InputAdornment>
+                    ) } }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': { height: 31 },
+                      '& .MuiInputBase-input': { py: '3px' },
+                    }}
+                  />
+                </ListSubheader>
+                {visibleLabelOptions.map((value) => (
                   <MenuItem key={value} value={value} dense>
-                    <Checkbox size="small" checked={selectedLabels.includes(value)} sx={{ py: 0, mr: 0.5 }} />
+                    <Checkbox size="small" checked={selectedLabelSet.has(value)} sx={{ py: 0, mr: 0.5 }} />
                     <ListItemText primary={value} slotProps={{ primary: { noWrap: true } }} />
                   </MenuItem>
                 ))}
+                {visibleLabelOptions.length === 0 && (
+                  <MenuItem disabled dense>
+                    <ListItemText primary="No matching labels" slotProps={{ primary: { color: 'text.secondary' } }} />
+                  </MenuItem>
+                )}
               </Select>
-              {selectedLabels.length > 0 && (
-                <Tooltip title="Clear label filters">
+              {labelFilterActive && (
+                <Tooltip title="Clear label filter">
                   <IconButton
-                    aria-label="Clear label filters"
+                    aria-label="Clear label filter"
                     size="small"
                     onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    onClick={(e) => { e.stopPropagation(); onSelectedLabelsChange([]); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectedLabelsChange([]);
+                      onLabelFilterTextChange('');
+                    }}
                     sx={{
                       position: 'absolute',
                       right: 28,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { type Node as RFNode } from '@xyflow/react';
 import type { Adjacency } from '../graph/adjacency';
 import { type FitNodesOptions } from '../lib/viewport';
@@ -10,6 +10,26 @@ type LabelFilterDeps = {
   largeTopology: boolean;
 };
 
+function labelSetHasSelected(labels: Set<string>, selected: Set<string>): boolean {
+  if (selected.size === 0) return true;
+  for (const label of selected) if (labels.has(label)) return true;
+  return false;
+}
+
+function labelSetMatchesTerms(labels: Set<string>, terms: string[]): boolean {
+  for (const term of terms) {
+    let found = false;
+    for (const label of labels) {
+      if (label.toLowerCase().includes(term)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) return false;
+  }
+  return true;
+}
+
 // Owns the label filter. `shown` is the set of node ids to display (null = no filter): nodes
 // carrying any selected label, plus each matched node's directly-attached context (a switch
 // pulls in its endpoint chips, an endpoint pulls in its switches). Auto-fits to the selection.
@@ -20,6 +40,13 @@ export function useLabelFilter(
   { nodes, ready, fitNodes, largeTopology }: LabelFilterDeps,
 ) {
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]); // [] = no filter
+  const [labelFilterText, setLabelFilterText] = useState('');
+  const deferredLabelFilterText = useDeferredValue(labelFilterText);
+  const labelFilterTerms = useMemo(
+    () => deferredLabelFilterText.trim().toLowerCase().split(/\s+/).filter(Boolean),
+    [deferredLabelFilterText],
+  );
+  const labelFilterTermKey = labelFilterTerms.join('\n');
 
   const nodeLabelOptions = useMemo(
     () => {
@@ -34,6 +61,7 @@ export function useLabelFilter(
 
   useEffect(() => {
     setSelectedLabels([]);
+    setLabelFilterText('');
   }, [namespace]);
 
   // drop any selected labels that no longer exist (e.g. after a namespace/topology change)
@@ -44,15 +72,14 @@ export function useLabelFilter(
     });
   }, [nodeLabelOptions]);
 
-  const filterActive = selectedLabels.length > 0;
+  const filterActive = selectedLabels.length > 0 || labelFilterTerms.length > 0;
   const shown = useMemo<Set<string> | null>(() => {
     if (!filterActive) return null;
     const sel = new Set(selectedLabels);
     const out = new Set<string>();
-    for (const [id, set] of adjacency.nodeLabels) {
-      let match = false;
-      for (const s of sel) if (set.has(s)) { match = true; break; }
-      if (!match) continue;
+    for (const [id, labels] of adjacency.nodeLabels) {
+      if (!labelSetHasSelected(labels, sel)) continue;
+      if (!labelSetMatchesTerms(labels, labelFilterTerms)) continue;
       out.add(id);
     }
     // keep a matched node's directly-attached context across a switch↔endpoint edge only.
@@ -67,7 +94,7 @@ export function useLabelFilter(
       }
     }
     return out;
-  }, [filterActive, selectedLabels, adjacency, switchIds]);
+  }, [filterActive, selectedLabels, labelFilterTerms, adjacency, switchIds]);
 
   // read the latest `shown`/`nodes` via refs so the auto-fit effect fires on the user's label
   // selection, not on every data refresh that recomputes them.
@@ -80,15 +107,16 @@ export function useLabelFilter(
     if (!ready) return;
     const target = shownRef.current;
     const handle = window.setTimeout(() => {
-      if (!target || target.size === 0) {
+      if (!target) {
         if (largeTopology) return;
         fitNodes(nodesRef.current, { padding: 0.12, duration: 400, maxZoom: largeTopology ? 0.5 : undefined });
         return;
       }
+      if (target.size === 0) return;
       fitNodes(nodesRef.current.filter((node) => target.has(node.id)), { padding: 0.2, duration: 400, maxZoom: 1.4 });
     }, 60);
     return () => window.clearTimeout(handle);
-  }, [selectedLabels, ready, fitNodes, largeTopology]);
+  }, [selectedLabels, labelFilterTermKey, ready, fitNodes, largeTopology]);
 
-  return { nodeLabelOptions, selectedLabels, setSelectedLabels, shown };
+  return { nodeLabelOptions, selectedLabels, setSelectedLabels, labelFilterText, setLabelFilterText, shown };
 }
