@@ -1753,7 +1753,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         borderColor: 'divider', boxShadow: 2 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: '30px 30px 30px 30px', gridTemplateRows: '30px 30px',
           gap: 0.5, alignItems: 'center', justifyContent: 'center' }}>
-          <Tooltip title="Tilt up">
+          <Tooltip title="Tilt up" disableInteractive>
             <IconButton size="small" aria-label="Tilt rack view up" onClick={(event) => {
               event.stopPropagation();
               nudgeLook(0, -GIZMO_TILT_STEP);
@@ -1761,7 +1761,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <KeyboardArrowUpIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Rotate left">
+          <Tooltip title="Rotate left" disableInteractive>
             <IconButton size="small" aria-label="Rotate rack view left" onClick={(event) => {
               event.stopPropagation();
               nudgeLook(-GIZMO_ROTATE_STEP, 0);
@@ -1769,7 +1769,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <RotateLeftIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Tilt down">
+          <Tooltip title="Tilt down" disableInteractive>
             <IconButton size="small" aria-label="Tilt rack view down" onClick={(event) => {
               event.stopPropagation();
               nudgeLook(0, GIZMO_TILT_STEP);
@@ -1777,7 +1777,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <KeyboardArrowDownIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Rotate right">
+          <Tooltip title="Rotate right" disableInteractive>
             <IconButton size="small" aria-label="Rotate rack view right" onClick={(event) => {
               event.stopPropagation();
               nudgeLook(GIZMO_ROTATE_STEP, 0);
@@ -1785,7 +1785,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <RotateRightIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Zoom in">
+          <Tooltip title="Zoom in" disableInteractive>
             <IconButton size="small" aria-label="Zoom rack view in" onClick={(event) => {
               event.stopPropagation();
               nudgeZoom(true);
@@ -1793,7 +1793,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Zoom out">
+          <Tooltip title="Zoom out" disableInteractive>
             <IconButton size="small" aria-label="Zoom rack view out" onClick={(event) => {
               event.stopPropagation();
               nudgeZoom(false);
@@ -1805,7 +1805,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         <Box sx={{ height: 1, bgcolor: 'divider', opacity: 0.72, my: 0.75 }} />
         <Box sx={{ display: 'grid', gridTemplateColumns: '30px 30px 30px', gridTemplateRows: '30px 30px',
           gap: 0.5, justifyContent: 'center' }}>
-          <Tooltip title="Pan up">
+          <Tooltip title="Pan up" disableInteractive>
             <IconButton size="small" aria-label="Pan rack view up" onClick={(event) => {
               event.stopPropagation();
               nudgePan(0, 1);
@@ -1813,7 +1813,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <KeyboardArrowUpIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Pan left">
+          <Tooltip title="Pan left" disableInteractive>
             <IconButton size="small" aria-label="Pan rack view left" onClick={(event) => {
               event.stopPropagation();
               nudgePan(-1, 0);
@@ -1821,7 +1821,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <KeyboardArrowLeftIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Pan down">
+          <Tooltip title="Pan down" disableInteractive>
             <IconButton size="small" aria-label="Pan rack view down" onClick={(event) => {
               event.stopPropagation();
               nudgePan(0, -1);
@@ -1829,7 +1829,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
               <KeyboardArrowDownIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Pan right">
+          <Tooltip title="Pan right" disableInteractive>
             <IconButton size="small" aria-label="Pan rack view right" onClick={(event) => {
               event.stopPropagation();
               nudgePan(1, 0);
