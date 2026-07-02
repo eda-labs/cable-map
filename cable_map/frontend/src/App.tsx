@@ -18,7 +18,7 @@ import { useFlowModel } from './hooks/useFlowModel';
 import { useSearch } from './hooks/useSearch';
 import AppToolbar from './components/AppToolbar';
 import FlowCanvas from './components/FlowCanvas';
-import RackView from './components/RackView';
+import RackView from './rackview/RackView';
 import NodeDrawer from './components/NodeDrawer';
 import PdfExportProgress from './components/PdfExportProgress';
 import { type OpenNodeOptions } from './components/NodeActionsContext';
