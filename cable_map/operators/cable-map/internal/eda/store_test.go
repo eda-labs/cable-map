@@ -71,6 +71,30 @@ func TestProjLink(t *testing.T) {
 	}
 }
 
+func TestProjGrouping(t *testing.T) {
+	u := &unstructured.Unstructured{Object: map[string]any{
+		"metadata": map[string]any{"name": "role", "namespace": "eda-system"},
+		"spec": map[string]any{"tierSelectors": []any{
+			map[string]any{"tier": int64(2), "nodeSelector": []any{"eda.nokia.com/role=superspine"}},
+			map[string]any{"tier": float64(4), "nodeSelector": []any{"eda.nokia.com/role=leaf", "eda.nokia.com/role=borderleaf"}},
+			map[string]any{"tier": int64(4)}, // catch-all
+		}},
+	}}
+	got := projGrouping(u)
+	if got.Name != "role" || len(got.Selectors) != 3 {
+		t.Fatalf("grouping: %+v", got)
+	}
+	if got.Selectors[0].Tier != 2 || len(got.Selectors[0].NodeSelectors) != 1 {
+		t.Errorf("selector 0: %+v", got.Selectors[0])
+	}
+	if got.Selectors[1].Tier != 4 || len(got.Selectors[1].NodeSelectors) != 2 {
+		t.Errorf("selector 1 (float tier, OR selectors): %+v", got.Selectors[1])
+	}
+	if got.Selectors[2].Tier != 4 || len(got.Selectors[2].NodeSelectors) != 0 {
+		t.Errorf("selector 2 (catch-all): %+v", got.Selectors[2])
+	}
+}
+
 func TestTopoNodeLookup(t *testing.T) {
 	s := &Store{caches: map[string]map[string]*unstructured.Unstructured{
 		edav1.KTopoNodeGVK.Kind: {

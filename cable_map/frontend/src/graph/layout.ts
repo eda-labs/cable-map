@@ -48,8 +48,14 @@ function breakoutsWithInferredChannels(explicit: Record<string, Breakout> | unde
 }
 
 export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, stencilOf }: LayoutGraphArgs): RFNode[] {
-  const leaves = topo.nodes.filter((n) => tierOf(n.role) >= 2);
-  const cores = topo.nodes.filter((n) => tierOf(n.role) < 2);
+  // tiers present, top (smallest) first. The bottom tier is the leaf row (endpoint fans);
+  // every tier above it gets its own row, so superspine and spine never share one.
+  const tiers = [...new Set(topo.nodes.map((n) => tierOf(n)))].toSorted((a, b) => a - b);
+  const bottomTier = tiers.at(-1) ?? 4;
+  const coreTiers = tiers.slice(0, -1);
+  const leaves = topo.nodes.filter((n) => tierOf(n) === bottomTier);
+  const cores = topo.nodes.filter((n) => tierOf(n) !== bottomTier);
+  const coresAt = (t: number) => cores.filter((n) => tierOf(n) === t);
 
   // sized by the node's resolved stencil (callers pass the node name, not its display platform)
   const swW = (name: string) => {
@@ -66,7 +72,7 @@ export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, ste
     const GAP_X = 28, GAP_Y = 30;
     const leafCols = Math.min(64, Math.max(1, Math.ceil(Math.sqrt(leaves.length * 4))));
     const leafWidth = leafCols * COMPACT_SWITCH_W + (leafCols - 1) * GAP_X;
-    const placeGrid = (items: typeof topo.nodes, y: number, cols: number) => {
+    const placeGrid = (items: typeof topo.nodes, y: number, cols: number): number => {
       const safeCols = Math.max(1, Math.min(cols, Math.max(1, items.length)));
       const totalW = safeCols * COMPACT_SWITCH_W + (safeCols - 1) * GAP_X;
       const startX = Math.max(0, (leafWidth - totalW) / 2);
@@ -76,23 +82,33 @@ export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, ste
         const x = startX + col * (COMPACT_SWITCH_W + GAP_X);
         const yy = y + row * (COMPACT_SWITCH_H + GAP_Y);
         pos.set(item.name, { x, y: yy });
-        if (tierOf(item.role) >= 2) leafCenter.set(item.name, x + COMPACT_SWITCH_W / 2);
+        if (tierOf(item) === bottomTier) leafCenter.set(item.name, x + COMPACT_SWITCH_W / 2);
       }
+      return Math.ceil(items.length / safeCols);
     };
 
-    placeGrid(topo.nodes.filter((n) => tierOf(n.role) === 0), SPINE_Y, 16);
-    placeGrid(topo.nodes.filter((n) => tierOf(n.role) === 1), SPINE_Y + 120, 32);
-    placeGrid(leaves, SPINE_Y + 360, leafCols);
+    // one grid row block per core tier, stacked top-down, then the leaf grid below
+    let coreBottom = SPINE_Y;
+    for (const [i, t] of coreTiers.entries()) {
+      const rows = placeGrid(coresAt(t), coreBottom, i === 0 ? 16 : 32);
+      coreBottom += rows * (COMPACT_SWITCH_H + GAP_Y) + 44;
+    }
+    placeGrid(leaves, coreTiers.length ? coreBottom + 120 : SPINE_Y, leafCols);
   } else if (tiered) {
-    // Large detailed fabrics need locality: every pod keeps its leaves under its own spines,
-    // while superspines stay as the shared top tier. This preserves full front-panel detail
-    // without making leaf->spine links disappear into the far centre of a 1000-node canvas.
+    // Large detailed fabrics need locality: every pod keeps its leaves under its own spines
+    // (the tier directly above the leaves), while the tiers above that stay shared top rows.
+    // This preserves full front-panel detail without making leaf->spine links disappear into
+    // the far centre of a 1000-node canvas.
     const GAP_X = 64, POD_GAP = 180, SPINE_GAP = 96, LEAF_COLS = 8;
-    const SPINE_TIER_Y = 210, LEAF_TIER_Y = 440;
+    const TIER_ROW_GAP = 210;
+    const podTier = coreTiers.at(-1);
+    const upperTiers = coreTiers.slice(0, -1);
+    const SPINE_TIER_Y = SPINE_Y + upperTiers.length * TIER_ROW_GAP;
+    const LEAF_TIER_Y = SPINE_TIER_Y + 230;
     const pods = new Map<string, { leaves: typeof topo.nodes; spines: typeof topo.nodes }>();
 
     for (const leaf of leaves) (pods.get(podKey(leaf)) ?? pods.set(podKey(leaf), { leaves: [], spines: [] }).get(podKey(leaf))!).leaves.push(leaf);
-    for (const spine of cores.filter((n) => tierOf(n.role) === 1)) (pods.get(podKey(spine)) ?? pods.set(podKey(spine), { leaves: [], spines: [] }).get(podKey(spine))!).spines.push(spine);
+    for (const spine of (podTier == null ? [] : coresAt(podTier))) (pods.get(podKey(spine)) ?? pods.set(podKey(spine), { leaves: [], spines: [] }).get(podKey(spine))!).spines.push(spine);
 
     let cursor = 0;
     const podNames = [...pods.keys()].toSorted(naturalName);
@@ -127,31 +143,47 @@ export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, ste
       cursor += podW + POD_GAP;
     }
 
-    const supers = cores.filter((n) => tierOf(n.role) === 0).toSorted((a, b) => naturalName(a.name, b.name));
+    // the tiers above the pod spines spread across the full width, one row per tier
     const totalW = Math.max(cursor - POD_GAP, switchW(32, 2));
-    for (const [i, node] of supers.entries()) {
-      const w = swW(node.name);
-      const x = supers.length <= 1 ? (totalW - w) / 2 : (totalW - w) * (i / (supers.length - 1));
-      pos.set(node.name, { x, y: SPINE_Y });
+    for (const [row, t] of upperTiers.entries()) {
+      const uppers = coresAt(t).toSorted((a, b) => naturalName(a.name, b.name));
+      const y = SPINE_Y + row * TIER_ROW_GAP;
+      for (const [i, node] of uppers.entries()) {
+        const w = swW(node.name);
+        const x = uppers.length <= 1 ? (totalW - w) / 2 : (totalW - w) * (i / (uppers.length - 1));
+        pos.set(node.name, { x, y });
+      }
     }
   } else {
+    // each core tier is its own row (superspine above spine); the leaf row starts below
+    // the deepest core row so the tiers never collapse onto one line.
+    const CORE_TIER_GAP = 160;
+    const coreRowY: number[] = [];
+    let coreBottom = SPINE_Y;
+    for (const t of coreTiers) {
+      coreRowY.push(coreBottom);
+      coreBottom += Math.max(...coresAt(t).map((c) => swH(c.name))) + CORE_TIER_GAP;
+    }
+    const leafY = Math.max(LEAF_Y, coreBottom);
+
     // leaves laid out left->right, each given a slot wide enough for its endpoint fan
     const SLOT_GAP = 64;
     let cursor = 0;
     for (const lf of leaves) {
       const w = Math.max(swW(lf.name), EP_COLS * EP_W + (EP_COLS - 1) * EP_HGAP);
       const x = cursor;
-      pos.set(lf.name, { x: x + (w - swW(lf.name)) / 2, y: LEAF_Y });
+      pos.set(lf.name, { x: x + (w - swW(lf.name)) / 2, y: leafY });
       leafCenter.set(lf.name, x + w / 2);
       cursor += w + SLOT_GAP;
     }
     const spanL = 0, spanR = Math.max(cursor - SLOT_GAP, switchW(32, 2));
-    // cores centred above the leaf span
-    if (cores.length) {
-      const totalW = cores.reduce((s, c) => s + swW(c.name), 0) + (cores.length - 1) * 120;
+    // core tier rows centred above the leaf span
+    for (const [i, t] of coreTiers.entries()) {
+      const row = coresAt(t);
+      const totalW = row.reduce((s, c) => s + swW(c.name), 0) + (row.length - 1) * 120;
       let cx = (spanL + spanR) / 2 - totalW / 2;
-      for (const c of cores) {
-        pos.set(c.name, { x: cx, y: SPINE_Y });
+      for (const c of row) {
+        pos.set(c.name, { x: cx, y: coreRowY[i] });
         cx += swW(c.name) + 120;
       }
     }

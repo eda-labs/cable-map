@@ -5,6 +5,7 @@
       "platform": "7220 IXR-H5-64D",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -109,6 +110,7 @@
       "platform": "7220 IXR-H5-64D",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -213,6 +215,7 @@
       "platform": "7220 IXR-H5-64D",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -317,6 +320,7 @@
       "platform": "7220 IXR-H5-64D",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -421,6 +425,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -873,6 +878,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -1325,6 +1331,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -1777,6 +1784,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -2229,6 +2237,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -2680,6 +2689,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -3132,6 +3142,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -3584,6 +3595,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -4036,6 +4048,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -4487,6 +4500,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -4939,6 +4953,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -5391,6 +5406,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -5843,6 +5859,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -6294,6 +6311,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -6746,6 +6764,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -7198,6 +7217,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -7650,6 +7670,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -7838,6 +7859,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -8026,6 +8048,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -8214,6 +8237,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -8402,6 +8426,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -8590,6 +8615,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -8778,6 +8804,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -8966,6 +8993,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -9154,6 +9182,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -9342,6 +9371,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -9530,6 +9560,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -9718,6 +9749,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -9906,6 +9938,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -10094,6 +10127,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -10282,6 +10316,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -10444,6 +10479,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -10606,6 +10642,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -10768,6 +10805,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -10930,6 +10968,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -11092,6 +11131,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -11254,6 +11294,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -11416,6 +11457,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -11578,6 +11620,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -11740,6 +11783,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -11902,6 +11946,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -12063,6 +12108,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -12225,6 +12271,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -12387,6 +12434,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -12549,6 +12597,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -12711,6 +12760,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -12873,6 +12923,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -13035,6 +13086,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -13197,6 +13249,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -13359,6 +13412,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -13521,6 +13575,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -13683,6 +13738,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -13845,6 +13901,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -14007,6 +14064,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -14169,6 +14227,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -14331,6 +14390,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -14493,6 +14553,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -14655,6 +14716,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -14817,6 +14879,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -14979,6 +15042,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -15141,6 +15205,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -15303,6 +15368,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -15465,6 +15531,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -15627,6 +15694,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -15789,6 +15857,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -15950,6 +16019,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -16112,6 +16182,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -16274,6 +16345,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -16436,6 +16508,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -16598,6 +16671,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -16760,6 +16834,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -16922,6 +16997,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -17084,6 +17160,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -17246,6 +17323,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -17408,6 +17486,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -17570,6 +17649,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -17732,6 +17812,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -17894,6 +17975,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -18056,6 +18138,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -18218,6 +18301,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -18380,6 +18464,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -18542,6 +18627,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -18704,6 +18790,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -18866,6 +18953,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -19028,6 +19116,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -19190,6 +19279,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -19352,6 +19442,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -19514,6 +19605,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -19676,6 +19768,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -19837,6 +19930,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -19999,6 +20093,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -20161,6 +20256,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -20323,6 +20419,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -20485,6 +20582,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -20647,6 +20745,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {
@@ -20809,6 +20908,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "demo",
       "version": "dev-golden",
       "labels": {

@@ -1,6 +1,5 @@
 import type { Cell } from 'write-excel-file/browser';
 import type { LagInfo, Topology } from './domain/topology/contract';
-import { portIdx } from './domain/ports/interfaceNames';
 import { edgeRemote } from './edge-remote';
 
 // readable LAG classification for the spreadsheet's LAG column
@@ -43,7 +42,7 @@ export async function exportXlsx(topo: Topology, nodeIds: string[]): Promise<voi
     data: [
       header,
       ...(byName.get(id)?.table ?? [])
-        .toSorted((a, b) => (portIdx(a.label) ?? 0) - (portIdx(b.label) ?? 0))
+        .toSorted((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
         .map((r): Cell[] => [
           r.label,
           r.type === 'interSwitch' ? 'ISL' : r.type,

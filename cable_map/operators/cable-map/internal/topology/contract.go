@@ -13,12 +13,13 @@ type Node struct {
 	Platform  string                 `json:"platform"`
 	OS        string                 `json:"os"`
 	Role      string                 `json:"role"`
+	Tier      int                    `json:"tier,omitempty"` // canvas row from the cluster's TopologyGrouping (1 = top); role-derived fallback
 	Namespace string                 `json:"namespace,omitempty"`
 	Version   string                 `json:"version,omitempty"`
 	Labels    map[string]string      `json:"labels,omitempty"`
-	Table     []Row                  `json:"table"`                // this node's cable matrix
-	Breakouts map[string]Breakout    `json:"breakouts,omitempty"`  // cage id -> breakout split
-	Raw       map[string]interface{} `json:"raw,omitempty"`        // the full TopoNode CR (details pane)
+	Table     []Row                  `json:"table"`               // this node's cable matrix
+	Breakouts map[string]Breakout    `json:"breakouts,omitempty"` // cage id -> breakout split
+	Raw       map[string]interface{} `json:"raw,omitempty"`       // the full TopoNode CR (details pane)
 }
 
 type Edge struct {
@@ -66,7 +67,7 @@ type Breakout struct {
 }
 
 type Topology struct {
-	Nodes  []Node              `json:"nodes"`  // each node carries its own table/breakouts/raw CR
+	Nodes  []Node              `json:"nodes"` // each node carries its own table/breakouts/raw CR
 	Links  []Edge              `json:"links"`
 	Lags   map[string]LagInfo  `json:"lags"`
 	Labels map[string][]string `json:"labels"` // collected TopoNode label key -> sorted distinct values

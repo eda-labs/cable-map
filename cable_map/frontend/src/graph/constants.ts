@@ -1,9 +1,11 @@
 import type { LldpStatus } from '../domain/topology/contract';
 import type { CableKind } from './types';
 
-// role tier: smaller = closer to the fabric core (drawn higher up).
-const TIER: Record<string, number> = { superspine: 0, spine: 1, borderleaf: 2, leaf: 3 };
-export const tierOf = (role: string): number => TIER[role] ?? 3;
+// Tier: smaller = closer to the fabric core (drawn higher up). The backend computes
+// node.tier from the cluster's TopologyGrouping; the role map mirrors EDA's bootstrap
+// "role" grouping as a fallback for data that predates the tier field (dev fixtures).
+const ROLE_TIER: Record<string, number> = { backbone: 1, superspine: 2, spine: 3, borderleaf: 4, leaf: 4 };
+export const tierOf = (n: { tier?: number; role?: string }): number => n.tier ?? ROLE_TIER[n.role ?? ''] ?? 4;
 
 export const LARGE_TOPOLOGY_NODE_THRESHOLD = 300;
 export const LARGE_TOPOLOGY_ROW_THRESHOLD = 5000;

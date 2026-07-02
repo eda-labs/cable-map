@@ -77,18 +77,17 @@ function addEndpointLag(lags, name, members, multihomed) {
   };
 }
 
-function portNumber(label) {
-  const matches = label.match(/\d+/g);
-  if (!matches) return 0;
-  if (matches.length >= 2) return Number(matches[1]) * 100 + Number(matches[2] ?? 0);
-  return Number(matches[0]) * 100;
-}
-
+// natural port order, mirroring the backend's naturalLess (topology.go)
 function sortTables(nodes) {
   for (const node of nodes) {
-    node.table = node.table.toSorted((left, right) => portNumber(left.label) - portNumber(right.label) || left.remoteNode.localeCompare(right.remoteNode));
+    node.table = node.table.toSorted((left, right) =>
+      left.label.localeCompare(right.label, undefined, { numeric: true })
+      || left.remoteNode.localeCompare(right.remoteNode));
   }
 }
+
+// mirrors the backend's role-derived tier fallback (roleTier in topology.go)
+const ROLE_TIER = { backbone: 1, superspine: 2, spine: 3, borderleaf: 4, leaf: 4 };
 
 function collectLabels(nodes) {
   const out = {};
@@ -106,7 +105,10 @@ function collectLabels(nodes) {
 
 function topology(nodes, links, lags) {
   sortTables(nodes);
-  return { nodes, links, lags, labels: collectLabels(nodes) };
+  const tiered = nodes.map(({ name, platform, os, role, ...rest }) => (
+    { name, platform, os, role, tier: ROLE_TIER[role] ?? 4, ...rest }
+  ));
+  return { nodes: tiered, links, lags, labels: collectLabels(nodes) };
 }
 
 function buildGoldenTopology() {

@@ -10,7 +10,7 @@ import TableCell from '@mui/material/TableCell';
 import Link from '@mui/material/Link';
 import FrontPanel from './FrontPanel';
 import RemoteCell from './RemoteCell';
-import { cageKey, portIdx } from './domain/ports/interfaceNames';
+import { cageKey } from './domain/ports/interfaceNames';
 import { slottedOf } from './domain/ports/frontPanelMeta';
 import type { Node, Row } from './domain/topology/contract';
 import { stencilFor, componentsOf } from './stencil';
@@ -43,7 +43,8 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
   const stencil = stencilFor(node.platform, componentsOf(node.raw));
   const slotted = slottedOf(stencil);
   const occupied = rows.map((r) => cageKey(r.label, slotted)).filter((c): c is string => c != null);
-  const sorted = rows.toSorted((a, b) => (portIdx(a.label) ?? 0) - (portIdx(b.label) ?? 0));
+  // natural order: digit runs compare numerically (ethernet-1-2 before ethernet-1-10), slot-aware
+  const sorted = rows.toSorted((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
   // print leaves empty cells blank (room to write); the drawer shows a dash
   const blank = interactive ? <Box component="span" color="text.disabled">—</Box> : null;
 

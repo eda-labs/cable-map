@@ -27,8 +27,9 @@ import (
 	"cable-map.eda.labs/cable-map/operators/cable-map/internal/topology"
 )
 
-// The three resources the cable-map view is derived from. TopoNode/TopoLink reuse the EDK
-// core GVKs; interfaces.eda.nokia.com has no EDK Go type, so it is read untyped.
+// The resources the cable-map view is derived from. TopoNode/TopoLink reuse the EDK
+// core GVKs; interfaces.eda.nokia.com and topologies.eda.nokia.com have no EDK Go
+// types, so they are read untyped.
 type crKind struct{ group, version, kind string }
 
 var kinds = []crKind{
@@ -36,7 +37,12 @@ var kinds = []crKind{
 	{edav1.KTopoLinkGVK.Group, edav1.KTopoLinkGVK.Version, edav1.KTopoLinkGVK.Kind},
 	{"interfaces.eda.nokia.com", "v1", "Interface"},
 	{"interfaces.eda.nokia.com", "v1alpha1", "Breakout"},
+	{"topologies.eda.nokia.com", "v1", "TopologyGrouping"},
 }
+
+// TopologyGrouping is cluster-wide UI config living in eda-system, not per-topology data:
+// it bypasses the namespace filter and must not surface in the namespace picker.
+const groupingKind = "TopologyGrouping"
 
 const (
 	debounce              = 300 * time.Millisecond
@@ -327,17 +333,25 @@ func (s *Store) snapshotLocked(filter []string) topology.Topology {
 			breakouts = append(breakouts, projBreakout(u))
 		}
 	}
+	var groupings []topology.RawGrouping
+	for _, u := range s.caches[groupingKind] {
+		groupings = append(groupings, projGrouping(u))
+	}
 	// Stable input order -> stable output JSON, so dedup and the UI don't churn.
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Name < nodes[j].Name })
 	sort.Slice(links, func(i, j int) bool { return links[i].Name < links[j].Name })
 	sort.Slice(ifaces, func(i, j int) bool { return ifaces[i].Name < ifaces[j].Name })
 	sort.Slice(breakouts, func(i, j int) bool { return breakouts[i].Name < breakouts[j].Name })
-	return topology.BuildTopology(nodes, links, ifaces, breakouts)
+	sort.Slice(groupings, func(i, j int) bool { return groupings[i].Name < groupings[j].Name })
+	return topology.BuildTopology(nodes, links, ifaces, breakouts, groupings)
 }
 
 func (s *Store) namespacesLocked() []string {
 	set := map[string]struct{}{}
-	for _, cache := range s.caches {
+	for kind, cache := range s.caches {
+		if kind == groupingKind {
+			continue // lives in eda-system; not a topology namespace
+		}
 		for key := range cache {
 			if ns := nsOf(key); ns != "" {
 				set[ns] = struct{}{}
@@ -602,6 +616,33 @@ func projBreakout(u *unstructured.Unstructured) topology.RawBreakout {
 		Channels:      int(ch),
 		Speed:         us(u.Object, "spec", "speed"),
 	}
+}
+
+func projGrouping(u *unstructured.Unstructured) topology.RawGrouping {
+	out := topology.RawGrouping{Name: u.GetName()}
+	selectors, _, _ := unstructured.NestedSlice(u.Object, "spec", "tierSelectors")
+	for _, si := range selectors {
+		m, ok := si.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		ts := topology.RawTierSelector{}
+		switch v := m["tier"].(type) {
+		case int64:
+			ts.Tier = int(v)
+		case float64:
+			ts.Tier = int(v)
+		}
+		if sels, ok := m["nodeSelector"].([]interface{}); ok {
+			for _, s := range sels {
+				if str, ok := s.(string); ok && str != "" {
+					ts.NodeSelectors = append(ts.NodeSelectors, str)
+				}
+			}
+		}
+		out.Selectors = append(out.Selectors, ts)
+	}
+	return out
 }
 
 func us(obj map[string]interface{}, fields ...string) string {
