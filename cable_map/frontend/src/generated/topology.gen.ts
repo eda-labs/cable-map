@@ -15,6 +15,7 @@ export interface Node {
   platform: string;
   os: string;
   role: string;
+  tier?: number /* int */; // canvas row from the cluster's TopologyGrouping (1 = top); role-derived fallback
   namespace?: string;
   version?: string;
   labels?: { [key: string]: string};

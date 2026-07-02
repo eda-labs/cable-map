@@ -5,6 +5,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "superspine",
+      "tier": 2,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -80,6 +81,7 @@
       "platform": "7220 IXR-H4",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -311,6 +313,7 @@
       "platform": "7750 SR-1s",
       "os": "sros",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -565,6 +568,7 @@
       "platform": "7750 SR-2s",
       "os": "sros",
       "role": "borderleaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -668,6 +672,7 @@
       "platform": "7220 IXR-D3L",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -737,6 +742,7 @@
       "platform": "7220 IXR-D2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -807,6 +813,7 @@
       "platform": "7220 IXR-H3",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -867,6 +874,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -950,6 +958,7 @@
       "platform": "7750 SR-1s",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1017,6 +1026,7 @@
       "platform": "7730 SXR-1D-32D",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1077,6 +1087,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1144,6 +1155,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1211,6 +1223,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1278,6 +1291,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1345,6 +1359,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1412,6 +1427,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1484,6 +1500,7 @@
       "platform": "7750 SR-1",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1576,6 +1593,7 @@
       "platform": "7750 SR-1se",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1636,6 +1654,7 @@
       "platform": "7750 SR-1s",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1703,6 +1722,7 @@
       "platform": "7750 SR-1s",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1770,6 +1790,7 @@
       "platform": "7750 SR-2s",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1842,6 +1863,7 @@
       "platform": "7750 SR-2se",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {
@@ -1914,6 +1936,7 @@
       "platform": "7750 SR-2se",
       "os": "sros",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-mixed-sros",
       "version": "dev-mixed-sros",
       "labels": {

@@ -30,13 +30,15 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   const tiered = options.tiered ?? compact;
   const byName = new Map(topo.nodes.map((n) => [n.name, n]));
   const role = (name: string) => byName.get(name)?.role ?? 'leaf';
+  const tierByName = new Map(topo.nodes.map((n) => [n.name, tierOf(n)]));
+  const tier = (name: string) => tierByName.get(name) ?? 4;
   // the stencil each node renders (its platform, or card-derived for modular SROS chassis); drives all
   // sizing + FP_META lookups, while node.platform stays the displayed model name.
   const stencilByName = new Map(topo.nodes.map((n) => [n.name, stencilFor(n.platform, componentsOf(n.raw))]));
   const stencilOf = (name: string) => stencilByName.get(name) ?? '';
   const lagOf = (name?: string): LagInfo | undefined => (name ? topo.lags[name] : undefined);
   const sideBetween = (node: string, remote: string): 'top' | 'bottom' =>
-    tierOf(role(remote)) <= tierOf(role(node)) ? 'top' : 'bottom';
+    tier(remote) <= tier(node) ? 'top' : 'bottom';
   const switchHandle = (node: string, remote: string, target = false) =>
     compact ? compactSwitchHandle(sideBetween(node, remote), target) : null;
 
@@ -71,10 +73,10 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
 
       if (r.type === 'interSwitch' && r.remoteNode) {
         hay(sw.name).push(r.label);
-        const remoteTier = tierOf(role(r.remoteNode));
+        const remoteTier = tier(r.remoteNode);
         // uplinks leave the top; a same-tier peer link (leaf↔leaf MLAG ISL) also routes over
         // the top, into the open space above — routing it below would dive through the host band.
-        const side: 'top' | 'bottom' = remoteTier <= tierOf(sw.role) ? 'top' : 'bottom';
+        const side: 'top' | 'bottom' = remoteTier <= tier(sw.name) ? 'top' : 'bottom';
         const rp = cageKey(r.remotePort, slottedOf(stencilOf(r.remoteNode))) ?? p;
         // canonical per-cable id, stable across the mirrored far-side row
         const cableId = canonicalIslCableId(sw.name, r);
@@ -86,7 +88,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
           portsOf(sw.name).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId, lldp: r.lldpStatus });
           if (!islSeen.has(cableId)) {
             islSeen.add(cableId);
-            const child = tierOf(sw.role) >= tierOf(role(r.remoteNode)) ? sw.name : r.remoteNode;
+            const child = tier(sw.name) >= tier(r.remoteNode) ? sw.name : r.remoteNode;
             const parent = child === sw.name ? r.remoteNode : sw.name;
             const childPort = child === sw.name ? p : rp;
             const parentPort = child === sw.name ? rp : p;

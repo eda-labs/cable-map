@@ -35,7 +35,10 @@ func TestBuildTopology(t *testing.T) {
 		{Name: "spine1", Labels: map[string]string{"eda.nokia.com/role": "spine"}, StatusPlatform: "7220 IXR-D5"},
 	}
 	ifaces := []RawIface{
-		{Name: "ethernet-1-49", Description: "to spine1"}, // desc keyed by interface name
+		// desc resolves via spec.members (node|interface); the CR name never matches the port label
+		{Name: "leaf1-ethernet-1-49", Description: "to spine1", Members: []IfMember{{Node: "leaf1", Interface: "ethernet-1-49"}}},
+		// desc fallback via the endpoint's interfaceResource when no member-keyed desc exists
+		{Name: "isl-lag-x", Description: "cross-link"},
 		{
 			Name: "lag-1", Type: "LAG", LagType: "LACP", LagMode: "AllActive",
 			Labels:  map[string]string{"eda.nokia.com/role": "InterSwitch"},
@@ -82,11 +85,19 @@ func TestBuildTopology(t *testing.T) {
 		{Name: "bo-1", Nodes: []string{"leaf1"}, Interfaces: []string{"ethernet-1-49"}, Channels: 4, Speed: "100G"},
 		{Name: "bo-sel", NodeSelectors: []string{"eda.nokia.com/role=spine"}, Interfaces: []string{"ethernet-1/2"}, Channels: 2, Speed: "200G"},
 	}
-	topo := BuildTopology(nodes, links, ifaces, breakouts)
+	topo := BuildTopology(nodes, links, ifaces, breakouts, nil)
 
 	// node projection + platform fallback
 	if topo.Nodes[2].Platform != "7220 IXR-D5" {
 		t.Errorf("spine1 platform fallback: got %q", topo.Nodes[2].Platform)
+	}
+
+	// no grouping streamed -> role-derived tier fallback
+	if got := nodeByName(topo, "spine1").Tier; got != 3 {
+		t.Errorf("spine1 fallback tier: got %d want 3", got)
+	}
+	if got := nodeByName(topo, "leaf1").Tier; got != 4 {
+		t.Errorf("leaf1 fallback tier: got %d want 4", got)
 	}
 
 	// breakout: direct node ref -> cage 49 (parent ethernet-1-49) split into 4x100G, folded onto the node
@@ -120,6 +131,8 @@ func TestBuildTopology(t *testing.T) {
 		t.Errorf("e1-50 lldpStatus: got %q want mismatch", r.LldpStatus)
 	} else if r.Lag != "" {
 		t.Errorf("e1-50 lag should be empty when interface resource is not a typed LAG, got %q", r.Lag)
+	} else if r.Desc != "cross-link" {
+		t.Errorf("e1-50 desc via interfaceResource: got %q want cross-link", r.Desc)
 	}
 	if r, _ := findRow(leaf1, "ethernet-1-10"); r.Type != "edge" || r.Peer != "server-a" || r.LldpStatus != "none" {
 		t.Errorf("edge row: type=%q peer=%q lldp=%q", r.Type, r.Peer, r.LldpStatus)
@@ -147,6 +160,67 @@ func TestBuildTopology(t *testing.T) {
 	// edges: only interSwitch links with both endpoints known
 	if len(topo.Links) != 2 {
 		t.Errorf("edges: got %d want 2", len(topo.Links))
+	}
+}
+
+// Tiers come from the cluster's TopologyGrouping: selectors are evaluated in order
+// (first match wins), selector strings OR together, no nodeSelector = catch-all, and
+// the bootstrap "role" grouping is preferred when several groupings exist.
+func TestTopologyGroupingTiers(t *testing.T) {
+	nodes := []RawNode{
+		{Name: "bb1", Labels: map[string]string{"eda.nokia.com/role": "backbone"}},
+		{Name: "ss1", Labels: map[string]string{"eda.nokia.com/role": "superspine"}},
+		{Name: "spine1", Labels: map[string]string{"eda.nokia.com/role": "spine"}},
+		{Name: "leaf1", Labels: map[string]string{"eda.nokia.com/role": "leaf"}},
+		{Name: "bl1", Labels: map[string]string{"eda.nokia.com/role": "borderleaf"}},
+		{Name: "srv1", Labels: map[string]string{"eda.nokia.com/role": "server"}},
+	}
+	role := RawGrouping{Name: "role", Selectors: []RawTierSelector{
+		{Tier: 1, NodeSelectors: []string{"eda.nokia.com/role=backbone"}},
+		{Tier: 2, NodeSelectors: []string{"eda.nokia.com/role=superspine"}},
+		{Tier: 3, NodeSelectors: []string{"eda.nokia.com/role=spine"}},
+		{Tier: 4, NodeSelectors: []string{"eda.nokia.com/role=leaf", "eda.nokia.com/role=borderleaf"}},
+		{Tier: 5}, // catch-all
+	}}
+	other := RawGrouping{Name: "alt", Selectors: []RawTierSelector{{Tier: 9}}}
+
+	topo := BuildTopology(nodes, nil, nil, nil, []RawGrouping{other, role})
+	want := map[string]int{"bb1": 1, "ss1": 2, "spine1": 3, "leaf1": 4, "bl1": 4, "srv1": 5}
+	for name, tier := range want {
+		if got := nodeByName(topo, name).Tier; got != tier {
+			t.Errorf("%s tier: got %d want %d", name, got, tier)
+		}
+	}
+
+	// without the "role" grouping the first (name-sorted) grouping applies
+	topo = BuildTopology(nodes, nil, nil, nil, []RawGrouping{other})
+	if got := nodeByName(topo, "leaf1").Tier; got != 9 {
+		t.Errorf("alt grouping catch-all tier: got %d want 9", got)
+	}
+}
+
+// Cable tables come out in natural port order (digit runs compared numerically), for the
+// drawer, xlsx, and PDF exports alike.
+func TestTableNaturalOrder(t *testing.T) {
+	nodes := []RawNode{{Name: "leaf1", Labels: map[string]string{"eda.nokia.com/role": "leaf"}}}
+	mkLink := func(iface string) RawLink {
+		return RawLink{Name: "leaf1-edge-" + iface, Links: []LinkEntry{{
+			Type: "edge", Local: LinkEnd{Node: "leaf1", Interface: iface},
+		}}}
+	}
+	links := []RawLink{
+		mkLink("ethernet-1-10"), mkLink("ethernet-1-2"), mkLink("ethernet-1-1-4"),
+		mkLink("ethernet-1-1-2"), mkLink("ethernet-1-1"), mkLink("ethernet-2-1"),
+		mkLink("1/1/c12/1"), mkLink("1/1/c2/1"),
+	}
+	topo := BuildTopology(nodes, links, nil, nil, nil)
+	got := make([]string, 0, len(topo.Nodes[0].Table))
+	for _, r := range topo.Nodes[0].Table {
+		got = append(got, r.Label)
+	}
+	want := []string{"1/1/c2/1", "1/1/c12/1", "ethernet-1-1", "ethernet-1-1-2", "ethernet-1-1-4", "ethernet-1-2", "ethernet-1-10", "ethernet-2-1"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("natural order:\n got %v\nwant %v", got, want)
 	}
 }
 

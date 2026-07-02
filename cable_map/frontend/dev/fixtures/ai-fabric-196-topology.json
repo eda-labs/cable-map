@@ -5,6 +5,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -579,6 +580,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -1153,6 +1155,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -1727,6 +1730,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -2301,6 +2305,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -2875,6 +2880,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -3448,6 +3454,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -4022,6 +4029,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -4596,6 +4604,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -5169,6 +5178,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -5743,6 +5753,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -6316,6 +6327,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -6890,6 +6902,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -7464,6 +7477,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -8037,6 +8051,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -8611,6 +8626,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -9185,6 +9201,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -9759,6 +9776,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -10332,6 +10350,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -10906,6 +10925,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -11479,6 +11499,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -12053,6 +12074,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -12626,6 +12648,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -13199,6 +13222,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -13773,6 +13797,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -14347,6 +14372,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -14921,6 +14947,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -15494,6 +15521,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -16068,6 +16096,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -16641,6 +16670,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -17215,6 +17245,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -17788,6 +17819,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -18362,6 +18394,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -18935,6 +18968,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -19509,6 +19543,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -20083,6 +20118,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -20657,6 +20693,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -21231,6 +21268,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -21804,6 +21842,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -22378,6 +22417,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -22951,6 +22991,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -23525,6 +23566,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -24098,6 +24140,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -24672,6 +24715,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -25245,6 +25289,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -25819,6 +25864,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -26393,6 +26439,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -26967,6 +27014,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -27541,6 +27589,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -28115,6 +28164,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -28689,6 +28739,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -29262,6 +29313,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -29836,6 +29888,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -30409,6 +30462,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -30983,6 +31037,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -31556,6 +31611,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -32130,6 +32186,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -32704,6 +32761,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -33278,6 +33336,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -33852,6 +33911,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -34426,6 +34486,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -35000,6 +35061,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -35573,6 +35635,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -36147,6 +36210,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -36720,6 +36784,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -37303,6 +37368,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -37886,6 +37952,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -38469,6 +38536,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -39052,6 +39120,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -39635,6 +39704,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -40218,6 +40288,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -40800,6 +40871,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -41383,6 +41455,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -41966,6 +42039,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -42549,6 +42623,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -43131,6 +43206,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -43714,6 +43790,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -44297,6 +44374,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -44880,6 +44958,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -45463,6 +45542,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -46045,6 +46125,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -46628,6 +46709,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -47210,6 +47292,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -47793,6 +47876,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -48375,6 +48459,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -48958,6 +49043,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -49540,6 +49626,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -50123,6 +50210,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -50706,6 +50794,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -51289,6 +51378,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -51872,6 +51962,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -52454,6 +52545,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -53037,6 +53129,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -53619,6 +53712,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -54202,6 +54296,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -54784,6 +54879,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -55367,6 +55463,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -55949,6 +56046,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -56532,6 +56630,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -57115,6 +57214,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -57698,6 +57798,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -58281,6 +58382,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -58863,6 +58965,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -59446,6 +59549,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -60028,6 +60132,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -60611,6 +60716,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -61193,6 +61299,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -61776,6 +61883,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -62358,6 +62466,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -62941,6 +63050,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -63524,6 +63634,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -64107,6 +64218,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -64690,6 +64802,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -65273,6 +65386,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -65856,6 +65970,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -66438,6 +66553,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -67021,6 +67137,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -67603,6 +67720,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -68186,6 +68304,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -68768,6 +68887,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -69351,6 +69471,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -69934,6 +70055,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -70517,6 +70639,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -71100,6 +71223,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -71683,6 +71807,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -72266,6 +72391,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -72848,6 +72974,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -73431,6 +73558,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "leaf",
+      "tier": 4,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -74013,6 +74141,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -75172,6 +75301,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -76330,6 +76460,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -77489,6 +77620,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -78647,6 +78779,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -79805,6 +79938,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -80964,6 +81098,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -82122,6 +82257,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -83280,6 +83416,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -84439,6 +84576,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -85597,6 +85735,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -86755,6 +86894,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -87914,6 +88054,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -89072,6 +89213,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -90230,6 +90372,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -91389,6 +91532,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -92547,6 +92691,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -93705,6 +93850,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -94864,6 +95010,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -96022,6 +96169,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -97181,6 +97329,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -98339,6 +98488,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -99497,6 +99647,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -100656,6 +100807,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -101814,6 +101966,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -102972,6 +103125,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -104131,6 +104285,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -105289,6 +105444,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -106447,6 +106603,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -107606,6 +107763,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -108764,6 +108922,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -109922,6 +110081,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -111081,6 +111241,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -112239,6 +112400,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -113397,6 +113559,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -114556,6 +114719,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -115714,6 +115878,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -116873,6 +117038,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -118031,6 +118197,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -119189,6 +119356,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -120348,6 +120516,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -121506,6 +121675,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -122664,6 +122834,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -123823,6 +123994,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -124981,6 +125153,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -126139,6 +126312,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -127298,6 +127472,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -128456,6 +128631,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -129614,6 +129790,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -130773,6 +130950,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -131931,6 +132109,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -133089,6 +133268,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -134248,6 +134428,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -135406,6 +135587,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -136565,6 +136747,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -137723,6 +137906,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -138881,6 +139065,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -140040,6 +140225,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -141198,6 +141384,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -142356,6 +142543,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -143515,6 +143703,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -144673,6 +144862,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -145831,6 +146021,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -146990,6 +147181,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "spine",
+      "tier": 3,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -148148,6 +148340,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -148758,6 +148951,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -149367,6 +149561,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {
@@ -149977,6 +150172,7 @@
       "platform": "7220 IXR-H2",
       "os": "srl",
       "role": "superspine",
+      "tier": 2,
       "namespace": "dev-ai-fabric-196",
       "version": "dev-ai-fabric-196",
       "labels": {

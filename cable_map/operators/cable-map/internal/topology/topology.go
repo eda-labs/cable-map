@@ -93,6 +93,18 @@ type RawBreakout struct {
 	Speed         string   // spec.speed
 }
 
+// RawTierSelector is one spec.tierSelectors entry of a topologies.eda.nokia.com/TopologyGrouping.
+type RawTierSelector struct {
+	Tier          int
+	NodeSelectors []string // spec.tierSelectors[].nodeSelector; empty = catch-all
+}
+
+// RawGrouping is a TopologyGrouping projection: how the cluster assigns nodes to canvas tiers.
+type RawGrouping struct {
+	Name      string
+	Selectors []RawTierSelector
+}
+
 // ---- helpers (ports, labels, normalisation) --------------------------------------
 
 // front-panel cage index = the <port> in ethernet-<card>-<port>[-<channel>]: the 2nd number, i.e.
@@ -147,11 +159,87 @@ func peerLabel(linkName string, nodes map[string]struct{}) string {
 	return linkName
 }
 
+// ---- tiers (TopologyGrouping) -----------------------------------------------------
+
+// roleTier mirrors the tiers of EDA's bootstrap "role" TopologyGrouping, used when no
+// grouping is streamed (or none of its selectors match a node). Lower = drawn higher.
+var roleTier = map[string]int{"backbone": 1, "superspine": 2, "spine": 3, "leaf": 4, "borderleaf": 4}
+
+const defaultTier = 4
+
+// pickGrouping selects the grouping whose tierSelectors drive the canvas rows: the
+// bootstrap "role" grouping when present, else the first by name (input is name-sorted).
+func pickGrouping(groupings []RawGrouping) *RawGrouping {
+	for i := range groupings {
+		if groupings[i].Name == "role" {
+			return &groupings[i]
+		}
+	}
+	if len(groupings) > 0 {
+		return &groupings[0]
+	}
+	return nil
+}
+
+// tierFor evaluates tierSelectors in spec order, first match wins. An entry's selector
+// strings OR together (each string itself an AND of comma-separated key=value terms);
+// an entry with no nodeSelector is a catch-all.
+func tierFor(labels map[string]string, selectors []RawTierSelector) (int, bool) {
+	for _, ts := range selectors {
+		if len(ts.NodeSelectors) == 0 {
+			return ts.Tier, true
+		}
+		for _, sel := range ts.NodeSelectors {
+			if matchSelector(sel, labels) {
+				return ts.Tier, true
+			}
+		}
+	}
+	return 0, false
+}
+
+// ---- natural interface order ------------------------------------------------------
+
+// naturalLess orders strings with embedded numbers numerically, so ethernet-1-2 sorts
+// before ethernet-1-10 and 1/1/c2/1 before 1/1/c12/1.
+func naturalLess(a, b string) bool {
+	i, j := 0, 0
+	for i < len(a) && j < len(b) {
+		ca, cb := a[i], b[j]
+		if isDigit(ca) && isDigit(cb) {
+			si, sj := i, j
+			for i < len(a) && isDigit(a[i]) {
+				i++
+			}
+			for j < len(b) && isDigit(b[j]) {
+				j++
+			}
+			na, nb := strings.TrimLeft(a[si:i], "0"), strings.TrimLeft(b[sj:j], "0")
+			if len(na) != len(nb) {
+				return len(na) < len(nb)
+			}
+			if na != nb {
+				return na < nb
+			}
+			continue
+		}
+		if ca != cb {
+			return ca < cb
+		}
+		i++
+		j++
+	}
+	return len(a)-i < len(b)-j
+}
+
+func isDigit(c byte) bool { return c >= '0' && c <= '9' }
+
 // ---- the build ------------------------------------------------------------------
 
-// BuildTopology folds raw toponode/topolink/interface projections into the view model.
-func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakouts []RawBreakout) Topology {
-	descOf := map[string]string{}
+// BuildTopology folds raw toponode/topolink/interface/grouping projections into the view model.
+func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakouts []RawBreakout, groupings []RawGrouping) Topology {
+	descOf := map[string]string{}     // Interface CR name -> spec.description (topolink interfaceResource points here)
+	descByPort := map[string]string{} // node|interface -> description, from non-LAG members
 	lags := map[string]LagInfo{}
 	// node|interface -> neighbours LLDP saw on that physical port
 	lldpByPort := map[string][]LagMember{} // reuse {Node,Port} pair shape
@@ -163,6 +251,16 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 	for _, f := range ifaces {
 		if f.Description != "" {
 			descOf[f.Name] = f.Description
+			// a physical Interface CR names its port via spec.members; key the description by
+			// node|port so rows resolve it (CR names like leaf1-ethernet-1-1 never match the
+			// port label). LAG members keep their own CR's description, not the bundle's.
+			if f.Type != "LAG" {
+				for _, m := range f.Members {
+					if m.Node != "" && m.Interface != "" {
+						descByPort[m.Node+"|"+m.Interface] = f.Description
+					}
+				}
+			}
 		}
 		for _, m := range f.StatusMembers {
 			if m.Node != "" && m.Interface != "" && m.NodeInterface != "" {
@@ -203,6 +301,7 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 		}
 	}
 
+	grouping := pickGrouping(groupings)
 	outNodes := make([]Node, 0, len(nodes))
 	known := map[string]struct{}{}
 	labelSets := map[string]map[string]struct{}{} // key -> set of values, collected across all nodes
@@ -215,11 +314,22 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 		if n.StatusVersion != "" {
 			version = n.StatusVersion
 		}
+		role := n.Labels["eda.nokia.com/role"]
+		tier := 0
+		if grouping != nil {
+			tier, _ = tierFor(n.Labels, grouping.Selectors)
+		}
+		if tier == 0 {
+			if tier = roleTier[role]; tier == 0 {
+				tier = defaultTier
+			}
+		}
 		outNodes = append(outNodes, Node{
 			Name:      n.Name,
 			Platform:  platform,
 			OS:        n.OperatingSystem,
-			Role:      n.Labels["eda.nokia.com/role"],
+			Role:      role,
+			Tier:      tier,
 			Namespace: n.Namespace,
 			Version:   version,
 			Labels:    n.Labels,
@@ -250,9 +360,13 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 		if node == "" {
 			return
 		}
+		desc := descByPort[node+"|"+portLabel(port)]
+		if desc == "" {
+			desc = descOf[iface] // the endpoint's Interface CR (possibly a LAG)
+		}
 		row := Row{
 			Label:      portLabel(port),
-			Desc:       descOf[portLabel(port)],
+			Desc:       desc,
 			RemoteNode: remote.Node,
 			Type:       typ,
 		}
@@ -355,12 +469,13 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 		}
 	}
 
-	// attach each node's cable table + breakouts to its node
+	// attach each node's cable table (in natural port order) + breakouts to its node
 	for i := range outNodes {
 		t := tables[outNodes[i].Name]
 		if t == nil {
 			t = []Row{}
 		}
+		sort.SliceStable(t, func(a, b int) bool { return naturalLess(t[a].Label, t[b].Label) })
 		outNodes[i].Table = t
 		outNodes[i].Breakouts = bo[outNodes[i].Name]
 	}
