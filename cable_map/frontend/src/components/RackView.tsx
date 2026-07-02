@@ -1,4 +1,7 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo, useCallback, useEffect, useMemo, useRef, useState,
+  type PointerEvent as ReactPointerEvent, type ReactNode,
+} from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
@@ -8,9 +11,12 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
+import type { SxProps, Theme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrongOutlined';
+import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -20,6 +26,7 @@ import LabelOffIcon from '@mui/icons-material/LabelOffOutlined';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
+import ViewColumnIcon from '@mui/icons-material/ViewColumnOutlined';
 import type { Breakout, Row, Topology } from '../domain/topology/contract';
 import type { FrontPanelPortPos } from '../domain/ports/frontPanelMeta';
 import { frontPanelMetaOf, layoutOf, slottedOf } from '../domain/ports/frontPanelMeta';
@@ -54,8 +61,17 @@ const KEYBOARD_FAST_MULTIPLIER = 2.4;
 const FPS_MOUSE_SENSITIVITY = 0.0023;
 const FPS_PITCH_MIN = 0.12;
 const FPS_PITCH_MAX = Math.PI - 0.14;
+// gizmo buttons: a tap applies one step, holding glides continuously at the hold speed
 const GIZMO_ROTATE_STEP = 72;
 const GIZMO_TILT_STEP = 48;
+const GIZMO_ROTATE_HOLD_SPEED = 620;
+const GIZMO_TILT_HOLD_SPEED = 400;
+const GIZMO_PAN_STEP = 120;
+const GIZMO_PAN_HOLD_SPEED = 660;
+const GIZMO_ZOOM_STEP = 0.82;
+const GIZMO_ZOOM_HOLD_RATE = 0.4; // distance factor per second while held
+const GIZMO_HOLD_DELAY_MS = 240;
+const FLY_DURATION_MS = 750;
 const CABLE_LINEWIDTH_IDLE = 1.2;
 const CABLE_LINEWIDTH_CLOSE = 3.25;
 const CABLE_LINEWIDTH_TRACE = 2.8;
@@ -95,6 +111,22 @@ type DeviceMesh = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> & {
   };
 };
 
+// invisible pick target spanning a whole cabinet; its material lights up on hover
+type RackHitbox = THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> & {
+  userData: { rackLabel: string };
+};
+
+type CameraPose = { position: THREE.Vector3; target: THREE.Vector3 };
+
+type CameraTween = {
+  fromPosition: THREE.Vector3;
+  toPosition: THREE.Vector3;
+  fromTarget: THREE.Vector3;
+  toTarget: THREE.Vector3;
+  start: number;
+  duration: number;
+};
+
 type RackSceneState = {
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
@@ -106,11 +138,13 @@ type RackSceneState = {
   devices: DeviceMesh[];
   deviceCenters: Float32Array;
   anchors: Map<string, DeviceAnchor>;
+  rackHitboxes: RackHitbox[];
   labels: THREE.Sprite[];
   cableLayer: LineSegments2 | null;
   cableHighlightLayer: LineSegments2 | null;
   cableEndpointLayer: THREE.Points | null;
   cableRoutes: RackCableRoute[];
+  cameraTween: CameraTween | null;
   requestRender: (ms?: number) => void;
 };
 
@@ -153,7 +187,8 @@ type PortHit = {
 
 type HoverTarget =
   | { type: 'device'; nodeName: string; port?: PortHit }
-  | { type: 'cable'; linkId: string };
+  | { type: 'cable'; linkId: string }
+  | { type: 'rack'; rack: string };
 
 type HoverState = {
   target: HoverTarget;
@@ -162,8 +197,8 @@ type HoverState = {
 };
 
 type HoverPick = {
-  key: string;      // dedupe key for pointermove
-  traceKey: string; // trace-store key to light up (node:… / cable:…)
+  key: string;              // dedupe key for pointermove
+  traceKey: string | null;  // trace-store key to light up (node:… / cable:…); racks trace nothing
   target: HoverTarget;
 };
 
@@ -1246,19 +1281,114 @@ function setDeviceOpacity(mesh: DeviceMesh, opacity: number) {
   });
 }
 
-function frameCamera(state: RackSceneState) {
+function frameOverview(state: RackSceneState): { pose: CameraPose; maxDim: number } | null {
   state.root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(state.root);
-  if (box.isEmpty()) return;
+  if (box.isEmpty()) return null;
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.z, size.y, 8);
-  state.controls.target.set(center.x, Math.max(2.5, center.y * 0.35), center.z);
-  state.camera.position.set(center.x + maxDim * 0.78, Math.max(7.5, maxDim * 0.42), center.z - maxDim * 0.92);
+  return {
+    maxDim,
+    pose: {
+      target: new THREE.Vector3(center.x, Math.max(2.5, center.y * 0.35), center.z),
+      position: new THREE.Vector3(center.x + maxDim * 0.78, Math.max(7.5, maxDim * 0.42), center.z - maxDim * 0.92),
+    },
+  };
+}
+
+function frameCamera(state: RackSceneState) {
+  const overview = frameOverview(state);
+  if (!overview) return;
+  state.controls.target.copy(overview.pose.target);
+  state.camera.position.copy(overview.pose.position);
   state.camera.near = 0.1;
-  state.camera.far = Math.max(400, maxDim * 8);
+  state.camera.far = Math.max(400, overview.maxDim * 8);
   state.camera.updateProjectionMatrix();
   state.controls.update();
+}
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// Smooth camera transition to a pose; any direct input (drag, wheel, keys, gizmo) cancels it.
+function flyTo(state: RackSceneState, pose: CameraPose, duration = FLY_DURATION_MS) {
+  state.cameraTween = {
+    fromPosition: state.camera.position.clone(),
+    toPosition: pose.position.clone(),
+    fromTarget: state.controls.target.clone(),
+    toTarget: pose.target.clone(),
+    start: performance.now(),
+    duration,
+  };
+  state.requestRender(duration + 150);
+}
+
+function stepCameraTween(state: RackSceneState, time: number) {
+  const tween = state.cameraTween;
+  if (!tween) return;
+  const t = Math.min(1, (time - tween.start) / tween.duration);
+  const k = easeInOutCubic(t);
+  state.camera.position.lerpVectors(tween.fromPosition, tween.toPosition, k);
+  state.controls.target.lerpVectors(tween.fromTarget, tween.toTarget, k);
+  if (t >= 1) state.cameraTween = null;
+  else state.requestRender();
+}
+
+// Distance at which a width×height face fills the frustum (whichever axis binds).
+function fitDistance(camera: THREE.PerspectiveCamera, width: number, height: number): number {
+  const tanVertical = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+  const tanHorizontal = tanVertical * Math.max(0.4, camera.aspect);
+  return Math.max(width / (2 * tanHorizontal), height / (2 * tanVertical));
+}
+
+// Straight-on pose in front of a device's panel: target on the panel, camera along its normal.
+function deviceFocusPose(state: RackSceneState, nodeName: string): CameraPose | null {
+  const anchor = state.anchors.get(nodeName);
+  if (!anchor) return null;
+  anchor.mesh.updateWorldMatrix(true, false);
+  const front = new THREE.Vector3(0, 0, -1).applyQuaternion(anchor.mesh.getWorldQuaternion(new THREE.Quaternion()));
+  const target = anchor.mesh.getWorldPosition(new THREE.Vector3()).addScaledVector(front, DEVICE_DEPTH / 2);
+  const distance = THREE.MathUtils.clamp(
+    fitDistance(state.camera, DEVICE_WIDTH * 1.35, Math.max(anchor.panelHeight * 3.2, 0.5)),
+    0.9,
+    4,
+  );
+  return { position: target.clone().addScaledVector(front, distance), target };
+}
+
+function rackFocusPose(state: RackSceneState, rackLabel: string): CameraPose | null {
+  const hitbox = state.rackHitboxes.find((mesh) => mesh.userData.rackLabel === rackLabel);
+  if (!hitbox) return null;
+  hitbox.updateWorldMatrix(true, false);
+  const front = new THREE.Vector3(0, 0, -1).applyQuaternion(hitbox.getWorldQuaternion(new THREE.Quaternion()));
+  const target = hitbox.getWorldPosition(new THREE.Vector3()).addScaledVector(front, RACK_DEPTH / 2);
+  const distance = THREE.MathUtils.clamp(
+    fitDistance(state.camera, RACK_WIDTH * 2.4, RACK_HEIGHT * 1.18),
+    4,
+    16,
+  );
+  return { position: target.clone().addScaledVector(front, distance), target };
+}
+
+// Elevation of the whole hall from the front-row side; rows face the camera head-on.
+function hallFrontPose(state: RackSceneState): CameraPose | null {
+  if (state.rackHitboxes.length === 0) return null;
+  const bounds = new THREE.Box3();
+  const worldPosition = new THREE.Vector3();
+  for (const hitbox of state.rackHitboxes) bounds.expandByPoint(hitbox.getWorldPosition(worldPosition));
+  const center = bounds.getCenter(new THREE.Vector3());
+  const width = bounds.max.x - bounds.min.x + RACK_SPACING;
+  const distance = THREE.MathUtils.clamp(
+    fitDistance(state.camera, width * 1.08, RACK_HEIGHT * 1.35),
+    8,
+    state.controls.maxDistance,
+  );
+  return {
+    target: new THREE.Vector3(center.x, RACK_HEIGHT * 0.45, center.z),
+    position: new THREE.Vector3(center.x, RACK_HEIGHT * 0.55, bounds.min.z - RACK_DEPTH - distance),
+  };
 }
 
 function resetRoot(state: RackSceneState) {
@@ -1268,6 +1398,7 @@ function resetRoot(state: RackSceneState) {
   state.devices = [];
   state.deviceCenters = new Float32Array(0);
   state.anchors = new Map();
+  state.rackHitboxes = [];
   state.labels = [];
   state.cableLayer = null;
   state.cableHighlightLayer = null;
@@ -1360,6 +1491,20 @@ async function buildScene(
     label.visible = labelsVisible;
     rackGroup.add(label);
     state.labels.push(label);
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(RACK_WIDTH + 0.22, RACK_HEIGHT + 0.2, RACK_DEPTH + 0.24),
+      new THREE.MeshBasicMaterial({
+        color: mode === 'dark' ? '#4092FF' : '#005AFF',
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
+    ) as RackHitbox;
+    hitbox.position.y = RACK_HEIGHT / 2;
+    hitbox.renderOrder = 6;
+    hitbox.userData = { rackLabel: rack.label };
+    rackGroup.add(hitbox);
+    state.rackHitboxes.push(hitbox);
     state.root.add(rackGroup);
   });
   addRackFurniture(state.root, furniture, mode);
@@ -1436,40 +1581,34 @@ function applyKeyboardNavigation(state: RackSceneState, pressedKeys: Set<NavDire
   state.controls.target.add(move);
 }
 
-function panView(state: RackSceneState, rightAmount: number, upAmount: number) {
-  if (rightAmount === 0 && upAmount === 0) return;
-  const forward = state.camera.getWorldDirection(new THREE.Vector3());
-  if (forward.lengthSq() < 0.0001) forward.set(0, 0, -1);
-  forward.normalize();
-  const right = new THREE.Vector3().crossVectors(forward, state.camera.up).setY(0);
-  if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
-  right.normalize();
-  const move = right.multiplyScalar(rightAmount).add(new THREE.Vector3(0, upAmount, 0));
-  if (move.lengthSq() < 0.0001) return;
-  move.normalize();
-
-  const distance = state.camera.position.distanceTo(state.controls.target);
-  const step = THREE.MathUtils.clamp(distance * 0.16, 0.3, 4.2);
-  move.multiplyScalar(step);
+// Screen-space pan in pixels: what sits under the orbit target moves exactly that many
+// pixels, so a right-drag feels like grabbing the rack face.
+function panView(state: RackSceneState, rightPx: number, upPx: number) {
+  if (rightPx === 0 && upPx === 0) return;
+  const height = state.renderer.domElement.clientHeight || 1;
+  const distance = Math.max(1.2, state.camera.position.distanceTo(state.controls.target));
+  const worldPerPixel = (2 * distance * Math.tan(THREE.MathUtils.degToRad(state.camera.fov) / 2)) / height;
+  state.camera.updateMatrix();
+  const move = new THREE.Vector3().setFromMatrixColumn(state.camera.matrix, 0).multiplyScalar(rightPx * worldPerPixel)
+    .addScaledVector(new THREE.Vector3().setFromMatrixColumn(state.camera.matrix, 1), upPx * worldPerPixel);
   state.camera.position.add(move);
   state.controls.target.add(move);
 }
 
-function zoomView(state: RackSceneState, zoomIn: boolean) {
+function zoomView(state: RackSceneState, factor: number) {
   const offset = state.camera.position.clone().sub(state.controls.target);
   const distance = offset.length();
   if (distance < 0.001) return;
-  const scale = zoomIn ? 0.82 : 1.22;
-  const nextDistance = THREE.MathUtils.clamp(distance * scale, state.controls.minDistance, state.controls.maxDistance);
+  const nextDistance = THREE.MathUtils.clamp(distance * factor, state.controls.minDistance, state.controls.maxDistance);
   state.camera.position.copy(state.controls.target).addScaledVector(offset.normalize(), nextDistance);
 }
 
-function updatePointerRay(state: RackSceneState, event: MouseEvent | PointerEvent): boolean {
+function updatePointerRay(state: RackSceneState, clientX: number, clientY: number): boolean {
   const rect = state.renderer.domElement.getBoundingClientRect();
   if (!rect.width || !rect.height) return false;
   state.pointer.set(
-    ((event.clientX - rect.left) / rect.width) * 2 - 1,
-    -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    ((clientX - rect.left) / rect.width) * 2 - 1,
+    -((clientY - rect.top) / rect.height) * 2 + 1,
   );
   state.raycaster.setFromCamera(state.pointer, state.camera);
   return true;
@@ -1583,10 +1722,11 @@ function placementSuffix(placement: DevicePlacement | undefined): string {
 
 // Cursor-following card naming exactly what's under the pointer: a cable (both ends with
 // rack + U position), a front-panel port (peer, LAG, LLDP, breakout channel) or a device.
-function HoverCard({ hover, nodeByName, placements, linkIndex, lags }: {
+function HoverCard({ hover, nodeByName, placements, rackByLabel, linkIndex, lags }: {
   hover: HoverState;
   nodeByName: Map<string, Topology['nodes'][number]>;
   placements: Map<string, DevicePlacement>;
+  rackByLabel: Map<string, RackGroup>;
   linkIndex: LinkIndex;
   lags: Topology['lags'];
 }) {
@@ -1601,6 +1741,25 @@ function HoverCard({ hover, nodeByName, placements, linkIndex, lags }: {
     position: 'fixed', zIndex: 2, pointerEvents: 'none', px: 1.25, py: 1, maxWidth: 320,
     bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 4,
   } as const;
+
+  if (hover.target.type === 'rack') {
+    const rack = rackByLabel.get(hover.target.rack);
+    if (!rack) return null;
+    return (
+      <Box sx={frameSx} style={style}>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>{rack.label}</Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          {rack.placement.row} · {rack.devices.length} device{rack.devices.length === 1 ? '' : 's'}
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+          {rack.ruUsed} / {rack.ruCapacity} U used
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5 }}>
+          Click to face this rack
+        </Typography>
+      </Box>
+    );
+  }
 
   if (hover.target.type === 'cable') {
     const link = linkIndex.linkById.get(hover.target.linkId);
@@ -1695,7 +1854,68 @@ function HoverCard({ hover, nodeByName, placements, linkIndex, lags }: {
           {exact?.desc && <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>{exact.desc}</Typography>}
         </Box>
       )}
+      <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mt: 0.5 }}>
+        {port ? 'Click to pin · F to face device' : 'Click to face front panel'}
+      </Typography>
     </Box>
+  );
+}
+
+// Gizmo control: a tap applies one nudge; keeping it pressed glides continuously
+// (onHold receives per-frame delta seconds) until the pointer lifts.
+function GizmoButton({ title, ariaLabel, onNudge, onHold, sx, children }: {
+  title: string;
+  ariaLabel: string;
+  onNudge: () => void;
+  onHold: (deltaSeconds: number) => void;
+  sx: SxProps<Theme>;
+  children: ReactNode;
+}) {
+  const holdRef = useRef<{ timeout: number; raf: number; last: number } | null>(null);
+  const stopHold = useCallback(() => {
+    const hold = holdRef.current;
+    if (!hold) return;
+    window.clearTimeout(hold.timeout);
+    window.cancelAnimationFrame(hold.raf);
+    holdRef.current = null;
+  }, []);
+  useEffect(() => stopHold, [stopHold]);
+
+  const startHold = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    stopHold();
+    onNudge();
+    const hold = { timeout: 0, raf: 0, last: 0 };
+    const step = (time: number) => {
+      onHold(Math.min(0.05, Math.max(0, (time - hold.last) / 1000)));
+      hold.last = time;
+      hold.raf = window.requestAnimationFrame(step);
+    };
+    hold.timeout = window.setTimeout(() => {
+      hold.last = performance.now();
+      hold.raf = window.requestAnimationFrame(step);
+    }, GIZMO_HOLD_DELAY_MS);
+    holdRef.current = hold;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  return (
+    <Tooltip title={title} disableInteractive>
+      <IconButton
+        size="small"
+        aria-label={ariaLabel}
+        onPointerDown={startHold}
+        onPointerUp={stopHold}
+        onPointerCancel={stopHold}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.detail === 0) onNudge(); // keyboard activation
+        }}
+        sx={sx}
+      >
+        {children}
+      </IconButton>
+    </Tooltip>
   );
 }
 
@@ -1704,6 +1924,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
   const sceneRef = useRef<RackSceneState | null>(null);
   const callbacksRef = useRef({ onOpenNode, onClearSelection });
   const [labelsVisible, setLabelsVisible] = useState(true);
+  const [fpsMode, setFpsMode] = useState(false);
   const [hover, setHover] = useState<HoverState | null>(null);
   const traceAny = useTrace((s) => s.any);
   const tracedNodes = useTrace((s) => s.nodes);
@@ -1715,6 +1936,7 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
   }, [onOpenNode, onClearSelection]);
 
   const racks = useMemo(() => buildRackGroups(topo, shown), [topo, shown]);
+  const rackByLabel = useMemo(() => new Map(racks.map((rack) => [rack.label, rack])), [racks]);
   const nodeByName = useMemo(() => new Map(topo.nodes.map((node) => [node.name, node])), [topo]);
   const linkIndex = useMemo(
     () => buildLinkIndex(topo, (node) => slottedOf(stencilFor(node.platform, componentsOf(node.raw)))),
@@ -1815,7 +2037,8 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     controls.dampingFactor = 0.08;
     controls.enableRotate = false;
     controls.enablePan = false;
-    controls.minDistance = 5;
+    controls.zoomToCursor = true; // wheel dives toward the port under the pointer
+    controls.minDistance = 0.55;
     controls.maxDistance = 220;
     controls.minPolarAngle = FPS_PITCH_MIN;
     controls.maxPolarAngle = FPS_PITCH_MAX;
@@ -1845,11 +2068,13 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       devices: [],
       deviceCenters: new Float32Array(0),
       anchors: new Map(),
+      rackHitboxes: [],
       labels: [],
       cableLayer: null,
       cableHighlightLayer: null,
       cableEndpointLayer: null,
       cableRoutes: [],
+      cameraTween: null,
       requestRender: (ms = RENDER_ACTIVE_MS) => {
         renderUntil = Math.max(renderUntil, performance.now() + ms);
       },
@@ -1873,6 +2098,10 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
 
     const pressedKeys = new Set<NavDirection>();
     let keyboardFast = false;
+    // walk (FPS) mode: pointer lock aims the camera directly; the crosshair at the canvas
+    // center takes over hover picking. Assigned below once the hover helpers exist.
+    const fps = { active: false, lastPickTime: 0 };
+    let updateCenterHover = () => {};
     let frame = 0;
     let lastFrameTime = performance.now();
     const render = (time = performance.now()) => {
@@ -1881,7 +2110,12 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       lastFrameTime = time;
       if (pressedKeys.size > 0) state.requestRender();
       if (time > renderUntil) return;
+      stepCameraTween(state, time);
       applyKeyboardNavigation(state, pressedKeys, deltaSeconds, keyboardFast);
+      if (fps.active && time - fps.lastPickTime > 120) {
+        fps.lastPickTime = time;
+        updateCenterHover();
+      }
       updateCableScaleForDistance(state);
       controls.update();
       renderer.render(scene, camera);
@@ -1889,13 +2123,35 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     render();
 
     let lastHover: string | null = null;
+    let lastPick: HoverPick | null = null;
+    let glowingRack: RackHitbox | null = null;
+    const setRackGlow = (label: string | null) => {
+      const mesh = label
+        ? state.rackHitboxes.find((hitbox) => hitbox.userData.rackLabel === label) ?? null
+        : null;
+      if (glowingRack === mesh) return;
+      if (glowingRack) glowingRack.material.opacity = 0;
+      glowingRack = mesh;
+      if (glowingRack) glowingRack.material.opacity = 0.14;
+      state.requestRender();
+    };
+    const clearHover = () => {
+      lastHover = null;
+      lastPick = null;
+      setRackGlow(null);
+      trace.hover(null);
+      setHover(null);
+    };
     const pointerDown = { x: 0, y: 0 };
     const mouseLook = { down: false, active: false, lastX: 0, lastY: 0, pointerId: -1 };
+    const panDrag = { active: false, lastX: 0, lastY: 0, pointerId: -1 };
     const onPointerDown = (event: PointerEvent) => {
       renderer.domElement.focus({ preventScroll: true });
+      state.cameraTween = null;
       state.requestRender();
       pointerDown.x = event.clientX;
       pointerDown.y = event.clientY;
+      if (fps.active) return; // no drag gestures while walking; clicks land via onClick
       if (event.button === 0) {
         mouseLook.down = true;
         mouseLook.active = false;
@@ -1903,19 +2159,54 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         mouseLook.lastY = event.clientY;
         mouseLook.pointerId = event.pointerId;
         renderer.domElement.setPointerCapture(event.pointerId);
+      } else if (event.button === 2) {
+        panDrag.active = true;
+        panDrag.lastX = event.clientX;
+        panDrag.lastY = event.clientY;
+        panDrag.pointerId = event.pointerId;
+        renderer.domElement.setPointerCapture(event.pointerId);
+        renderer.domElement.style.cursor = 'grabbing';
+        clearHover();
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || isKeyboardInputTarget(event.target)) return;
       if (event.key === 'Escape') {
+        // first Esc leaves walk mode (the browser usually consumes it, but not always);
+        // Esc outside walk mode clears the selection
+        if (fps.active) {
+          document.exitPointerLock();
+          return;
+        }
         trace.clear();
         callbacksRef.current.onClearSelection();
         callbacksRef.current.onOpenNode(null);
         return;
       }
+      if (event.code === 'KeyV') {
+        event.preventDefault();
+        if (fps.active) document.exitPointerLock();
+        else renderer.domElement.requestPointerLock();
+        return;
+      }
+      if (event.code === 'KeyF') {
+        // fly to whatever is hovered: a device's front panel or a whole rack
+        const pick = lastPick;
+        const pose = pick?.target.type === 'device'
+          ? deviceFocusPose(state, pick.target.nodeName)
+          : pick?.target.type === 'rack'
+            ? rackFocusPose(state, pick.target.rack)
+            : null;
+        if (pose) {
+          event.preventDefault();
+          flyTo(state, pose);
+        }
+        return;
+      }
       const key = navigationKey(event);
       if (!key) return;
       event.preventDefault();
+      state.cameraTween = null;
       pressedKeys.add(key);
       keyboardFast = event.shiftKey;
       state.requestRender();
@@ -1934,8 +2225,8 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     // What's under the cursor, most specific first: a cable in front of everything, then a
     // front-panel port, then the device. Every pick carries its trace key so hover and click
     // light the same thing in both the rack and topology views.
-    const resolveHover = (event: PointerEvent | MouseEvent): HoverPick | null => {
-      if (!updatePointerRay(state, event)) return null;
+    const resolveHoverAt = (clientX: number, clientY: number): HoverPick | null => {
+      if (!updatePointerRay(state, clientX, clientY)) return null;
       const deviceHit = pickDevice(state);
       const cable = pickCable(state, deviceHit ? deviceHit.distance + 0.02 : Number.POSITIVE_INFINITY);
       // a cable wins over a device only when clearly in front of it, so the short stub
@@ -1948,21 +2239,79 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
           target: { type: 'cable', linkId: cable.linkId },
         };
       }
-      if (!deviceHit) return null;
-      const mesh = deviceHit.object as DeviceMesh;
-      const nodeName = mesh.userData.nodeName;
-      const anchor = state.anchors.get(nodeName);
-      const port = anchor ? pickDevicePort(anchor, deviceHit.point) : null;
-      if (port) {
-        return {
-          key: `port:${nodeName}:${port.cage}:${port.channel ?? ''}`,
-          traceKey: portTraceKey(linkIndexRef.current, nodeName, port) ?? `node:${nodeName}`,
-          target: { type: 'device', nodeName, port },
-        };
+      if (deviceHit) {
+        const mesh = deviceHit.object as DeviceMesh;
+        const nodeName = mesh.userData.nodeName;
+        const anchor = state.anchors.get(nodeName);
+        const port = anchor ? pickDevicePort(anchor, deviceHit.point) : null;
+        if (port) {
+          return {
+            key: `port:${nodeName}:${port.cage}:${port.channel ?? ''}`,
+            traceKey: portTraceKey(linkIndexRef.current, nodeName, port) ?? `node:${nodeName}`,
+            target: { type: 'device', nodeName, port },
+          };
+        }
+        return { key: `node:${nodeName}`, traceKey: `node:${nodeName}`, target: { type: 'device', nodeName } };
       }
-      return { key: `node:${nodeName}`, traceKey: `node:${nodeName}`, target: { type: 'device', nodeName } };
+      const rackHit = state.raycaster.intersectObjects(state.rackHitboxes, false)[0];
+      if (rackHit) {
+        const rackLabel = (rackHit.object as RackHitbox).userData.rackLabel;
+        return { key: `rack:${rackLabel}`, traceKey: null, target: { type: 'rack', rack: rackLabel } };
+      }
+      return null;
+    };
+    // shared by pointer hover and the walk-mode crosshair: light the pick and place the card
+    const applyHover = (pick: HoverPick | null, x: number, y: number) => {
+      setRackGlow(pick?.target.type === 'rack' ? pick.target.rack : null);
+      if ((pick?.key ?? null) === lastHover) {
+        if (pick) setHover({ target: pick.target, x, y });
+        return;
+      }
+      lastHover = pick?.key ?? null;
+      lastPick = pick;
+      if (pick) {
+        trace.hover(pick.traceKey);
+        setHover({ target: pick.target, x, y });
+      } else {
+        trace.hover(null);
+        setHover(null);
+      }
+    };
+    const canvasCenter = (): { x: number; y: number } | null => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    };
+    updateCenterHover = () => {
+      const center = canvasCenter();
+      if (!center) return;
+      applyHover(resolveHoverAt(center.x, center.y), center.x, center.y);
+    };
+    // click position is frozen while pointer-locked, so walk mode picks at the crosshair
+    const resolveClickPick = (event: MouseEvent): HoverPick | null => {
+      if (!fps.active) return resolveHoverAt(event.clientX, event.clientY);
+      const center = canvasCenter();
+      return center ? resolveHoverAt(center.x, center.y) : null;
     };
     const onPointerMove = (event: PointerEvent) => {
+      if (fps.active) {
+        // pointer lock: raw mouse deltas aim the camera, the crosshair does the picking
+        applyMouseLook(state, event.movementX, event.movementY);
+        state.requestRender();
+        updateCenterHover();
+        return;
+      }
+      if (panDrag.active && event.pointerId === panDrag.pointerId && (event.buttons & 2) === 2) {
+        const deltaX = event.clientX - panDrag.lastX;
+        const deltaY = event.clientY - panDrag.lastY;
+        panDrag.lastX = event.clientX;
+        panDrag.lastY = event.clientY;
+        event.preventDefault();
+        // grab metaphor: the scene follows the pointer
+        panView(state, -deltaX, deltaY);
+        state.requestRender();
+        return;
+      }
       if (mouseLook.down && (event.buttons & 1) === 1) {
         const deltaX = event.clientX - mouseLook.lastX;
         const deltaY = event.clientY - mouseLook.lastY;
@@ -1973,30 +2322,23 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
           mouseLook.active = true;
           event.preventDefault();
           renderer.domElement.style.cursor = 'grabbing';
-          lastHover = null;
-          trace.hover(null);
-          setHover(null);
+          clearHover();
           applyMouseLook(state, deltaX, deltaY);
           state.requestRender();
           return;
         }
       }
-      const pick = resolveHover(event);
+      const pick = resolveHoverAt(event.clientX, event.clientY);
       renderer.domElement.style.cursor = pick ? 'pointer' : 'grab';
-      if ((pick?.key ?? null) === lastHover) {
-        if (pick) setHover({ target: pick.target, x: event.clientX, y: event.clientY });
-        return;
-      }
-      lastHover = pick?.key ?? null;
-      if (pick) {
-        trace.hover(pick.traceKey);
-        setHover({ target: pick.target, x: event.clientX, y: event.clientY });
-      } else {
-        trace.hover(null);
-        setHover(null);
-      }
+      applyHover(pick, event.clientX, event.clientY);
     };
     const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerId === panDrag.pointerId) {
+        panDrag.active = false;
+        panDrag.pointerId = -1;
+        if (renderer.domElement.hasPointerCapture(event.pointerId)) renderer.domElement.releasePointerCapture(event.pointerId);
+        renderer.domElement.style.cursor = 'grab';
+      }
       if (event.pointerId !== mouseLook.pointerId) return;
       mouseLook.down = false;
       mouseLook.active = false;
@@ -2005,24 +2347,32 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       renderer.domElement.style.cursor = 'grab';
     };
     const onPointerLeave = () => {
-      if (mouseLook.active) return;
-      lastHover = null;
+      if (mouseLook.active || panDrag.active) return;
       renderer.domElement.style.cursor = 'grab';
-      trace.hover(null);
-      setHover(null);
+      clearHover();
     };
     const onClick = (event: MouseEvent) => {
       const moved = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
       if (moved > POINTER_CLICK_TOLERANCE) return;
-      const pick = resolveHover(event);
+      const pick = resolveClickPick(event);
       if (pick?.target.type === 'cable') {
-        trace.pin(pick.traceKey);
+        trace.pin(pick.traceKey ?? `cable:${pick.target.linkId}`);
+        return;
+      }
+      if (pick?.target.type === 'rack') {
+        const pose = rackFocusPose(state, pick.target.rack);
+        if (pose) flyTo(state, pose);
         return;
       }
       if (pick?.target.type === 'device') {
         // a port click pins just that cable; a chassis click pins the whole node's cables
-        trace.pin(pick.traceKey);
+        // and flies to a straight-on view of the front panel
+        trace.pin(pick.traceKey ?? `node:${pick.target.nodeName}`);
         callbacksRef.current.onOpenNode(pick.target.nodeName, { select: true });
+        if (!pick.target.port) {
+          const pose = deviceFocusPose(state, pick.target.nodeName);
+          if (pose) flyTo(state, pose);
+        }
         return;
       }
       trace.clear();
@@ -2030,13 +2380,40 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       callbacksRef.current.onOpenNode(null);
     };
     const onDoubleClick = (event: MouseEvent) => {
-      const pick = resolveHover(event);
+      const pick = resolveClickPick(event);
       if (pick?.target.type !== 'device') return;
       trace.pin(`node:${pick.target.nodeName}`, true);
       callbacksRef.current.onOpenNode(pick.target.nodeName, { expand: true, select: true });
     };
 
-    const onWheel = () => state.requestRender();
+    const onWheel = (event: WheelEvent) => {
+      state.cameraTween = null;
+      if (fps.active) {
+        // scroll walks forward/back along the view direction, speed scaled like WASD
+        const notches = event.deltaMode === 1 ? event.deltaY / 3 : event.deltaY / 100;
+        const distance = state.camera.position.distanceTo(state.controls.target);
+        const speed = Math.max(KEYBOARD_MOVE_SPEED_MIN, Math.min(KEYBOARD_MOVE_SPEED_MAX, distance * 0.45));
+        const move = state.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(-notches * speed * 0.22);
+        state.camera.position.add(move);
+        state.controls.target.add(move);
+      }
+      state.requestRender();
+    };
+    const onPointerLockChange = () => {
+      fps.active = document.pointerLockElement === renderer.domElement;
+      setFpsMode(fps.active);
+      controls.enableZoom = !fps.active; // walk mode owns the wheel
+      state.cameraTween = null;
+      clearHover();
+      renderer.domElement.style.cursor = fps.active ? 'none' : 'grab';
+      state.requestRender();
+      if (fps.active) {
+        // the toggle button may still hold focus; keyboard nav needs the canvas
+        renderer.domElement.focus({ preventScroll: true });
+        updateCenterHover();
+      }
+    };
+    document.addEventListener('pointerlockchange', onPointerLockChange);
     renderer.domElement.addEventListener('pointerdown', onPointerDown);
     renderer.domElement.addEventListener('pointermove', onPointerMove);
     renderer.domElement.addEventListener('pointerup', onPointerUp);
@@ -2050,6 +2427,8 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
     window.addEventListener('blur', clearPressedKeys);
 
     return () => {
+      if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
       renderer.domElement.removeEventListener('wheel', onWheel);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
@@ -2119,34 +2498,56 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
   const nudgeLook = useCallback((deltaX: number, deltaY: number) => {
     const state = sceneRef.current;
     if (!state) return;
+    state.cameraTween = null;
     applyMouseLook(state, deltaX, deltaY);
     state.controls.update();
     state.requestRender();
   }, []);
 
-  const nudgePan = useCallback((rightAmount: number, upAmount: number) => {
+  const nudgePan = useCallback((rightPx: number, upPx: number) => {
     const state = sceneRef.current;
     if (!state) return;
-    panView(state, rightAmount, upAmount);
+    state.cameraTween = null;
+    panView(state, rightPx, upPx);
     state.controls.update();
     state.requestRender();
   }, []);
 
-  const nudgeZoom = useCallback((zoomIn: boolean) => {
+  const nudgeZoom = useCallback((factor: number) => {
     const state = sceneRef.current;
     if (!state) return;
-    zoomView(state, zoomIn);
+    state.cameraTween = null;
+    zoomView(state, factor);
     state.controls.update();
     state.requestRender();
+  }, []);
+
+  const toggleFps = useCallback(() => {
+    const state = sceneRef.current;
+    if (!state) return;
+    if (document.pointerLockElement === state.renderer.domElement) document.exitPointerLock();
+    else state.renderer.domElement.requestPointerLock();
+  }, []);
+
+  const focusNode = useCallback((nodeName: string) => {
+    const state = sceneRef.current;
+    if (!state) return;
+    const pose = deviceFocusPose(state, nodeName);
+    if (pose) flyTo(state, pose);
+  }, []);
+
+  const viewFrontElevation = useCallback(() => {
+    const state = sceneRef.current;
+    if (!state) return;
+    const pose = hallFrontPose(state);
+    if (pose) flyTo(state, pose);
   }, []);
 
   const resetCamera = useCallback(() => {
     const state = sceneRef.current;
-    if (state) {
-      frameCamera(state);
-      state.controls.update();
-      state.requestRender();
-    }
+    if (!state) return;
+    const overview = frameOverview(state);
+    if (overview) flyTo(state, overview.pose);
   }, []);
 
   const gizmoButtonSx = {
@@ -2170,13 +2571,27 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
           {totalRackLabels > 0 ? `${totalRackLabels} rack labels in namespace` : 'No rack labels in namespace'}
         </Typography>
         <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
-          Drag to look · WASD/QE move · hover ports &amp; cables
+          Drag to look · right-drag to pan · wheel zooms to cursor
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
+          Click a rack or device to face it · F on hover · V walk mode
         </Typography>
       </Box>
 
       <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 1, display: 'flex', gap: 0.5,
         bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 2, p: 0.5 }}>
-        <Tooltip title="Reset rack view">
+        <Tooltip title={fpsMode ? 'Exit walk mode (V or Esc)' : 'Walk mode — free mouse look (V)'}>
+          <IconButton size="small" onClick={toggleFps}
+            sx={{ color: fpsMode ? 'primary.main' : 'text.primary' }}>
+            <DirectionsWalkIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Front elevation — face the rack rows">
+          <IconButton size="small" onClick={viewFrontElevation} sx={{ color: 'text.primary' }}>
+            <ViewColumnIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Frame all racks">
           <IconButton size="small" onClick={resetCamera} sx={{ color: 'text.primary' }}>
             <CenterFocusStrongIcon fontSize="small" />
           </IconButton>
@@ -2191,93 +2606,82 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
       <Box sx={{ position: 'absolute', right: 12, bottom: { xs: 68, sm: 12 }, zIndex: 1,
         width: 132, px: 0.75, py: 0.75, bgcolor: 'background.paper', border: 1,
         borderColor: 'divider', boxShadow: 2 }}>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'text.disabled', fontSize: 10, lineHeight: 1.6 }}>
+          Look · zoom
+        </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: '30px 30px 30px 30px', gridTemplateRows: '30px 30px',
           gap: 0.5, alignItems: 'center', justifyContent: 'center' }}>
-          <Tooltip title="Tilt up" disableInteractive>
-            <IconButton size="small" aria-label="Tilt rack view up" onClick={(event) => {
-              event.stopPropagation();
-              nudgeLook(0, -GIZMO_TILT_STEP);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 1 }}>
-              <KeyboardArrowUpIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Rotate left" disableInteractive>
-            <IconButton size="small" aria-label="Rotate rack view left" onClick={(event) => {
-              event.stopPropagation();
-              nudgeLook(-GIZMO_ROTATE_STEP, 0);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 1, gridRow: 2 }}>
-              <RotateLeftIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Tilt down" disableInteractive>
-            <IconButton size="small" aria-label="Tilt rack view down" onClick={(event) => {
-              event.stopPropagation();
-              nudgeLook(0, GIZMO_TILT_STEP);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 2 }}>
-              <KeyboardArrowDownIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Rotate right" disableInteractive>
-            <IconButton size="small" aria-label="Rotate rack view right" onClick={(event) => {
-              event.stopPropagation();
-              nudgeLook(GIZMO_ROTATE_STEP, 0);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 3, gridRow: 2 }}>
-              <RotateRightIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Zoom in" disableInteractive>
-            <IconButton size="small" aria-label="Zoom rack view in" onClick={(event) => {
-              event.stopPropagation();
-              nudgeZoom(true);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 4, gridRow: 1 }}>
-              <AddIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Zoom out" disableInteractive>
-            <IconButton size="small" aria-label="Zoom rack view out" onClick={(event) => {
-              event.stopPropagation();
-              nudgeZoom(false);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 4, gridRow: 2 }}>
-              <RemoveIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          <GizmoButton title="Tilt up" ariaLabel="Tilt rack view up"
+            onNudge={() => nudgeLook(0, -GIZMO_TILT_STEP)}
+            onHold={(dt) => nudgeLook(0, -GIZMO_TILT_HOLD_SPEED * dt)}
+            sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 1 }}>
+            <KeyboardArrowUpIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Zoom in" ariaLabel="Zoom rack view in"
+            onNudge={() => nudgeZoom(GIZMO_ZOOM_STEP)}
+            onHold={(dt) => nudgeZoom(Math.pow(GIZMO_ZOOM_HOLD_RATE, dt))}
+            sx={{ ...gizmoButtonSx, gridColumn: 4, gridRow: 1 }}>
+            <AddIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Rotate left" ariaLabel="Rotate rack view left"
+            onNudge={() => nudgeLook(-GIZMO_ROTATE_STEP, 0)}
+            onHold={(dt) => nudgeLook(-GIZMO_ROTATE_HOLD_SPEED * dt, 0)}
+            sx={{ ...gizmoButtonSx, gridColumn: 1, gridRow: 2 }}>
+            <RotateLeftIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Tilt down" ariaLabel="Tilt rack view down"
+            onNudge={() => nudgeLook(0, GIZMO_TILT_STEP)}
+            onHold={(dt) => nudgeLook(0, GIZMO_TILT_HOLD_SPEED * dt)}
+            sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 2 }}>
+            <KeyboardArrowDownIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Rotate right" ariaLabel="Rotate rack view right"
+            onNudge={() => nudgeLook(GIZMO_ROTATE_STEP, 0)}
+            onHold={(dt) => nudgeLook(GIZMO_ROTATE_HOLD_SPEED * dt, 0)}
+            sx={{ ...gizmoButtonSx, gridColumn: 3, gridRow: 2 }}>
+            <RotateRightIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Zoom out" ariaLabel="Zoom rack view out"
+            onNudge={() => nudgeZoom(1 / GIZMO_ZOOM_STEP)}
+            onHold={(dt) => nudgeZoom(Math.pow(1 / GIZMO_ZOOM_HOLD_RATE, dt))}
+            sx={{ ...gizmoButtonSx, gridColumn: 4, gridRow: 2 }}>
+            <RemoveIcon fontSize="small" />
+          </GizmoButton>
         </Box>
         <Box sx={{ height: 1, bgcolor: 'divider', opacity: 0.72, my: 0.75 }} />
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'text.disabled', fontSize: 10, lineHeight: 1.6 }}>
+          Move
+        </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: '30px 30px 30px', gridTemplateRows: '30px 30px',
           gap: 0.5, justifyContent: 'center' }}>
-          <Tooltip title="Pan up" disableInteractive>
-            <IconButton size="small" aria-label="Pan rack view up" onClick={(event) => {
-              event.stopPropagation();
-              nudgePan(0, 1);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 1 }}>
-              <KeyboardArrowUpIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Pan left" disableInteractive>
-            <IconButton size="small" aria-label="Pan rack view left" onClick={(event) => {
-              event.stopPropagation();
-              nudgePan(-1, 0);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 1, gridRow: 2 }}>
-              <KeyboardArrowLeftIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Pan down" disableInteractive>
-            <IconButton size="small" aria-label="Pan rack view down" onClick={(event) => {
-              event.stopPropagation();
-              nudgePan(0, -1);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 2 }}>
-              <KeyboardArrowDownIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Pan right" disableInteractive>
-            <IconButton size="small" aria-label="Pan rack view right" onClick={(event) => {
-              event.stopPropagation();
-              nudgePan(1, 0);
-            }} sx={{ ...gizmoButtonSx, gridColumn: 3, gridRow: 2 }}>
-              <KeyboardArrowRightIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          <GizmoButton title="Pan up" ariaLabel="Pan rack view up"
+            onNudge={() => nudgePan(0, GIZMO_PAN_STEP)}
+            onHold={(dt) => nudgePan(0, GIZMO_PAN_HOLD_SPEED * dt)}
+            sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 1 }}>
+            <KeyboardArrowUpIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Pan left" ariaLabel="Pan rack view left"
+            onNudge={() => nudgePan(-GIZMO_PAN_STEP, 0)}
+            onHold={(dt) => nudgePan(-GIZMO_PAN_HOLD_SPEED * dt, 0)}
+            sx={{ ...gizmoButtonSx, gridColumn: 1, gridRow: 2 }}>
+            <KeyboardArrowLeftIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Pan down" ariaLabel="Pan rack view down"
+            onNudge={() => nudgePan(0, -GIZMO_PAN_STEP)}
+            onHold={(dt) => nudgePan(0, -GIZMO_PAN_HOLD_SPEED * dt)}
+            sx={{ ...gizmoButtonSx, gridColumn: 2, gridRow: 2 }}>
+            <KeyboardArrowDownIcon fontSize="small" />
+          </GizmoButton>
+          <GizmoButton title="Pan right" ariaLabel="Pan rack view right"
+            onNudge={() => nudgePan(GIZMO_PAN_STEP, 0)}
+            onHold={(dt) => nudgePan(GIZMO_PAN_HOLD_SPEED * dt, 0)}
+            sx={{ ...gizmoButtonSx, gridColumn: 3, gridRow: 2 }}>
+            <KeyboardArrowRightIcon fontSize="small" />
+          </GizmoButton>
         </Box>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: 'text.disabled', fontSize: 9, mt: 0.5 }}>
+          Hold a button to glide
+        </Typography>
       </Box>
 
       {(legendRoles.length > 0 || legendPortKinds.length > 0) && (
@@ -2312,6 +2716,26 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
         </Box>
       )}
 
+      {fpsMode && (
+        <>
+          <Box aria-hidden sx={{ position: 'absolute', left: '50%', top: '50%',
+            transform: 'translate(-50%, -50%)', zIndex: 1, pointerEvents: 'none',
+            width: 18, height: 18, filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.55))',
+            '&::before': { content: '""', position: 'absolute', left: '50%', top: 0, bottom: 0,
+              width: '2px', ml: '-1px', bgcolor: 'common.white', opacity: 0.85 },
+            '&::after': { content: '""', position: 'absolute', top: '50%', left: 0, right: 0,
+              height: '2px', mt: '-1px', bgcolor: 'common.white', opacity: 0.85 },
+          }} />
+          <Box sx={{ position: 'absolute', bottom: { xs: 68, sm: 12 }, left: '50%', zIndex: 1,
+            transform: 'translateX(-50%)', px: 1.25, py: 0.5,
+            bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 2 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Walk mode · aim to inspect · click to pin · scroll walks · WASD/QE move · Esc exits
+            </Typography>
+          </Box>
+        </>
+      )}
+
       {racks.length === 0 && (
         <Box sx={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none' }}>
           <Box sx={{ px: 2, py: 1.5, bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 2 }}>
@@ -2326,20 +2750,32 @@ function RackView({ topo, shown, selected, mode, onOpenNode, onClearSelection }:
           bgcolor: 'background.paper', border: 1, borderColor: 'divider', boxShadow: 3,
           display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{ width: 8, height: 8, flex: 'none', bgcolor: OCCUPANCY_KIND_COLORS[pinnedCable.kind] }} />
-          <Typography variant="caption" noWrap sx={{ fontWeight: 600 }}>
-            {pinnedCable.link.source} {shortPortLabel(pinnedCable.link.sourcePort)}
-            {placementSuffix(placements.get(pinnedCable.link.source))}
-            {'  ⟷  '}
-            {pinnedCable.link.target} {shortPortLabel(pinnedCable.link.targetPort)}
-            {placementSuffix(placements.get(pinnedCable.link.target))}
-            {pinnedCable.bundleSize > 1 ? `  ·  ×${pinnedCable.bundleSize} bundle` : ''}
-          </Typography>
+          <Tooltip title={`Fly to ${pinnedCable.link.source}`} disableInteractive>
+            <Link component="button" type="button" variant="caption" underline="hover" noWrap
+              onClick={() => focusNode(pinnedCable.link.source)}
+              sx={{ fontWeight: 600, color: 'text.primary', minWidth: 0 }}>
+              {pinnedCable.link.source} {shortPortLabel(pinnedCable.link.sourcePort)}
+              {placementSuffix(placements.get(pinnedCable.link.source))}
+            </Link>
+          </Tooltip>
+          <Typography variant="caption" sx={{ flex: 'none', color: 'text.secondary' }}>⟷</Typography>
+          <Tooltip title={`Fly to ${pinnedCable.link.target}`} disableInteractive>
+            <Link component="button" type="button" variant="caption" underline="hover" noWrap
+              onClick={() => focusNode(pinnedCable.link.target)}
+              sx={{ fontWeight: 600, color: 'text.primary', minWidth: 0 }}>
+              {pinnedCable.link.target} {shortPortLabel(pinnedCable.link.targetPort)}
+              {placementSuffix(placements.get(pinnedCable.link.target))}
+            </Link>
+          </Tooltip>
+          {pinnedCable.bundleSize > 1 && (
+            <Typography variant="caption" sx={{ flex: 'none', color: 'text.secondary' }}>×{pinnedCable.bundleSize} bundle</Typography>
+          )}
           <Typography variant="caption" sx={{ color: 'text.disabled', flex: 'none' }}>Esc to clear</Typography>
         </Box>
       )}
 
       {hover && (
-        <HoverCard hover={hover} nodeByName={nodeByName} placements={placements} linkIndex={linkIndex} lags={topo.lags} />
+        <HoverCard hover={hover} nodeByName={nodeByName} placements={placements} rackByLabel={rackByLabel} linkIndex={linkIndex} lags={topo.lags} />
       )}
     </Box>
   );
