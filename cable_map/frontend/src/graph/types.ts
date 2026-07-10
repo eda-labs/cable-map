@@ -1,5 +1,6 @@
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 import type { Breakout, LldpStatus } from '../domain/topology/contract';
+import type { ConnectorInfo } from '../domain/ports/srosPorts';
 import type { Adjacency } from './adjacency';
 
 export type CableKind = 'isl' | 'edge' | 'lag' | 'mlag';
@@ -9,6 +10,8 @@ export type PortPos = { p: string; x: number; y: number; w: number; h: number };
 export type PortInfo = {
   port: string;         // cage id matching the stencil's data-port ("<port>" or "<slot>-<port>")
   channel?: number;     // breakout channel (1-based) when this cable lands on a broken-out sub-port
+  interfaceLabel?: string; // native interface name shown first in hover details
+  physicalAlias?: string;  // EDA physical SR OS alias (e.g. 1-a-1-1)
   kind: CableKind | 'free';
   side: 'top' | 'bottom';
   remote: string;       // short remote label e.g. "spine1" / "srv03" / "lag-a"
@@ -30,6 +33,8 @@ export type SwitchData = {
   layout?: PortPos[];                // real on-panel port positions (from the stencil); else grid
   aspect?: number;                   // cage-box w/h, to size the layout panel
   breakouts?: Record<string, Breakout>;  // cage id -> breakout split (channels + speed)
+  connectors?: Record<string, ConnectorInfo>; // SR OS connector inventory keyed by panel cage
+  portLabels?: Record<string, string>;   // stencil silkscreen label keyed by internal cage id
   compact?: boolean;                 // large-topology mode: draw a cheap aggregate switch node
   renderHandles?: boolean;           // false when WebGL computes cable endpoints from node data
   detailLevel?: SwitchDetailLevel;   // adaptive detail: labeled/summary draw the panel into one canvas

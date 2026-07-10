@@ -1,7 +1,8 @@
 // Builds the React Flow graph (positioned nodes + edges) and the trace adjacency straight from the
 // topology tables — which carry the full per-port truth, including the edge/server interfaces.
 import type { Edge as RFEdge } from '@xyflow/react';
-import { cageKey, shortPortLabel } from '../domain/ports/interfaceNames';
+import { breakoutChannel, cageKey, edaPhysicalAlias, shortPortLabel } from '../domain/ports/interfaceNames';
+import { srosPortModel } from '../domain/ports/srosPorts';
 import type { LagInfo, Topology } from '../domain/topology/contract';
 import { nodeLabelPairs } from '../domain/topology/labels';
 import { stencilFor, componentsOf } from '../stencil';
@@ -13,7 +14,7 @@ import {
   realizeEndpointGroups, realizeIslBundles, type EndpointGroups, type IslBundles,
 } from './endpointGrouping';
 import {
-  compactSwitchHandle,
+  compactSwitchHandle, portHandle,
 } from './geometry';
 import { layoutGraph } from './layout';
 import {
@@ -36,6 +37,7 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   // sizing + FP_META lookups, while node.platform stays the displayed model name.
   const stencilByName = new Map(topo.nodes.map((n) => [n.name, stencilFor(n.platform, componentsOf(n.raw))]));
   const stencilOf = (name: string) => stencilByName.get(name) ?? '';
+  const portModels = new Map(topo.nodes.map((n) => [n.name, srosPortModel(n, stencilOf(n.name))]));
   const lagOf = (name?: string): LagInfo | undefined => (name ? topo.lags[name] : undefined);
   const sideBetween = (node: string, remote: string): 'top' | 'bottom' =>
     tier(remote) <= tier(node) ? 'top' : 'bottom';
@@ -66,39 +68,52 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
   const endpointGroups: EndpointGroups = new Map();
 
   for (const sw of topo.nodes) {
-    const slotted = slottedOf(stencilOf(sw.name));
+    const stencil = stencilOf(sw.name);
+    const slotted = slottedOf(stencil);
     for (const r of sw.table ?? []) {
-      const p = cageKey(r.label, slotted);
+      const p = cageKey(r.label, slotted, stencil);
       if (p == null) continue;
+      const channel = breakoutChannel(r.label) ?? undefined;
+      const physicalAlias = edaPhysicalAlias(r.label) ?? undefined;
 
       if (r.type === 'interSwitch' && r.remoteNode) {
-        hay(sw.name).push(r.label);
+        hay(sw.name).push(r.label, ...(physicalAlias ? [physicalAlias] : []));
         const remoteTier = tier(r.remoteNode);
         // uplinks leave the top; a same-tier peer link (leaf↔leaf MLAG ISL) also routes over
         // the top, into the open space above — routing it below would dive through the host band.
         const side: 'top' | 'bottom' = remoteTier <= tier(sw.name) ? 'top' : 'bottom';
-        const rp = cageKey(r.remotePort, slottedOf(stencilOf(r.remoteNode))) ?? p;
+        const remoteStencil = stencilOf(r.remoteNode);
+        const rp = cageKey(r.remotePort, slottedOf(remoteStencil), remoteStencil) ?? p;
+        const remoteChannel = breakoutChannel(r.remotePort) ?? undefined;
         // canonical per-cable id, stable across the mirrored far-side row
         const cableId = canonicalIslCableId(sw.name, r);
 
         if (lagOf(r.lag)?.isl) {
-          const bid = addIslBundleMember({ bundles: islBundles, node: sw.name, row: r, side, localPort: p, remotePort: rp });
-          portsOf(sw.name).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: bid, lldp: r.lldpStatus });
+          const bid = addIslBundleMember({ bundles: islBundles, node: sw.name, row: r, side, localPort: p, remotePort: rp, localChannel: channel, remoteChannel });
+          portsOf(sw.name).push({ port: p, channel, interfaceLabel: r.label, physicalAlias, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId: bid, lldp: r.lldpStatus });
         } else {
-          portsOf(sw.name).push({ port: p, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId, lldp: r.lldpStatus });
+          portsOf(sw.name).push({ port: p, channel, interfaceLabel: r.label, physicalAlias, kind: 'isl', side, remote: r.remoteNode, remotePort: r.remotePort, desc: r.desc, cableId, lldp: r.lldpStatus });
           if (!islSeen.has(cableId)) {
             islSeen.add(cableId);
             const child = tier(sw.name) >= tier(r.remoteNode) ? sw.name : r.remoteNode;
             const parent = child === sw.name ? r.remoteNode : sw.name;
             const childPort = child === sw.name ? p : rp;
             const parentPort = child === sw.name ? rp : p;
+            const childChannel = child === sw.name ? channel : remoteChannel;
+            const parentChannel = child === sw.name ? remoteChannel : channel;
             rfEdges.push({
               id: cableId, source: child, target: parent, type: 'cable',
-              sourceHandle: switchHandle(child, parent) ?? `p${childPort}`,
-              targetHandle: switchHandle(parent, child, true) ?? `p${parentPort}t`,
-              data: { kind: 'isl', a: shortPortLabel(r.label), b: shortPortLabel(r.remotePort), lldp: r.lldpStatus, fast: compact },
+              sourceHandle: switchHandle(child, parent) ?? portHandle(childPort, childChannel),
+              targetHandle: switchHandle(parent, child, true) ?? `${portHandle(parentPort, parentChannel)}t`,
+              data: {
+                kind: 'isl',
+                a: shortPortLabel(child === sw.name ? r.label : r.remotePort),
+                b: shortPortLabel(child === sw.name ? r.remotePort : r.label),
+                lldp: r.lldpStatus,
+                fast: compact,
+              },
             });
-            link(cableId, child, parent, [`${child}:${childPort}`, `${parent}:${parentPort}`]);
+            link(cableId, child, parent, [`${child}:${childPort}${childChannel ? `_${childChannel}` : ''}`, `${parent}:${parentPort}${parentChannel ? `_${parentChannel}` : ''}`]);
           }
         }
       } else if (r.type === 'edge') {
@@ -128,6 +143,6 @@ export function buildGraph(topo: Topology, options: BuildGraphOptions = {}): Bui
     search.set(n.name, [...(haystacks.get(n.name) ?? [n.name, n.platform, n.role]), ...pairs].join(' ').toLowerCase());
   }
 
-  const rfNodes = layoutGraph({ topo, compact, tiered, endpoints, switchPorts, stencilOf });
+  const rfNodes = layoutGraph({ topo, compact, tiered, endpoints, switchPorts, portModels, stencilOf });
   return { nodes: rfNodes, edges: rfEdges, adjacency };
 }

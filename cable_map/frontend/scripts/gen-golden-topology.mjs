@@ -581,6 +581,20 @@ function buildMixedSrosTopology() {
     os: 'srl',
     labels: { 'eda.nokia.com/pod': 'pod-00', 'eda.nokia.com/rack': 'rack-06' },
   });
+  addNode({
+    name: 'pod1',
+    role: 'dcgw',
+    platform: '7750 SR-1s',
+    os: 'sros',
+    labels: { 'eda.nokia.com/pod': 'pod1', 'eda.nokia.com/fabric-node-group': 'dcgw' },
+    components: [
+      { kind: 'lineCard', type: 'xcm-1s', slot: '1' },
+      { kind: 'mda', type: 's18-100gb-qsfp28', slot: '1-a' },
+      ...Array.from({ length: 18 }, (_, index) => ({
+        kind: 'connector', type: 'c1-100g', slot: `1-a-${index + 1}`,
+      })),
+    ],
+  });
 
   const srosVariants = [];
   function addSrosVariant(name, platform, components) {
@@ -640,6 +654,9 @@ function buildMixedSrosTopology() {
     addLink(leaf, 'mix-spine-srl', 'leaf fabric A');
     addLink(leaf, 'mix-spine-sros', 'leaf fabric B');
   }
+  // Live SR OS regression: connector 1/channel 1 on the dcgw lands on SR Linux port 25.
+  nextPort.set('mix-spine-srl', 25);
+  addLink('pod1', 'mix-spine-srl', 'dcgw fabric');
 
   addEdge('mix-leaf-d3l', 'single attached telemetry host', 'telemetry-01');
   const localLag = 'lag-mix-border-tools-local';

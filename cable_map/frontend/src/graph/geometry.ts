@@ -36,6 +36,20 @@ export function breakoutGrid(channels: number): { cols: number; rows: number } {
   return { cols: Math.ceil(n / rows), rows };
 }
 
+export function breakoutCellBox(channels: number, channel: number, width: number, height: number) {
+  const n = Math.max(1, channels);
+  const ch = Math.max(1, Math.min(n, channel));
+  const { cols, rows } = breakoutGrid(n);
+  const cellWidth = width / cols;
+  const cellHeight = height / rows;
+  return {
+    left: ((ch - 1) % cols) * cellWidth,
+    top: Math.floor((ch - 1) / cols) * cellHeight,
+    width: cellWidth,
+    height: cellHeight,
+  };
+}
+
 function switchCages(d: SwitchData): string[] {
   return d.layout ? d.layout.map((p) => p.p) : Array.from({ length: d.portCount }, (_, i) => String(i + 1));
 }
@@ -48,7 +62,7 @@ export function findSwitchPort(d: SwitchData, text: string): string | null {
   const candidates = new Set<string>();
 
   for (const token of [text.toLowerCase(), ...tokens]) {
-    const key = cageKey(token, slotted);
+    const key = cageKey(token, slotted, d.platform);
     if (key) candidates.add(key);
 
     const normalized = token
@@ -78,18 +92,10 @@ export function switchPortCenter(d: SwitchData, port: string, channel?: number):
   const channelOffset = (width: number, height: number) => {
     const bo = d.breakouts?.[port];
     if (!bo || !channel) return { x: 0, y: 0 };
-    const n = Math.max(1, bo.channels);
-    const ch = Math.max(1, Math.min(n, channel));
-    const { cols, rows } = breakoutGrid(n);
-    const col = (ch - 1) % cols;
-    const row = Math.floor((ch - 1) / cols);
-    const colGap = cols > 2 ? 0.5 : 1;
-    const rowGap = rows > 1 ? 0.5 : 0;
-    const sw = (width - colGap * (cols - 1)) / cols;
-    const sh = (height - rowGap * (rows - 1)) / rows;
+    const cell = breakoutCellBox(bo.channels, channel, width, height);
     return {
-      x: -width / 2 + col * (sw + colGap) + sw / 2,
-      y: -height / 2 + row * (sh + rowGap) + sh / 2,
+      x: -width / 2 + cell.left + cell.width / 2,
+      y: -height / 2 + cell.top + cell.height / 2,
     };
   };
 

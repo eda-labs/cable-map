@@ -36,7 +36,7 @@ var kinds = []crKind{
 	{edav1.KTopoNodeGVK.Group, edav1.KTopoNodeGVK.Version, edav1.KTopoNodeGVK.Kind},
 	{edav1.KTopoLinkGVK.Group, edav1.KTopoLinkGVK.Version, edav1.KTopoLinkGVK.Kind},
 	{"interfaces.eda.nokia.com", "v1", "Interface"},
-	{"interfaces.eda.nokia.com", "v1alpha1", "Breakout"},
+	{"interfaces.eda.nokia.com", "v1", "Breakout"},
 	{"topologies.eda.nokia.com", "v1", "TopologyGrouping"},
 }
 
