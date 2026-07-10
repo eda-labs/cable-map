@@ -1,6 +1,7 @@
 import type { Node as RFNode } from '@xyflow/react';
-import { aspectOf, layoutOf, portCountOf, rowsOf } from '../domain/ports/frontPanelMeta';
+import { aspectOf, layoutOf, portCountOf, portLabelsOf, rowsOf } from '../domain/ports/frontPanelMeta';
 import type { Breakout, Topology } from '../domain/topology/contract';
+import { mergeBreakouts, type SrosPortModel } from '../domain/ports/srosPorts';
 import { labelOf } from '../domain/topology/labels';
 import {
   EP_COLS, EP_H, EP_HGAP, EP_TOP_GAP, EP_VGAP, EP_W, LEAF_Y, SPINE_Y, tierOf,
@@ -16,6 +17,7 @@ type LayoutGraphArgs = {
   tiered: boolean;
   endpoints: GraphEndpoint[];
   switchPorts: Map<string, PortInfo[]>;
+  portModels: Map<string, SrosPortModel>;
   stencilOf: (name: string) => string;
 };
 
@@ -47,7 +49,7 @@ function breakoutsWithInferredChannels(explicit: Record<string, Breakout> | unde
   return Object.keys(out).length ? out : undefined;
 }
 
-export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, stencilOf }: LayoutGraphArgs): RFNode[] {
+export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, portModels, stencilOf }: LayoutGraphArgs): RFNode[] {
   // tiers present, top (smallest) first. The bottom tier is the leaf row (endpoint fans);
   // every tier above it gets its own row, so superspine and spine never share one.
   const tiers = [...new Set(topo.nodes.map((n) => tierOf(n)))].toSorted((a, b) => a - b);
@@ -191,6 +193,7 @@ export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, ste
 
   const rfNodes: RFNode[] = topo.nodes.map((n) => {
     const nodePorts = switchPorts.get(n.name) ?? [];
+    const portModel = portModels.get(n.name);
     const nodeState = nodeStateOf(n);
     return {
       id: n.name, type: 'switch', position: pos.get(n.name) ?? { x: 0, y: 0 },
@@ -204,7 +207,15 @@ export function layoutGraph({ topo, compact, tiered, endpoints, switchPorts, ste
         synced: nodeState?.trim().toLowerCase() === 'synced',
         portCount: portCountOf(stencilOf(n.name)), rows: rowsOf(stencilOf(n.name)),
         ports: nodePorts, layout: compact ? undefined : layoutOf(stencilOf(n.name)),
-        aspect: aspectOf(stencilOf(n.name)), breakouts: compact ? undefined : breakoutsWithInferredChannels(n.breakouts, nodePorts), compact,
+        aspect: aspectOf(stencilOf(n.name)),
+        breakouts: compact ? undefined : mergeBreakouts(
+          n.breakouts,
+          portModel?.breakouts ?? {},
+          breakoutsWithInferredChannels(n.breakouts, nodePorts),
+        ),
+        connectors: compact ? undefined : portModel?.connectors,
+        portLabels: compact ? undefined : portLabelsOf(stencilOf(n.name)),
+        compact,
       } satisfies SwitchData,
       draggable: !compact,
     };

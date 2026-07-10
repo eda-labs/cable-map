@@ -6,9 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "vitest run",
     "build": "tsc -b && vite build",
     "lint": "oxlint .",
     "preview": "vite preview",
+    "gen:frontpanel-labels": "node scripts/gen-frontpanel-labels.mjs",
+    "check:frontpanel-labels": "node scripts/gen-frontpanel-labels.mjs --check",
     "gen:golden-topology": "node scripts/gen-golden-topology.mjs"
   },
   "devDependencies": {
@@ -30,6 +33,7 @@
     "react-dom": "^19.2.6",
     "typescript": "~6.0.2",
     "vite": "^8.0.12",
+    "vitest": "^4.1.10",
     "write-excel-file": "^4.1.1"
   }
 }

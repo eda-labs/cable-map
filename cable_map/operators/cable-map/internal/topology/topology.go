@@ -82,7 +82,7 @@ type RawIface struct {
 	StatusMembers []IfStatusMember // status.members (carry LLDP neighbours)
 }
 
-// RawBreakout is an interfaces.eda.nokia.com/Breakout projection: which parent ports on which nodes
+// RawBreakout is an interfaces.eda.nokia.com/v1 Breakout projection: which parent ports on which nodes
 // are split into how many channels.
 type RawBreakout struct {
 	Name          string

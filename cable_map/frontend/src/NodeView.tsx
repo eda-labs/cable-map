@@ -10,7 +10,7 @@ import TableCell from '@mui/material/TableCell';
 import Link from '@mui/material/Link';
 import FrontPanel from './FrontPanel';
 import RemoteCell from './RemoteCell';
-import { cageKey } from './domain/ports/interfaceNames';
+import { cageKey, detailedPortLabel } from './domain/ports/interfaceNames';
 import { slottedOf } from './domain/ports/frontPanelMeta';
 import type { Node, Row } from './domain/topology/contract';
 import { stencilFor, componentsOf } from './stencil';
@@ -42,7 +42,7 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
   // panel highlights match the stencil's data-port on both fixed and modular chassis.
   const stencil = stencilFor(node.platform, componentsOf(node.raw));
   const slotted = slottedOf(stencil);
-  const occupied = rows.map((r) => cageKey(r.label, slotted)).filter((c): c is string => c != null);
+  const occupied = rows.map((r) => cageKey(r.label, slotted, stencil)).filter((c): c is string => c != null);
   // natural order: digit runs compare numerically (ethernet-1-2 before ethernet-1-10), slot-aware
   const sorted = rows.toSorted((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
   // print leaves empty cells blank (room to write); the drawer shows a dash
@@ -77,14 +77,14 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
           </TableHead>
           <TableBody>
             {sorted.map((r) => {
-              const cage = cageKey(r.label, slotted);
+              const cage = cageKey(r.label, slotted, stencil);
               const isHot = interactive && hovered != null && cage === hovered;
               return (
                 <TableRow key={r.label} hover selected={isHot} data-port={cage ?? undefined}
                   sx={{ scrollMarginTop: '40px' }}  /* clear the sticky header on scroll-into-view */
                   onMouseEnter={() => interactive && cage && setHovered(cage)}
                   onMouseLeave={() => interactive && setHovered(null)}>
-                  <TableCell>{r.label}</TableCell>
+                  <TableCell>{interactive ? detailedPortLabel(r.label) : r.label}</TableCell>
                   <TableCell>{r.desc || blank}</TableCell>
                   <TableCell>
                     {r.type === 'interSwitch' ? 'ISL' : r.type === 'edge' ? 'edge' : r.type}
@@ -112,7 +112,7 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
                             : blank}
                       </TableCell>
                       <TableCell>
-                        {r.remotePort || blank}
+                        {r.remotePort ? (interactive ? detailedPortLabel(r.remotePort) : r.remotePort) : blank}
                       </TableCell>
                     </>
                   )}

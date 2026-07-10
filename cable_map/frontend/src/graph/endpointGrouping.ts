@@ -1,5 +1,5 @@
 import type { Edge as RFEdge } from '@xyflow/react';
-import { breakoutChannel, shortPortLabel } from '../domain/ports/interfaceNames';
+import { breakoutChannel, edaPhysicalAlias, shortPortLabel } from '../domain/ports/interfaceNames';
 import type { LagInfo, LldpStatus, Row } from '../domain/topology/contract';
 import { worseLldp } from './constants';
 import { compactSwitchHandle, portHandle } from './geometry';
@@ -28,7 +28,7 @@ type IslBundle = {
   parent: string;
   side: 'top' | 'bottom';
   lldp: LldpStatus;
-  cables: Map<string, { childPort: string; parentPort: string; childLabel: string; parentLabel: string }>;
+  cables: Map<string, { childPort: string; parentPort: string; childChannel?: number; parentChannel?: number; childLabel: string; parentLabel: string }>;
 };
 
 export type EndpointGroups = Map<string, EndpointAccum>;
@@ -87,6 +87,8 @@ export function addCompactEndpointPort({
   ports.push({
     port,
     channel,
+    interfaceLabel: row.label,
+    physicalAlias: edaPhysicalAlias(row.label) ?? undefined,
     kind,
     side: 'bottom',
     remote: shortEndpoint(node, remoteName),
@@ -109,6 +111,8 @@ export function addIslBundleMember({
   side,
   localPort,
   remotePort,
+  localChannel,
+  remoteChannel,
 }: {
   bundles: IslBundles;
   node: string;
@@ -116,12 +120,16 @@ export function addIslBundleMember({
   side: 'top' | 'bottom';
   localPort: string;
   remotePort: string;
+  localChannel?: number;
+  remoteChannel?: number;
 }): string {
   const cableId = canonicalIslCableId(node, row);
   const bid = `isllag|${row.lag!.replace(/^lag-/, '').replace(/-(local|remote)$/, '')}`;
   const [a, b] = [node, row.remoteNode].toSorted();
   const aPort = a === node ? localPort : remotePort;
   const bPort = a === node ? remotePort : localPort;
+  const aChannel = a === node ? localChannel : remoteChannel;
+  const bChannel = a === node ? remoteChannel : localChannel;
   const bundle = bundles.get(bid) ?? bundles.set(bid, {
     id: bid,
     child: a,
@@ -134,6 +142,8 @@ export function addIslBundleMember({
   bundle.cables.set(cableId, {
     childPort: aPort,
     parentPort: bPort,
+    childChannel: aChannel,
+    parentChannel: bChannel,
     childLabel: shortPortLabel(a === node ? row.label : row.remotePort),
     parentLabel: shortPortLabel(a === node ? row.remotePort : row.label),
   });
@@ -161,8 +171,8 @@ export function realizeIslBundles({
       source: b.child,
       target: b.parent,
       type: 'cable',
-      sourceHandle: switchHandle(b.child, b.parent) ?? `p${rep.childPort}`,
-      targetHandle: switchHandle(b.parent, b.child, true) ?? `p${rep.parentPort}t`,
+      sourceHandle: switchHandle(b.child, b.parent) ?? portHandle(rep.childPort, rep.childChannel),
+      targetHandle: switchHandle(b.parent, b.child, true) ?? `${portHandle(rep.parentPort, rep.parentChannel)}t`,
       data: {
         kind: 'isl',
         a: cables.map((c) => c.childLabel).join(', '),
@@ -172,7 +182,10 @@ export function realizeIslBundles({
         fast,
       },
     });
-    link(b.id, b.child, b.parent, cables.flatMap((c) => [`${b.child}:${c.childPort}`, `${b.parent}:${c.parentPort}`]));
+    link(b.id, b.child, b.parent, cables.flatMap((c) => [
+      `${b.child}:${c.childPort}${c.childChannel ? `_${c.childChannel}` : ''}`,
+      `${b.parent}:${c.parentPort}${c.parentChannel ? `_${c.parentChannel}` : ''}`,
+    ]));
   }
 }
 
@@ -219,7 +232,10 @@ export function realizeEndpointGroups({
         lldp: epLldp,
       },
     });
-    const labels = allMembers.map((x) => x.label);
+    const labels = allMembers.flatMap((x) => {
+      const alias = edaPhysicalAlias(x.label);
+      return alias ? [x.label, alias] : [x.label];
+    });
     search.set(epId, [a.label, a.full, remotePort, ...labels].join(' ').toLowerCase());
 
     for (const [node, members] of a.portsByNode) {
@@ -228,6 +244,8 @@ export function realizeEndpointGroups({
         portsOf(node).push({
           port: m.port,
           channel: m.channel,
+          interfaceLabel: m.label,
+          physicalAlias: edaPhysicalAlias(m.label) ?? undefined,
           kind,
           side: 'bottom',
           remote: a.label,
@@ -245,7 +263,7 @@ export function realizeEndpointGroups({
           targetHandle: 'in',
           data: { kind, a: shortPortLabel(m.label), b: m.remotePort || a.label, lldp: m.lldp, fast: compact },
         });
-        link(sid, node, epId, [`${node}:${m.port}`]);
+        link(sid, node, epId, [`${node}:${m.port}${m.channel ? `_${m.channel}` : ''}`]);
       }
     }
   }

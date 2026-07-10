@@ -280,6 +280,15 @@
           "type": "interSwitch",
           "lldpStatus": "ok",
           "lldpPeer": "mix-sros-sr2se-m36-mse24 1/1/c1/1"
+        },
+        {
+          "label": "ethernet-1-25",
+          "desc": "dcgw fabric",
+          "remoteNode": "pod1",
+          "remotePort": "1/1/c1/1",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "pod1 1/1/c1/1"
         }
       ],
       "raw": {
@@ -1078,6 +1087,160 @@
           "platform": "7730 SXR-1D-32D",
           "operatingSystem": "srl",
           "version": "24.7.1",
+          "node-state": "connected"
+        }
+      }
+    },
+    {
+      "name": "pod1",
+      "platform": "7750 SR-1s",
+      "os": "sros",
+      "role": "dcgw",
+      "tier": 4,
+      "namespace": "dev-mixed-sros",
+      "version": "dev-mixed-sros",
+      "labels": {
+        "eda.nokia.com/role": "dcgw",
+        "eda.nokia.com/os": "sros",
+        "eda.nokia.com/dev-fixture": "mixed-sros",
+        "eda.nokia.com/pod": "pod1",
+        "eda.nokia.com/fabric-node-group": "dcgw"
+      },
+      "table": [
+        {
+          "label": "1/1/c1/1",
+          "desc": "dcgw fabric",
+          "remoteNode": "mix-spine-srl",
+          "remotePort": "ethernet-1-25",
+          "type": "interSwitch",
+          "lldpStatus": "ok",
+          "lldpPeer": "mix-spine-srl ethernet-1-25"
+        }
+      ],
+      "raw": {
+        "apiVersion": "core.eda.nokia.com/v1",
+        "kind": "TopoNode",
+        "metadata": {
+          "name": "pod1",
+          "namespace": "dev-mixed-sros",
+          "labels": {
+            "eda.nokia.com/role": "dcgw",
+            "eda.nokia.com/os": "sros",
+            "eda.nokia.com/dev-fixture": "mixed-sros",
+            "eda.nokia.com/pod": "pod1",
+            "eda.nokia.com/fabric-node-group": "dcgw"
+          }
+        },
+        "spec": {
+          "platform": "7750 SR-1s",
+          "operatingSystem": "sros",
+          "component": [
+            {
+              "kind": "lineCard",
+              "type": "xcm-1s",
+              "slot": "1"
+            },
+            {
+              "kind": "mda",
+              "type": "s18-100gb-qsfp28",
+              "slot": "1-a"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-1"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-2"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-3"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-4"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-5"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-6"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-7"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-8"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-9"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-10"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-11"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-12"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-13"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-14"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-15"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-16"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-17"
+            },
+            {
+              "kind": "connector",
+              "type": "c1-100g",
+              "slot": "1-a-18"
+            }
+          ]
+        },
+        "status": {
+          "platform": "7750 SR-1s",
+          "operatingSystem": "sros",
+          "version": "24.7.r1",
           "node-state": "connected"
         }
       }
@@ -2349,6 +2512,14 @@
       "sourcePort": "1/1/c2/1",
       "targetPort": "1/1/c22/1",
       "type": "interSwitch"
+    },
+    {
+      "id": "mix-pod1-mix-spine-srl-44",
+      "source": "pod1",
+      "target": "mix-spine-srl",
+      "sourcePort": "1/1/c1/1",
+      "targetPort": "ethernet-1-25",
+      "type": "interSwitch"
     }
   ],
   "lags": {
@@ -2438,6 +2609,9 @@
     "eda.nokia.com/dev-fixture": [
       "mixed-sros"
     ],
+    "eda.nokia.com/fabric-node-group": [
+      "dcgw"
+    ],
     "eda.nokia.com/os": [
       "srl",
       "sros"
@@ -2449,6 +2623,7 @@
     "eda.nokia.com/pod": [
       "edge",
       "pod-00",
+      "pod1",
       "sros-variants"
     ],
     "eda.nokia.com/rack": [
@@ -2474,6 +2649,7 @@
     ],
     "eda.nokia.com/role": [
       "borderleaf",
+      "dcgw",
       "leaf",
       "spine",
       "superspine"

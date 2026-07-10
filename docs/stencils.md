@@ -168,7 +168,7 @@ a port number). It records `hasC` per label, which the bake step uses to emit `c
 
 ---
 
-## 5. frontpanel-meta.json
+## 5. Generated front-panel metadata
 
 The metadata generation step walks every `cable_map/operators/cable-map/frontpanel/*.svg`, reads the
 `data-port` cage geometry, and writes per-platform:
@@ -185,6 +185,17 @@ The metadata generation step walks every `cable_map/operators/cable-map/frontpan
 - `rows` = distinct y-bands of cages. `aspect` = panel width/height.
 - Regenerate after **any** SVG change. It's a committed file
   (`cable_map/frontend/src/generated/frontpanel-meta.json`)
+
+The app also derives `cable_map/frontend/src/generated/frontpanel-labels.json` from each stencil's
+baked `data-added="1"` port text. It records whether each fixed panel or modular bay uses `c1`,
+`c2`, … or bare `1`, `2`, … silkscreen labels. The topology canvas uses that label while keeping
+addresses such as `1-1` solely as internal cage keys. Regenerate it after changing stencils with:
+
+```sh
+pnpm -C cable_map/frontend gen:frontpanel-labels
+```
+
+`make check` verifies that the committed label metadata is current.
   and the FE reads it through `src/domain/ports/frontPanelMeta.ts`. (Note: label-only edits
   don't change meta — it's derived from cage geometry, not text.)
 
@@ -316,6 +327,7 @@ live with the operator that serves them; the inspector + generation scripts live
 | `stencils/` | gitignored | raw vendor SVG library (source material) |
 | `cable_map/operators/cable-map/frontpanel/<name>.svg` | committed | **the stencils** (data-port + baked labels); served by the operator at `/frontpanel/*` |
 | `cable_map/frontend/src/generated/frontpanel-meta.json` | committed | derived per-platform `{ports,rows,aspect,slotted,layout}` |
+| `cable_map/frontend/src/generated/frontpanel-labels.json` | committed | derived per-platform/per-bay visible cage-label convention (`c1` or `1`) |
 | `cable_map/frontend/src/stencil.ts` | committed | `stencilFor()` resolver (platform+components → name) |
 | `cable_map/frontend/src/FrontPanel.tsx` | committed | drawer render (inline SVG, fill cages) |
 | `cable_map/frontend/src/SwitchNode.tsx` | committed | canvas render (cells from meta layout) |

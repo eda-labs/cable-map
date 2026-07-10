@@ -173,6 +173,7 @@ func TestTopologyGroupingTiers(t *testing.T) {
 		{Name: "spine1", Labels: map[string]string{"eda.nokia.com/role": "spine"}},
 		{Name: "leaf1", Labels: map[string]string{"eda.nokia.com/role": "leaf"}},
 		{Name: "bl1", Labels: map[string]string{"eda.nokia.com/role": "borderleaf"}},
+		{Name: "dcgw1", Labels: map[string]string{"eda.nokia.com/role": "dcgw"}},
 		{Name: "srv1", Labels: map[string]string{"eda.nokia.com/role": "server"}},
 	}
 	role := RawGrouping{Name: "role", Selectors: []RawTierSelector{
@@ -180,12 +181,12 @@ func TestTopologyGroupingTiers(t *testing.T) {
 		{Tier: 2, NodeSelectors: []string{"eda.nokia.com/role=superspine"}},
 		{Tier: 3, NodeSelectors: []string{"eda.nokia.com/role=spine"}},
 		{Tier: 4, NodeSelectors: []string{"eda.nokia.com/role=leaf", "eda.nokia.com/role=borderleaf"}},
-		{Tier: 5}, // catch-all
+		{Tier: 4}, // live role grouping catch-all (e.g. dcgw)
 	}}
 	other := RawGrouping{Name: "alt", Selectors: []RawTierSelector{{Tier: 9}}}
 
 	topo := BuildTopology(nodes, nil, nil, nil, []RawGrouping{other, role})
-	want := map[string]int{"bb1": 1, "ss1": 2, "spine1": 3, "leaf1": 4, "bl1": 4, "srv1": 5}
+	want := map[string]int{"bb1": 1, "ss1": 2, "spine1": 3, "leaf1": 4, "bl1": 4, "dcgw1": 4, "srv1": 4}
 	for name, tier := range want {
 		if got := nodeByName(topo, name).Tier; got != tier {
 			t.Errorf("%s tier: got %d want %d", name, got, tier)

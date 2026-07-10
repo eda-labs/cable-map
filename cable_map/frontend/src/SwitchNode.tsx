@@ -2,9 +2,11 @@ import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type CSS
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
   CABLE_COLOR, LLDP_COLOR, COMPACT_SWITCH_H, COMPACT_SWITCH_W,
-  breakoutGrid, compactSwitchHandle, panelDims, portHandle, type PortInfo, type SwitchData,
+  breakoutCellBox, breakoutGrid, compactSwitchHandle, panelDims, portHandle, type PortInfo, type SwitchData,
 } from './graph';
 import type { Breakout } from './domain/topology/contract';
+import type { ConnectorInfo } from './domain/ports/srosPorts';
+import { detailedPortLabel } from './domain/ports/interfaceNames';
 import { trace, useTrace, modeFor } from './trace';
 import { useLldp } from './lldp';
 import spineIcon from './assets/icons/spine.svg?raw';
@@ -74,9 +76,11 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
   const id = portHandle(info.port, info.channel);
   const stubVisible = showsEdgeStub(info, showEdgeStub) && !hot;
   // responsive label: fit the number to the cell in BOTH axes (digit-aware) so dense composite panels
-  // never overflow their tiny cages; it scales up with canvas zoom. grid mode stays at a flat 7px.
+  // never overflow their tiny cages. Breakout channel text is deliberately smaller than a cage label.
   const digits = Math.max(1, String(label ?? info.port).length);
-  const fontSize = box ? Math.max(4, Math.min(13, box.height * 0.9, box.width / (digits * 0.62))) : 7;
+  const minFont = channel ? 3 : 4;
+  const maxFont = channel ? 6.5 : 13;
+  const fontSize = box ? Math.max(minFont, Math.min(maxFont, box.height * 0.8, box.width / (digits * 0.62))) : channel ? 5 : 7;
   return (
     <div
       data-port={info.port}
@@ -88,7 +92,9 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
         trace.pin(`cable:${info.cableId}`);
       }}
       onDoubleClick={free ? undefined : (e) => { e.stopPropagation(); onSelectNode?.(true); }}
-      title={title ?? (free ? `port ${info.port} · free` : `${info.port} → ${info.remote} ${info.remotePort}`)}
+      title={title ?? (free
+        ? `port ${info.port} · free`
+        : `${info.interfaceLabel ?? info.port}${info.physicalAlias ? ` (${info.physicalAlias})` : ''} → ${info.remote} ${detailedPortLabel(info.remotePort)}`)}
       style={{
         ...(box ? { position: 'absolute', left: box.left, top: box.top, width: box.width, height: box.height }
           : { position: 'relative', width: CELL, height: CELL }),
@@ -98,12 +104,12 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: '"NokiaPureText", sans-serif',   // match the SVG silkscreen labels
         fontSize, lineHeight: 1, fontWeight: 700,
-        overflow: 'visible',
-        color: free ? 'var(--cell-free-fg)' : 'var(--bg)',
+        overflow: channel ? 'hidden' : 'visible',
+        color: free ? 'var(--muted)' : 'var(--bg)',
         background: free ? 'var(--cell-free-bg)' : fill,
         // occupied ports ring in their own cable colour; the traced port rings white
         outline: channel ? 'none' : hot ? '1.5px solid white' : free ? '1px solid var(--cell-free-line)' : `1px solid ${fill}`,
-        outlineOffset: hot ? 0 : -1,
+        outlineOffset: -1,
         cursor: free ? 'default' : 'pointer',
         opacity: visualHidden ? 0 : dim ? (free ? 0.18 : 0.24) : 1,
         pointerEvents: visualHidden ? 'none' : undefined,
@@ -129,7 +135,7 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
           }}
         />
       )}
-      {(channel || !free) && (label ?? info.port)}
+      {(label != null || channel || !free) && (label ?? info.port)}
       {!free && renderHandles !== false && (
         <>
           <Handle type="source" id={id} position={side} isConnectable={false}
@@ -145,8 +151,8 @@ function PortCell({ info, hot, dim, lldp, showEdgeStub, box, label, title, visua
 // A broken-out cage: the cage box is split into `bo.channels` equal channel slivers (left→right),
 // each cabled channel slotting into its own sliver with its own handle. `box` is the cage's
 // absolute rect (real-layout) or undefined for a CELL-sized grid cage.
-function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs, box, onSelectNode, renderHandles }:
-  { cage: string; infos: PortInfo[]; bo: Breakout; hot: boolean; selected: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box; onSelectNode?: (expand?: boolean) => void; renderHandles?: boolean }) {
+function BreakoutCage({ cage, displayLabel, infos, bo, connector, hot, selected, dim, lldp, showEdgeStubs, box, onSelectNode, renderHandles }:
+  { cage: string; displayLabel: string; infos: PortInfo[]; bo: Breakout; connector?: ConnectorInfo; hot: boolean; selected: boolean; dim: boolean; lldp: boolean; showEdgeStubs: boolean; box?: Box; onSelectNode?: (expand?: boolean) => void; renderHandles?: boolean }) {
   const [hovered, setHovered] = useState(false);
   // Per-channel trace state: subscribe to a primitive derived from this cage's cables, so unrelated
   // trace updates don't re-render every breakout cage.
@@ -165,15 +171,11 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
   const n = Math.max(1, bo.channels);
   const W = box?.width ?? CELL, H = box?.height ?? CELL;
   const { cols, rows } = breakoutGrid(n);
-  const colGap = cols > 2 ? 0.5 : 1;
-  const rowGap = rows > 1 ? 0.5 : 0;
-  const sw = (W - colGap * (cols - 1)) / cols;
-  const sh = (H - rowGap * (rows - 1)) / rows;
   const byCh = useMemo(() => new Map(infos.map((i) => [i.channel ?? 1, i])), [infos]);
   // any channel of this cage in the active trace -> the whole cage rings white (one ring, like a port)
   const anyHot = hot || activeCableStr.length > 0;
   const label = bo.speed ? `${n}×${bo.speed} breakout` : `${n}-channel breakout`;
-  const digits = Math.max(1, cage.length);
+  const digits = Math.max(1, displayLabel.length);
   const fontSize = box ? Math.max(4, Math.min(13, H * 0.9, W / (digits * 0.62))) : 7;
   const expanded = hovered || anyHot || selected;
   const primary = infos[0] ?? freeCell(cage);
@@ -184,70 +186,91 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
   const collapsedFree = collapsed.kind === 'free';
   return (
     <div
-      title={`port ${cage} · ${label}`}
+      data-connector={connector?.label}
+      title={`${displayLabel} · ${label}${connector ? ` · ${connector.label} · ${connector.physical}` : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{
-        ...(box
-          ? { position: 'absolute', left: box.left, top: box.top, width: W, height: H }
-          : { position: 'relative', width: CELL, height: CELL }),
-        // expanded: one ring around the whole QSFP-sized port (white when traced), with the channel
-        // gaps reading as thin light dividers via the cage background showing through.
-        ...(expanded && {
-          borderRadius: 3,
-          overflow: 'hidden',
-          background: 'rgba(255,255,255,0.6)',
-          // constant ring — only the colour changes when traced (white), never the size/offset
-          outline: `1.5px solid ${anyHot ? 'white' : collapsedFree ? 'var(--cell-free-line)' : collapsedFill}`,
-          outlineOffset: 0,
-        }),
-      }}
+      style={box
+        ? { position: 'absolute', left: box.left, top: box.top, width: W, height: H }
+        : { position: 'relative', width: CELL, height: CELL }}
     >
-      {Array.from({ length: n }, (_, i) => {
-        const ch = i + 1;
-        const info = byCh.get(ch) ?? freeCell(cage);
-        const occ = info.kind !== 'free';
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        // this channel is hot when its own cable is traced; dim when the cage is dimmed (cage not in
-        // the trace) or a trace is active and this channel's cable isn't part of it.
-        const chHot = !!info.cableId && activeCableIds.has(info.cableId);
-        const chDim = dim || (activeCableStr.length > 0 && !chHot);
-        return (
-          <PortCell key={ch} info={info} hot={chHot} lldp={lldp} channel label={String(ch)} box={{ left: col * (sw + colGap), top: row * (sh + rowGap), width: sw, height: sh }}
-            dim={chDim}
-            showEdgeStub={showEdgeStubs}
-            onSelectNode={onSelectNode}
-            renderHandles={renderHandles}
-            visualHidden={!expanded}
-            title={occ ? `${cage}/${ch} → ${info.remote} ${info.remotePort}` : `port ${cage}/${ch} · free${bo.speed ? ` · ${bo.speed}` : ''}`} />
-        );
-      })}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 2,
-          background: collapsedFree ? 'var(--cell-free-bg)' : collapsedFill,
-          outline: collapsedFree ? '1px solid var(--cell-free-line)' : `1px solid ${collapsedFill}`,
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 3, overflow: 'hidden',
+        ...(expanded && {
+          outline: `1.5px solid ${anyHot ? 'white' : collapsedFree ? 'var(--cell-free-line)' : collapsedFill}`,
           outlineOffset: -1,
-          fontSize,
-          lineHeight: 1,
-          fontWeight: 700,
-          color: collapsedFree ? 'var(--cell-free-fg)' : 'var(--bg)',
-          opacity: expanded ? 0 : dim ? 0.24 : 1,
-          pointerEvents: expanded ? 'none' : 'auto',
-          cursor: 'pointer',
-          transition: 'opacity 120ms, outline-color 120ms',
-          zIndex: 3,
-        }}
-      >
-        {!collapsedFree && cage}
+        }),
+      }}>
+        {Array.from({ length: n }, (_, i) => {
+          const ch = i + 1;
+          const info = byCh.get(ch) ?? freeCell(cage);
+          const occ = info.kind !== 'free';
+          const chHot = !!info.cableId && activeCableIds.has(info.cableId);
+          const chDim = dim || (activeCableStr.length > 0 && !chHot);
+          const showChannelLabel = occ || hovered || selected || anyHot;
+          return (
+            <PortCell key={ch} info={info} hot={chHot} lldp={lldp} channel label={showChannelLabel ? String(ch) : ''} box={breakoutCellBox(n, ch, W, H)}
+              dim={chDim}
+              showEdgeStub={showEdgeStubs}
+              onSelectNode={onSelectNode}
+              renderHandles={renderHandles}
+              visualHidden={!expanded}
+              title={occ
+                ? `${info.interfaceLabel ?? `${connector?.label ?? cage}/${ch}`}${info.physicalAlias ? ` (${info.physicalAlias})` : ''} → ${info.remote} ${detailedPortLabel(info.remotePort)}`
+                : `${connector?.label ?? displayLabel}/${ch} · free${bo.speed ? ` · ${bo.speed}` : ''}`} />
+          );
+        })}
+        {expanded && Array.from({ length: cols - 1 }, (_, i) => (
+          <span key={`v${i}`} aria-hidden style={{
+            position: 'absolute', top: 0, bottom: 0, left: `${((i + 1) / cols) * 100}%`,
+            width: 0.35, transform: 'translateX(-50%)', background: 'var(--line)', opacity: 0.55,
+            pointerEvents: 'none', zIndex: 2,
+          }} />
+        ))}
+        {expanded && Array.from({ length: rows - 1 }, (_, i) => (
+          <span key={`h${i}`} aria-hidden style={{
+            position: 'absolute', left: 0, right: 0, top: `${((i + 1) / rows) * 100}%`,
+            height: 0.35, transform: 'translateY(-50%)', background: 'var(--line)', opacity: 0.55,
+            pointerEvents: 'none', zIndex: 2,
+          }} />
+        ))}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 2,
+            background: collapsedFree ? 'var(--cell-free-bg)' : collapsedFill,
+            outline: collapsedFree ? '1px solid var(--cell-free-line)' : `1px solid ${collapsedFill}`,
+            outlineOffset: -1,
+            fontSize,
+            lineHeight: 1,
+            fontWeight: 700,
+            color: collapsedFree ? 'var(--muted)' : 'var(--bg)',
+            opacity: expanded ? 0 : dim ? 0.24 : 1,
+            pointerEvents: expanded ? 'none' : 'auto',
+            cursor: 'pointer',
+            transition: 'opacity 120ms, outline-color 120ms',
+            zIndex: 3,
+          }}
+        >
+          {displayLabel}
+        </div>
       </div>
+      {expanded && box && H >= 10 && (
+        <div aria-hidden style={{
+          position: 'absolute', left: '50%', top: -7, zIndex: 5,
+          transform: 'translateX(-50%)', padding: '0 1.5px', borderRadius: 2,
+          color: 'var(--fg)', background: 'var(--panel)',
+          fontSize: 5.5, lineHeight: 1, fontWeight: 700, whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+        }}>
+          {displayLabel}
+        </div>
+      )}
     </div>
   );
 }
@@ -255,9 +278,9 @@ function BreakoutCage({ cage, infos, bo, hot, selected, dim, lldp, showEdgeStubs
 const freeCell = (port: string): PortInfo => ({ port, kind: 'free', side: 'bottom', remote: '', remotePort: '', desc: '', cableId: '' });
 
 // One cage: a breakout splits into channel slivers, otherwise it's a single cell (free if uncabled).
-function renderCage(cage: string, infos: PortInfo[] | undefined, bo: Breakout | undefined, hot: boolean, selected: boolean, dim: boolean, lldp: boolean, showEdgeStubs: boolean, box?: Box, onSelectNode?: (expand?: boolean) => void, renderHandles?: boolean) {
-  if (bo) return <BreakoutCage key={cage} cage={cage} infos={infos ?? []} bo={bo} hot={hot} selected={selected} dim={dim} lldp={lldp} showEdgeStubs={showEdgeStubs} box={box} onSelectNode={onSelectNode} renderHandles={renderHandles} />;
-  return <PortCell key={cage} info={infos?.[0] ?? freeCell(cage)} hot={hot} dim={dim && !hot} lldp={lldp} showEdgeStub={showEdgeStubs} box={box} onSelectNode={onSelectNode} renderHandles={renderHandles} />;
+function renderCage(cage: string, displayLabel: string, infos: PortInfo[] | undefined, bo: Breakout | undefined, connector: ConnectorInfo | undefined, hot: boolean, selected: boolean, dim: boolean, lldp: boolean, showEdgeStubs: boolean, box?: Box, onSelectNode?: (expand?: boolean) => void, renderHandles?: boolean) {
+  if (bo && bo.channels > 1) return <BreakoutCage key={cage} cage={cage} displayLabel={displayLabel} infos={infos ?? []} bo={bo} connector={connector} hot={hot} selected={selected} dim={dim} lldp={lldp} showEdgeStubs={showEdgeStubs} box={box} onSelectNode={onSelectNode} renderHandles={renderHandles} />;
+  return <PortCell key={cage} info={infos?.[0] ?? freeCell(cage)} label={displayLabel} title={connector && !infos?.length ? `${displayLabel} · ${connector.label} · ${connector.physical} · free · ${connector.speed}` : undefined} hot={hot} dim={dim && !hot} lldp={lldp} showEdgeStub={showEdgeStubs} box={box} onSelectNode={onSelectNode} renderHandles={renderHandles} />;
 }
 
 function CompactSwitchNode({ id, data, selected }: NodeProps) {
@@ -342,8 +365,8 @@ function CompactSwitchNode({ id, data, selected }: NodeProps) {
 function SummaryPanelCanvas({ data, lldp, width, height, showLabels }: { data: SwitchData; lldp: boolean; width: number; height: number; showLabels: boolean }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const byPort = useMemo(() => {
-    const m = new Map<string, PortInfo>();
-    for (const p of data.ports) if (!m.has(p.port)) m.set(p.port, p);
+    const m = new Map<string, PortInfo[]>();
+    for (const p of data.ports) (m.get(p.port) ?? m.set(p.port, []).get(p.port)!).push(p);
     return m;
   }, [data.ports]);
   const layoutKey = useMemo(
@@ -373,12 +396,14 @@ function SummaryPanelCanvas({ data, lldp, width, height, showLabels }: { data: S
     };
     const freeBg = resolveColor('var(--cell-free-bg)');
     const freeLine = resolveColor('var(--cell-free-line)');
-    const freeText = resolveColor('var(--cell-free-fg)');
+    const freeText = resolveColor('var(--muted)');
     const occupiedText = resolveColor('var(--bg)');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const drawCell = (port: string, x: number, y: number, w: number, h: number) => {
-      const info = byPort.get(port);
+      const infos = byPort.get(port) ?? [];
+      const info = infos[0];
+      const connector = data.connectors?.[port];
       const fill = info ? resolveColor(fillFor(info, lldp)) : freeBg;
       ctx.fillStyle = fill;
       ctx.fillRect(x, y, w, h);
@@ -386,7 +411,7 @@ function SummaryPanelCanvas({ data, lldp, width, height, showLabels }: { data: S
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, w - 1), Math.max(0, h - 1));
       if (!showLabels || w < 5 || h < 5) return;
-      const label = String(port);
+      const label = data.portLabels?.[port] ?? connector?.label ?? String(port).split('-').at(-1)!;
       const fontSize = Math.max(4, Math.min(9, h * 0.72, w / (Math.max(1, label.length) * 0.62)));
       ctx.font = `700 ${fontSize}px sans-serif`;
       ctx.fillStyle = info ? occupiedText : freeText;
@@ -408,7 +433,7 @@ function SummaryPanelCanvas({ data, lldp, width, height, showLabels }: { data: S
       const col = Math.floor(i / rows);
       drawCell(String(i + 1), col * (CELL + CELL_GAP), row * (CELL + CELL_GAP), CELL, CELL);
     }
-  }, [byPort, data.layout, data.portCount, data.rows, height, layoutKey, lldp, showLabels, width]);
+  }, [byPort, data.breakouts, data.connectors, data.layout, data.portCount, data.portLabels, data.rows, height, layoutKey, lldp, showLabels, width]);
 
   return <canvas ref={ref} aria-hidden style={{ display: 'block', pointerEvents: 'none' }} />;
 }
@@ -486,8 +511,13 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
   }, [d.activeEdgeStubPorts, id]);
   const hotPorts = useMemo(() => {
     const out = new Set<string>();
-    for (const p of activeStr ? activeStr.split('\n') : []) out.add(p);
-    for (const p of expandedStubStr ? expandedStubStr.split('\n') : []) out.add(p);
+    const add = (port: string) => {
+      out.add(port);
+      const channelSep = port.lastIndexOf('_');
+      if (channelSep > 0) out.add(port.slice(0, channelSep));
+    };
+    for (const p of activeStr ? activeStr.split('\n') : []) add(p);
+    for (const p of expandedStubStr ? expandedStubStr.split('\n') : []) add(p);
     return out;
   }, [activeStr, expandedStubStr]);
   const dimInactivePorts = mode === 'on' && traceAny && hotPorts.size > 0;
@@ -541,14 +571,16 @@ function DetailedSwitchNode({ id, data, selected }: NodeProps) {
             const cw = Math.max(3, p.w * panel.W), ch = Math.max(3, p.h * panel.H);
             const box = { left: p.x * panel.W - cw / 2, top: p.y * panel.H - ch / 2, width: cw, height: ch };
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, isSelected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box, openThisNode, renderHandles);
+            const displayLabel = d.portLabels?.[cage] ?? d.connectors?.[cage]?.label ?? cage.split('-').at(-1)!;
+            return renderCage(cage, displayLabel, byPort.get(cage), d.breakouts?.[cage], d.connectors?.[cage], hot, isSelected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, box, openThisNode, renderHandles);
           })}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${CELL}px)`, gridTemplateRows: `repeat(${rows}, ${CELL}px)`, gridAutoFlow: 'column', gap: CELL_GAP }}>
           {cages.map((cage) => {
             const hot = hotPorts.has(cage);
-            return renderCage(cage, byPort.get(cage), d.breakouts?.[cage], hot, isSelected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, undefined, openThisNode, renderHandles);
+            const displayLabel = d.portLabels?.[cage] ?? d.connectors?.[cage]?.label ?? cage.split('-').at(-1)!;
+            return renderCage(cage, displayLabel, byPort.get(cage), d.breakouts?.[cage], d.connectors?.[cage], hot, isSelected, dimInactivePorts && !hot, lldp, !!d.showEdgeStubs, undefined, openThisNode, renderHandles);
           })}
         </div>
       )}

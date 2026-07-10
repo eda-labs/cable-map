@@ -24,6 +24,8 @@ PROJECT_TARGETS += dev
 PROJECT_TARGETS += dev-cluster
 PROJECT_TARGETS += preview
 PROJECT_TARGETS += lint
+PROJECT_TARGETS += ui-test
+PROJECT_TARGETS += frontpanel-labels-check
 PROJECT_TARGETS += ts-contract
 PROJECT_TARGETS += ts-contract-check
 PROJECT_TARGETS += ui-build
@@ -64,6 +66,16 @@ preview:
 HELP_lint := Run frontend lint checks
 lint:
 	$(FRONTEND) lint
+
+.PHONY: ui-test
+HELP_ui-test := Run frontend unit tests
+ui-test:
+	$(FRONTEND) test
+
+.PHONY: frontpanel-labels-check
+HELP_frontpanel-labels-check := Fail if generated front-panel silkscreen labels are stale
+frontpanel-labels-check:
+	$(FRONTEND) check:frontpanel-labels
 
 TYGO ?= github.com/gzuidhof/tygo@v0.2.21
 
@@ -119,7 +131,7 @@ deploy-local:
 
 .PHONY: check
 HELP_check := Run lint, the contract-drift guard, Go tests, and a full embedded binary build
-check: lint ts-contract-check test build
+check: lint ui-test frontpanel-labels-check ts-contract-check test build
 
 .PHONY: clean
 HELP_clean := Remove generated frontend, embedded frontend, and operator build output
