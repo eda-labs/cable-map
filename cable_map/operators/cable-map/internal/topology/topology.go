@@ -64,10 +64,11 @@ type IfNeighbor struct {
 }
 
 type IfStatusMember struct {
-	Node          string
-	Interface     string // EDA-normalised name (ethernet-1-a-1-1)
-	NodeInterface string // node-native name (1/1/c1/1) — the form LLDP neighbours are reported in
-	Neighbors     []IfNeighbor
+	Node             string
+	Interface        string // EDA-normalised name (ethernet-1-a-1-1)
+	NodeInterface    string // node-native name (1/1/c1/1) — the form LLDP neighbours are reported in
+	OperationalState string // status.members[].operationalState ("Up", "Down", "Degraded", ...)
+	Neighbors        []IfNeighbor
 }
 
 // RawIface is an interfaces.eda.nokia.com/Interface projection.
@@ -247,6 +248,8 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 	// form (1/1/c1/1), but topolink endpoints use the EDA name (ethernet-1-a-1-1); this resolves the
 	// expected remote to its native name so the match is native-vs-native (no naming guesswork).
 	nativeOf := map[string]string{}
+	// node|interface -> the physical member's reported operational state.
+	operStateByPort := map[string]string{}
 
 	for _, f := range ifaces {
 		if f.Description != "" {
@@ -265,6 +268,9 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 		for _, m := range f.StatusMembers {
 			if m.Node != "" && m.Interface != "" && m.NodeInterface != "" {
 				nativeOf[m.Node+"|"+m.Interface] = m.NodeInterface
+			}
+			if m.Node != "" && m.Interface != "" && m.OperationalState != "" {
+				operStateByPort[m.Node+"|"+normIf(m.Interface)] = m.OperationalState
 			}
 			var nbrs []LagMember
 			for _, n := range m.Neighbors {
@@ -365,10 +371,11 @@ func BuildTopology(nodes []RawNode, links []RawLink, ifaces []RawIface, breakout
 			desc = descOf[iface] // the endpoint's Interface CR (possibly a LAG)
 		}
 		row := Row{
-			Label:      portLabel(port),
-			Desc:       desc,
-			RemoteNode: remote.Node,
-			Type:       typ,
+			Label:            portLabel(port),
+			Desc:             desc,
+			RemoteNode:       remote.Node,
+			Type:             typ,
+			OperationalState: operStateByPort[node+"|"+normIf(port)],
 		}
 		if remote.Interface != "" {
 			row.RemotePort = portLabel(remote.Interface)

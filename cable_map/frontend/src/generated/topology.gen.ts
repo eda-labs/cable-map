@@ -39,6 +39,7 @@ export interface Row {
   type: string;
   lag?: string; // LAG resource name (lag-…) when bundled
   peer?: string; // endpoint label for edge links with no remote node
+  operationalState?: string; // physical member state reported by EDA
   lldpStatus: LldpStatus; // "ok" | "mismatch" | "none" — always emitted
   lldpPeer?: string; // "node port[, node port]"
 }

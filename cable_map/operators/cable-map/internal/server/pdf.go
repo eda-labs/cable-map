@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"cable-map.eda.labs/cable-map/operators/cable-map/internal/topology"
 )
@@ -31,10 +32,11 @@ const occupiedColour = "#00A87E" // fill for a cabled cage
 // pdfEngine shells out to `typst`. Fonts are extracted once to a temp dir (--font-path); the
 // template + per-request data are written per render.
 type pdfEngine struct {
-	bin      string
-	once     sync.Once
-	fontsDir string
-	initErr  error
+	bin        string
+	renderSlot chan struct{}
+	once       sync.Once
+	fontsDir   string
+	initErr    error
 }
 
 type pdfRenderProgress struct {
@@ -49,7 +51,7 @@ func newPDFEngine() *pdfEngine {
 	if bin == "" {
 		bin = "typst"
 	}
-	return &pdfEngine{bin: bin}
+	return &pdfEngine{bin: bin, renderSlot: make(chan struct{}, 1)}
 }
 
 func (e *pdfEngine) fonts() (string, error) {
@@ -89,6 +91,15 @@ func (e *pdfEngine) render(ctx context.Context, nodes []topology.Node, stencilDi
 }
 
 func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Node, stencilDir string, remote, stencils map[string]string, progress func(pdfRenderProgress)) ([]byte, error) {
+	// Typst can consume multiple GiB for thousand-node documents. Serialize renders so concurrent
+	// users cannot multiply that peak and OOM the pod while their job records are still in memory.
+	select {
+	case e.renderSlot <- struct{}{}:
+		defer func() { <-e.renderSlot }()
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
 	reportPDFProgress(progress, "Preparing PDF", "", intPtr(0), false)
 	fontsDir, err := e.fonts()
 	if err != nil {
@@ -127,6 +138,9 @@ func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Nod
 	plans := map[string]*stencilPlan{}        // stencil filename -> precomputed plan (nil if missing)
 	slottedByName := map[string]bool{}        // stencil filename -> slotted cage ids
 	for i, n := range nodes {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		panel := ""
 		svgName := n.Platform
 		if s := stencils[n.Name]; s != "" {
@@ -258,7 +272,7 @@ func tableRows(n topology.Node, remote map[string]string) [][]string {
 		if rn == "" && r.Peer != "" {
 			rn = r.Peer
 		}
-		rows = append(rows, []string{r.Label, dash(r.Desc), typ, dash(rn), dash(rp), dash(r.LldpPeer)})
+		rows = append(rows, []string{r.Label, dash(r.Desc), typ, dash(rn), dash(rp), dash(r.OperationalState), dash(r.LldpPeer)})
 	}
 	return rows
 }
@@ -551,11 +565,15 @@ func (s *Server) pdf(w http.ResponseWriter, r *http.Request) {
 }
 
 func pdfFilename(namespace string) string {
+	return pdfFilenameAt(namespace, time.Now())
+}
+
+func pdfFilenameAt(namespace string, now time.Time) string {
 	name := "cable_map"
 	if ns := safeFilenamePart(namespace); ns != "" {
 		name += "_" + ns
 	}
-	return name + ".pdf"
+	return name + "_" + now.UTC().Format("2006-01-02_15-04-05Z") + ".pdf"
 }
 
 func safeFilenamePart(s string) string {

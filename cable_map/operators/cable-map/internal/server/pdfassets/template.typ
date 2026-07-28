@@ -26,10 +26,10 @@
     v(12pt)
   }
   table(
-    columns: (auto, 1fr, auto, auto, auto, 1fr),
+    columns: (auto, 1fr, auto, auto, auto, auto, 1fr),
     inset: 5pt, align: left + horizon, stroke: 0.4pt + rgb("#dddddd"),
     fill: (_, row) => if row == 0 { rgb("#e9edf2") } else if calc.odd(row) { rgb("#f6f8fa") } else { white },
-    table.header([*Port*], [*Description*], [*Type*], [*Remote node*], [*Remote port*], [*LLDP neighbor*]),
+    table.header([*Port*], [*Description*], [*Type*], [*Remote node*], [*Remote port*], [*Operational state*], [*LLDP neighbor*]),
     ..node.rows.flatten(),
   )
 }

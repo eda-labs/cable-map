@@ -32,15 +32,16 @@ type Edge struct {
 }
 
 type Row struct {
-	Label      string `json:"label"`
-	Desc       string `json:"desc"`
-	RemoteNode string `json:"remoteNode"`
-	RemotePort string `json:"remotePort"`
-	Type       string `json:"type"`
-	Lag        string `json:"lag,omitempty"`                  // LAG resource name (lag-…) when bundled
-	Peer       string `json:"peer,omitempty"`                 // endpoint label for edge links with no remote node
-	LldpStatus string `json:"lldpStatus" tstype:"LldpStatus"` // "ok" | "mismatch" | "none" — always emitted
-	LldpPeer   string `json:"lldpPeer,omitempty"`             // "node port[, node port]"
+	Label            string `json:"label"`
+	Desc             string `json:"desc"`
+	RemoteNode       string `json:"remoteNode"`
+	RemotePort       string `json:"remotePort"`
+	Type             string `json:"type"`
+	Lag              string `json:"lag,omitempty"`                  // LAG resource name (lag-…) when bundled
+	Peer             string `json:"peer,omitempty"`                 // endpoint label for edge links with no remote node
+	OperationalState string `json:"operationalState,omitempty"`     // physical member state reported by EDA
+	LldpStatus       string `json:"lldpStatus" tstype:"LldpStatus"` // "ok" | "mismatch" | "none" — always emitted
+	LldpPeer         string `json:"lldpPeer,omitempty"`             // "node port[, node port]"
 }
 
 type LagMember struct {

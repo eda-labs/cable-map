@@ -1,6 +1,7 @@
 package server
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -32,6 +33,29 @@ func TestColourPanelSupportsSingleQuotedDataPorts(t *testing.T) {
 
 	if !strings.Contains(out, "fill:"+occupiedColour+";fill-opacity:1") {
 		t.Fatalf("occupied single-quoted cage was not colored: %s", out)
+	}
+}
+
+func TestPDFTableRowsIncludeOperationalState(t *testing.T) {
+	node := topology.Node{
+		Name: "leaf1",
+		Table: []topology.Row{{
+			Label:            "ethernet-1-1",
+			Desc:             "to spine1",
+			RemoteNode:       "spine1",
+			RemotePort:       "ethernet-1-2",
+			Type:             "interSwitch",
+			OperationalState: "Down",
+			LldpPeer:         "spine1 ethernet-1-2",
+		}},
+	}
+
+	got := tableRows(node, nil)
+	want := [][]string{{
+		"ethernet-1-1", "to spine1", "ISL", "spine1", "ethernet-1-2", "Down", "spine1 ethernet-1-2",
+	}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("PDF table rows = %#v, want %#v", got, want)
 	}
 }
 
@@ -74,6 +98,27 @@ func TestPDFJobStoreExpiresTerminalJobs(t *testing.T) {
 
 	if _, ok := store.get(job.id); ok {
 		t.Fatal("expired PDF job was not cleaned up")
+	}
+}
+
+func TestRunningPDFJobDoesNotExpire(t *testing.T) {
+	store := newPDFJobStore()
+	job := store.create("cable_map.pdf")
+
+	if job.expired(time.Now().Add(24 * time.Hour)) {
+		t.Fatal("running PDF job expired")
+	}
+	if got, ok := store.get(job.id); !ok || got != job {
+		t.Fatal("running PDF job was removed from the store")
+	}
+}
+
+func TestPDFFilenameIncludesNamespaceAndUTCTimestamp(t *testing.T) {
+	now := time.Date(2026, time.July, 28, 16, 35, 22, 0, time.FixedZone("CEST", 2*60*60))
+	got := pdfFilenameAt(" tenant/a ", now)
+	want := "cable_map_tenant_a_2026-07-28_14-35-22Z.pdf"
+	if got != want {
+		t.Fatalf("pdf filename = %q, want %q", got, want)
 	}
 }
 

@@ -4,6 +4,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
+import { timestampedDownloadFilename } from '../src/download-filename'
 
 const execFileAsync = promisify(execFile)
 const occupiedColour = '#00A87E'
@@ -26,6 +27,7 @@ type DevPdfRow = {
   type: string
   lag?: string
   peer?: string
+  operationalState?: string
   lldpPeer?: string
 }
 
@@ -183,7 +185,7 @@ function tableRows(node: DevPdfNode, remote: Record<string, string>): string[][]
       remotePort = remote[`${node.name} ${row.label} port`] || remotePort
     }
     if (!remoteNode && row.peer) remoteNode = row.peer
-    return [row.label, dash(row.desc), type, dash(remoteNode), dash(remotePort), dash(row.lldpPeer)]
+    return [row.label, dash(row.desc), type, dash(remoteNode), dash(remotePort), dash(row.operationalState), dash(row.lldpPeer)]
   })
 }
 
@@ -298,7 +300,7 @@ function dash(value: string | undefined): string {
 
 function pdfFilename(namespace: string): string {
   const ns = safeFilenamePart(namespace)
-  return `cable_map${ns ? `_${ns}` : ''}.pdf`
+  return timestampedDownloadFilename(`cable_map${ns ? `_${ns}` : ''}.pdf`)
 }
 
 function safeFilenamePart(value: string): string {

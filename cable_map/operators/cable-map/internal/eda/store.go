@@ -583,7 +583,12 @@ func projIface(u *unstructured.Unstructured) topology.RawIface {
 		if !ok {
 			continue
 		}
-		sm := topology.IfStatusMember{Node: mstr(m, "node"), Interface: mstr(m, "interface"), NodeInterface: mstr(m, "nodeInterface")}
+		sm := topology.IfStatusMember{
+			Node:             mstr(m, "node"),
+			Interface:        mstr(m, "interface"),
+			NodeInterface:    mstr(m, "nodeInterface"),
+			OperationalState: mstr(m, "operationalState"),
+		}
 		if nbrs, ok := m["neighbors"].([]interface{}); ok {
 			for _, ni := range nbrs {
 				if nm, ok := ni.(map[string]interface{}); ok {

@@ -1,5 +1,6 @@
 import type { Cell } from 'write-excel-file/browser';
 import type { LagInfo, Topology } from './domain/topology/contract';
+import { timestampedDownloadFilename } from './download-filename';
 import { edgeRemote } from './edge-remote';
 
 // readable LAG classification for the spreadsheet's LAG column
@@ -7,8 +8,8 @@ const lagLabel = (lag?: LagInfo): string =>
   !lag ? '' : lag.isl ? 'ISL-LAG' : lag.multihomed ? 'ESI' : 'LAG';
 
 // one sheet per node, so the Node column is redundant (the sheet name is the node)
-const HEADERS = ['Port', 'Type', 'LAG', 'Remote node', 'Remote port', 'Description', 'LLDP neighbor', 'LLDP'];
-const WIDTHS = [16, 8, 9, 18, 16, 30, 22, 9];
+const HEADERS = ['Port', 'Type', 'LAG', 'Remote node', 'Remote port', 'Description', 'Operational state', 'LLDP neighbor', 'LLDP'];
+const WIDTHS = [16, 8, 9, 18, 16, 30, 18, 22, 9];
 
 // Excel sheet names: <=31 chars, none of \ / ? * [ ] :, and unique. Returns a per-call namer.
 function sheetNamer(): (id: string) => string {
@@ -50,6 +51,7 @@ export async function exportXlsx(topo: Topology, nodeIds: string[]): Promise<voi
           r.type === 'edge' ? (edgeRemote.get(id, r.label, 'node') || null) : (r.remoteNode || r.peer || null),
           r.type === 'edge' ? (edgeRemote.get(id, r.label, 'port') || null) : (r.remotePort || null),
           r.desc || null,
+          r.operationalState || null,
           r.lldpPeer || null,
           r.lldpStatus && r.lldpStatus !== 'none' ? r.lldpStatus : null,
         ]),
@@ -58,5 +60,5 @@ export async function exportXlsx(topo: Topology, nodeIds: string[]): Promise<voi
 
   const tag = nodeIds.length && nodeIds.length < topo.nodes.length ? `-${nodeIds.join('_')}` : '';
   const file = await writeXlsxFile(sheets);
-  await file.toFile(`cable-map${tag}.xlsx`);
+  await file.toFile(timestampedDownloadFilename(`cable-map${tag}.xlsx`));
 }

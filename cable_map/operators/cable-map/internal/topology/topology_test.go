@@ -50,8 +50,8 @@ func TestBuildTopology(t *testing.T) {
 			Members: []IfMember{{Node: "leaf1", Interface: "ethernet-1-11"}, {Node: "leaf2", Interface: "ethernet-1-11"}},
 		},
 		{StatusMembers: []IfStatusMember{
-			{Node: "leaf1", Interface: "ethernet-1/49", Neighbors: []IfNeighbor{{Node: "spine1", Interface: "ethernet-1/1"}}},
-			{Node: "leaf1", Interface: "ethernet-1/50", Neighbors: []IfNeighbor{{Node: "spine1", Interface: "ethernet-1/9"}}},
+			{Node: "leaf1", Interface: "ethernet-1/49", OperationalState: "Up", Neighbors: []IfNeighbor{{Node: "spine1", Interface: "ethernet-1/1"}}},
+			{Node: "leaf1", Interface: "ethernet-1/50", OperationalState: "Down", Neighbors: []IfNeighbor{{Node: "spine1", Interface: "ethernet-1/9"}}},
 		}},
 	}
 	links := []RawLink{
@@ -117,6 +117,9 @@ func TestBuildTopology(t *testing.T) {
 		if r.LldpStatus != "ok" {
 			t.Errorf("e1-49 lldpStatus: got %q want ok", r.LldpStatus)
 		}
+		if r.OperationalState != "Up" {
+			t.Errorf("e1-49 operationalState: got %q want Up", r.OperationalState)
+		}
 		if r.LldpPeer != "spine1 ethernet-1-1" {
 			t.Errorf("e1-49 lldpPeer: got %q", r.LldpPeer)
 		}
@@ -129,6 +132,8 @@ func TestBuildTopology(t *testing.T) {
 	}
 	if r, _ := findRow(leaf1, "ethernet-1-50"); r.LldpStatus != "mismatch" {
 		t.Errorf("e1-50 lldpStatus: got %q want mismatch", r.LldpStatus)
+	} else if r.OperationalState != "Down" {
+		t.Errorf("e1-50 operationalState: got %q want Down", r.OperationalState)
 	} else if r.Lag != "" {
 		t.Errorf("e1-50 lag should be empty when interface resource is not a typed LAG, got %q", r.Lag)
 	} else if r.Desc != "cross-link" {
@@ -136,6 +141,8 @@ func TestBuildTopology(t *testing.T) {
 	}
 	if r, _ := findRow(leaf1, "ethernet-1-10"); r.Type != "edge" || r.Peer != "server-a" || r.LldpStatus != "none" {
 		t.Errorf("edge row: type=%q peer=%q lldp=%q", r.Type, r.Peer, r.LldpStatus)
+	} else if r.OperationalState != "" {
+		t.Errorf("edge row operationalState: got %q want empty", r.OperationalState)
 	}
 	if r, _ := findRow(leaf1, "ethernet-1-11"); r.Lag != "lag1-l1-l2-eth-1-1" {
 		t.Errorf("non-prefixed edge lag: got %q want lag1-l1-l2-eth-1-1", r.Lag)
