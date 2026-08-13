@@ -61,11 +61,11 @@ spec:
             periodSeconds: 20
           resources:
             limits:
-              cpu: "1"
-              memory: 1Gi
+              cpu: "2"
+              memory: 4Gi
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 250m
+              memory: 512Mi
           # EDK reads EDA state over gRPC/mTLS from the State Aggregator; these are the
           # internal certs (client cert from cert-manager + trust bundle), mounted exactly
           # as EDA core operators (e.g. eda-cx) receive them.

@@ -16,7 +16,10 @@ import (
 	"cable-map.eda.labs/cable-map/operators/cable-map/internal/topology"
 )
 
-const pdfJobTTL = 10 * time.Minute
+const (
+	pdfJobTTL        = 10 * time.Minute
+	pdfRenderTimeout = 10 * time.Minute
+)
 
 type pdfJobStatus string
 
@@ -242,8 +245,12 @@ func (s *Server) pdfJobsRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	job := s.pdfJobs.create(pdfFilename(req.Namespace))
+	renderBaseContext := context.WithoutCancel(r.Context())
 	go func() {
-		pdf, err := s.engine.renderWithProgress(contextWithoutCancel(r.Context()), nodes, stencilDir(), req.Remote, req.Stencils, func(progress pdfRenderProgress) {
+		renderContext, cancel := context.WithTimeout(renderBaseContext, pdfRenderTimeout)
+		defer cancel()
+
+		pdf, err := s.engine.renderWithProgress(renderContext, nodes, stencilDir(), req.Remote, req.Stencils, func(progress pdfRenderProgress) {
 			job.update(pdfJobEvent{
 				Status:        pdfJobRunning,
 				Phase:         progress.Phase,
@@ -253,6 +260,10 @@ func (s *Server) pdfJobsRoot(w http.ResponseWriter, r *http.Request) {
 			})
 		})
 		if err != nil {
+			if errors.Is(renderContext.Err(), context.DeadlineExceeded) {
+				job.fail(errors.New("PDF export timed out after 10 minutes"))
+				return
+			}
 			job.fail(err)
 			return
 		}
@@ -287,6 +298,7 @@ func (s *Server) pdfJobStatus(w http.ResponseWriter, r *http.Request, id string)
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
+	w.Header().Set("Cache-Control", "no-store")
 	job, ok := s.pdfJobs.get(id)
 	if !ok {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "PDF job not found"})
@@ -301,6 +313,7 @@ func (s *Server) pdfJobEvents(w http.ResponseWriter, r *http.Request, id string)
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
+	w.Header().Set("Cache-Control", "no-store")
 	job, ok := s.pdfJobs.get(id)
 	if !ok {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "PDF job not found"})
@@ -339,6 +352,7 @@ func (s *Server) pdfJobDownload(w http.ResponseWriter, r *http.Request, id strin
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
+	w.Header().Set("Cache-Control", "no-store")
 	job, ok := s.pdfJobs.get(id)
 	if !ok {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "PDF job not found"})
@@ -389,8 +403,4 @@ func selectPDFNodes(topo topology.Topology, names []string) []topology.Node {
 		}
 	}
 	return nodes
-}
-
-func contextWithoutCancel(ctx context.Context) context.Context {
-	return context.WithoutCancel(ctx)
 }

@@ -45,7 +45,11 @@ export function streamPdfJob(
       const res = await authenticatedFetch(`api/pdf/jobs/${encodeURIComponent(id)}/status`);
       if (res.status === 404) {
         closed = true;
-        onEvent({ status: 'error', phase: 'PDF export failed', message: 'PDF job expired or was not found' });
+        onEvent({
+          status: 'error',
+          phase: 'PDF export failed',
+          message: 'PDF job is no longer available; the service may have restarted. Please retry.',
+        });
         return;
       }
       if (!res.ok) throw new Error(`status ${res.status}`);

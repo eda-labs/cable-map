@@ -71,6 +71,35 @@ func TestProjLink(t *testing.T) {
 	}
 }
 
+func TestProjIfaceIncludesMemberOperationalState(t *testing.T) {
+	u := &unstructured.Unstructured{Object: map[string]any{
+		"metadata": map[string]any{"name": "leaf1-ethernet-1-1"},
+		"status": map[string]any{"members": []any{
+			map[string]any{
+				"node":             "leaf1",
+				"interface":        "ethernet-1-1",
+				"nodeInterface":    "ethernet-1/1",
+				"operationalState": "Degraded",
+				"neighbors": []any{
+					map[string]any{"node": "spine1", "interface": "ethernet-1/2"},
+				},
+			},
+		}},
+	}}
+
+	got := projIface(u)
+	if len(got.StatusMembers) != 1 {
+		t.Fatalf("status members: %+v", got.StatusMembers)
+	}
+	member := got.StatusMembers[0]
+	if member.Node != "leaf1" || member.Interface != "ethernet-1-1" || member.NodeInterface != "ethernet-1/1" || member.OperationalState != "Degraded" {
+		t.Errorf("status member: %+v", member)
+	}
+	if len(member.Neighbors) != 1 || member.Neighbors[0].Node != "spine1" || member.Neighbors[0].Interface != "ethernet-1/2" {
+		t.Errorf("neighbors: %+v", member.Neighbors)
+	}
+}
+
 func TestProjGrouping(t *testing.T) {
 	u := &unstructured.Unstructured{Object: map[string]any{
 		"metadata": map[string]any{"name": "role", "namespace": "eda-system"},
