@@ -157,6 +157,9 @@ func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Nod
 		if plan != nil {
 			occupied := map[string]bool{}
 			for _, r := range n.Table {
+				if linkDown(r) {
+					continue // a cabled port whose link is down stays uncoloured (grey)
+				}
 				if c := cageKey(r.Label, slottedByName[svgName]); c != "" {
 					occupied[c] = true
 				}
@@ -300,6 +303,11 @@ var (
 )
 
 // cageKey maps an EDA/SROS interface name to its front-panel cage id (port "12" or slotted "1-12").
+// linkDown reports whether EDA says the row's physical port is down.
+func linkDown(r topology.Row) bool {
+	return strings.EqualFold(r.OperationalState, "down")
+}
+
 func cageKey(label string, slotted bool) string {
 	ns := reNum.FindAllString(label, -1)
 	if len(ns) == 0 {

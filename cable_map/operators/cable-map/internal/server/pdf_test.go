@@ -134,3 +134,11 @@ func TestSelectPDFNodesPreservesRequestedOrder(t *testing.T) {
 		t.Fatalf("selected nodes = %#v, want leaf-c then leaf-a", nodes)
 	}
 }
+
+func TestLinkDown(t *testing.T) {
+	for state, want := range map[string]bool{"Down": true, "down": true, "Up": false, "Degraded": false, "": false} {
+		if got := linkDown(topology.Row{OperationalState: state}); got != want {
+			t.Errorf("linkDown(%q) = %v, want %v", state, got, want)
+		}
+	}
+}
