@@ -38,11 +38,13 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
       ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [hovered]);
 
-  // cage ids occupied by this node's cables, derived from the interface names (slot-aware) so the
+  // cage ids occupied by this node's live cables, derived from the interface names (slot-aware) so the
   // panel highlights match the stencil's data-port on both fixed and modular chassis.
   const stencil = stencilFor(node.platform, componentsOf(node.raw));
   const slotted = slottedOf(stencil);
-  const occupied = rows.map((r) => cageKey(r.label, slotted, stencil)).filter((c): c is string => c != null);
+  // a cabled port whose link isn't up stays uncoloured (grey)
+  const occupied = rows.filter((r) => r.operationalState?.toLowerCase() === 'up')
+    .map((r) => cageKey(r.label, slotted, stencil)).filter((c): c is string => c != null);
   // natural order: digit runs compare numerically (ethernet-1-2 before ethernet-1-10), slot-aware
   const sorted = rows.toSorted((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
   // print leaves empty cells blank (room to write); the drawer shows a dash

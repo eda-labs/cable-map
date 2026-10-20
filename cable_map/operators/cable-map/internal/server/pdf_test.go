@@ -134,3 +134,18 @@ func TestSelectPDFNodesPreservesRequestedOrder(t *testing.T) {
 		t.Fatalf("selected nodes = %#v, want leaf-c then leaf-a", nodes)
 	}
 }
+
+func TestLinkUp(t *testing.T) {
+	for state, want := range map[string]bool{"Up": true, "up": true, "Down": false, "Degraded": false, "Unknown": false, "N/A": false, "": false} {
+		if got := linkUp(topology.Row{OperationalState: state}); got != want {
+			t.Errorf("linkUp(%q) = %v, want %v", state, got, want)
+		}
+	}
+}
+
+func TestLLDPMismatchesFlagsRows(t *testing.T) {
+	node := topology.Node{Table: []topology.Row{{LldpStatus: "ok"}, {LldpStatus: "mismatch"}, {LldpStatus: "none"}}}
+	if got, want := lldpMismatches(node), []bool{false, true, false}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("lldpMismatches = %v, want %v", got, want)
+	}
+}
