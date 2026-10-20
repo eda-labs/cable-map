@@ -142,3 +142,10 @@ func TestLinkDown(t *testing.T) {
 		}
 	}
 }
+
+func TestLLDPMismatchesFlagsRows(t *testing.T) {
+	node := topology.Node{Table: []topology.Row{{LldpStatus: "ok"}, {LldpStatus: "mismatch"}, {LldpStatus: "none"}}}
+	if got, want := lldpMismatches(node), []bool{false, true, false}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("lldpMismatches = %v, want %v", got, want)
+	}
+}
