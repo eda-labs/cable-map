@@ -42,8 +42,8 @@ export default function NodeView({ node, rows, showHeader = true, interactive = 
   // panel highlights match the stencil's data-port on both fixed and modular chassis.
   const stencil = stencilFor(node.platform, componentsOf(node.raw));
   const slotted = slottedOf(stencil);
-  // a cabled port whose link is down stays uncoloured (grey)
-  const occupied = rows.filter((r) => r.operationalState?.toLowerCase() !== 'down')
+  // a cabled port whose link isn't up stays uncoloured (grey)
+  const occupied = rows.filter((r) => r.operationalState?.toLowerCase() === 'up')
     .map((r) => cageKey(r.label, slotted, stencil)).filter((c): c is string => c != null);
   // natural order: digit runs compare numerically (ethernet-1-2 before ethernet-1-10), slot-aware
   const sorted = rows.toSorted((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));

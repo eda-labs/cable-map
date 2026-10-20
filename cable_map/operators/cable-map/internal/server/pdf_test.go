@@ -135,10 +135,10 @@ func TestSelectPDFNodesPreservesRequestedOrder(t *testing.T) {
 	}
 }
 
-func TestLinkDown(t *testing.T) {
-	for state, want := range map[string]bool{"Down": true, "down": true, "Up": false, "Degraded": false, "": false} {
-		if got := linkDown(topology.Row{OperationalState: state}); got != want {
-			t.Errorf("linkDown(%q) = %v, want %v", state, got, want)
+func TestLinkUp(t *testing.T) {
+	for state, want := range map[string]bool{"Up": true, "up": true, "Down": false, "Degraded": false, "Unknown": false, "N/A": false, "": false} {
+		if got := linkUp(topology.Row{OperationalState: state}); got != want {
+			t.Errorf("linkUp(%q) = %v, want %v", state, got, want)
 		}
 	}
 }
