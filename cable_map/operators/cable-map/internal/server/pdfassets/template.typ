@@ -11,6 +11,19 @@
 
 #let bookmark(title) = place(hide(heading(level: 1, outlined: false, bookmarked: true)[#title]))
 
+// LLDP mismatch marker: a red warning triangle drawn as a shape, so it never depends on the
+// font carrying a ⚠ glyph.
+#let lldp-red = rgb("#C71E1E")
+#let warn = box(width: 9pt, height: 8pt, baseline: 0.5pt, {
+  polygon(fill: lldp-red, (0pt, 8pt), (4.5pt, 0pt), (9pt, 8pt))
+  place(top + left, dy: 2.2pt, box(width: 9pt, align(center, text(size: 5.5pt, weight: 700, fill: white)[!])))
+})
+
+// LLDP neighbour cell (last column): mismatches get the triangle and red bold text, like the app.
+#let lldp-cell(value, mismatch) = if mismatch {
+  [#warn#h(3pt)#text(fill: lldp-red, weight: 700)[#value]]
+} else { value }
+
 // one node per page: header, front panel, cable table
 #let node-page(node) = {
   current.update(node.name)
@@ -30,7 +43,9 @@
     inset: 5pt, align: left + horizon, stroke: 0.4pt + rgb("#dddddd"),
     fill: (_, row) => if row == 0 { rgb("#e9edf2") } else if calc.odd(row) { rgb("#f6f8fa") } else { white },
     table.header([*Port*], [*Description*], [*Type*], [*Remote node*], [*Remote port*], [*Operational state*], [*LLDP neighbor*]),
-    ..node.rows.flatten(),
+    ..node.rows.enumerate().map(((i, row)) =>
+      row.slice(0, -1) + (lldp-cell(row.last(), node.mismatch.at(i, default: false)),)
+    ).flatten(),
   )
 }
 

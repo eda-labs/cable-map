@@ -128,15 +128,16 @@ func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Nod
 		Platform string     `json:"platform"`
 		Panel    string     `json:"panel"` // SVG filename in `work`, or "" if no stencil
 		Rows     [][]string `json:"rows"`
+		Mismatch []bool     `json:"mismatch"` // per row: LLDP saw a neighbour other than the cabled one
 	}
 	data := struct {
 		Nodes []pdfNode `json:"nodes"`
 	}{}
 
 	totalNodes := len(nodes)
-	panelByHash := map[string]string{}        // coloured-panel content hash -> filename
-	plans := map[string]*stencilPlan{}        // stencil filename -> precomputed plan (nil if missing)
-	slottedByName := map[string]bool{}        // stencil filename -> slotted cage ids
+	panelByHash := map[string]string{} // coloured-panel content hash -> filename
+	plans := map[string]*stencilPlan{} // stencil filename -> precomputed plan (nil if missing)
+	slottedByName := map[string]bool{} // stencil filename -> slotted cage ids
 	for i, n := range nodes {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -157,6 +158,9 @@ func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Nod
 		if plan != nil {
 			occupied := map[string]bool{}
 			for _, r := range n.Table {
+				if !linkUp(r) {
+					continue // a cabled port whose link isn't up stays uncoloured (grey)
+				}
 				if c := cageKey(r.Label, slottedByName[svgName]); c != "" {
 					occupied[c] = true
 				}
@@ -174,7 +178,7 @@ func (e *pdfEngine) renderWithProgress(ctx context.Context, nodes []topology.Nod
 				panelByHash[key] = panel
 			}
 		}
-		data.Nodes = append(data.Nodes, pdfNode{Name: n.Name, Platform: n.Platform, Panel: panel, Rows: tableRows(n, remote)})
+		data.Nodes = append(data.Nodes, pdfNode{Name: n.Name, Platform: n.Platform, Panel: panel, Rows: tableRows(n, remote), Mismatch: lldpMismatches(n)})
 		reportPDFProgress(progress, "Rendering panels", fmt.Sprintf("%d / %d nodes", i+1, totalNodes), intPtr(10+((i+1)*60)/totalNodes), false)
 	}
 
@@ -277,6 +281,14 @@ func tableRows(n topology.Node, remote map[string]string) [][]string {
 	return rows
 }
 
+func lldpMismatches(n topology.Node) []bool {
+	out := make([]bool, len(n.Table))
+	for i, r := range n.Table {
+		out[i] = r.LldpStatus == "mismatch"
+	}
+	return out
+}
+
 func dash(s string) string {
 	if s == "" {
 		return "—"
@@ -298,6 +310,11 @@ var (
 	reTextAdded = regexp.MustCompile(`^<text\b[^>]*\bdata-added=(?:"[^"]*"|'[^']*')[^>]*>`)
 	reSelfClose = regexp.MustCompile(`/\s*>$`)
 )
+
+// linkUp reports whether EDA says the row's physical port is up.
+func linkUp(r topology.Row) bool {
+	return strings.EqualFold(r.OperationalState, "up")
+}
 
 // cageKey maps an EDA/SROS interface name to its front-panel cage id (port "12" or slotted "1-12").
 func cageKey(label string, slotted bool) string {
@@ -351,7 +368,7 @@ type cageSpan struct {
 }
 
 type raiseSpan struct {
-	pos  int    // byte offset in svg to insert the raised copy
+	pos  int // byte offset in svg to insert the raised copy
 	port string
 	copy []byte // the original cage tag with its id stripped (greened per node)
 }
