@@ -34,3 +34,15 @@ access require that session. By default, users with either `cable-map-viewer` or
 
 The app does not install a public `NodePort`, `LoadBalancer`, or patched EDA UI
 proxy.
+
+## Installing on EDA 26.8
+
+Cable Map releases are not signed, and EDA 26.8 rejects unsigned apps by default.
+Before installing, allow them on the registry entry for `ghcr.io`, once per
+cluster. This applies to everything the cluster installs from `ghcr.io`, not only
+Cable Map. The registry name can differ per cluster.
+
+```sh
+kubectl -n eda-system patch registries.appstore.eda.nokia.com eda-apps-registry \
+  --type merge -p '{"spec":{"skipSignatureVerification":true}}'
+```
