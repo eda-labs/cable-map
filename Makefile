@@ -11,7 +11,7 @@ include $(sort $(wildcard $(MKLIBS)/*.mk))
 PNPM ?= pnpm
 APP_DIR := cable_map
 FRONTEND_DIR := $(APP_DIR)/frontend
-FRONTEND := $(PNPM) -C $(FRONTEND_DIR)
+FRONTEND := cd $(FRONTEND_DIR) && $(PNPM)
 OPERATOR := cable-map
 EMBED_DIR := $(APP_DIR)/operators/$(OPERATOR)/internal/server/dist
 OPERATOR_BIN := build/operators/$(OPERATOR)/$(OPERATOR)
@@ -38,6 +38,7 @@ PROJECT_TARGETS += image
 PROJECT_TARGETS += deploy-local
 PROJECT_TARGETS += check
 PROJECT_TARGETS += clean
+PROJECT_TARGETS += release
 
 .PHONY: dev
 HELP_dev := Start the Vite dev server (mock /api by default; set EDA_API to proxy a real backend)
@@ -129,9 +130,30 @@ HELP_deploy-local := Build, push to the in-cluster dev registry, and deploy with
 deploy-local:
 	./scripts/deploy-local.sh
 
+# The Go tests compile the server package, whose go:embed needs the built SPA in EMBED_DIR.
+$(APP_DIR)-test: ui-embed
+
+RELEASE_VERSION := $(shell sed -n 's|^  image: .*:\(v[^ ]*\)$$|\1|p' $(APP_DIR)/manifest.yaml)
+RELEASE_IMAGE := ghcr.io/eda-labs/cable-map/operators/$(OPERATOR):$(RELEASE_VERSION)
+CATALOG ?= $(shell sed -n 's|^catalog: *||p' PROJECT)
+RELEASE_FLAGS ?=
+define release-tag-guard
+@grep -q '$(RELEASE_IMAGE)$$' $(APP_DIR)/manifest.yaml || { echo "manifest operator image tag does not match app version $(RELEASE_VERSION)" >&2; exit 1; }
+endef
+
 .PHONY: check
 HELP_check := Run lint, the contract-drift guard, Go tests, and a full embedded binary build
 check: lint ui-test frontpanel-labels-check ts-contract-check test build
+	$(release-tag-guard)
+	edabuilder release "$(CATALOG)" --app "$(APP_DIR)" --dry-run $(RELEASE_FLAGS)
+
+.PHONY: release
+HELP_release := Push the operator image, then edabuilder release to the catalog (vars: CATALOG, RELEASE_FLAGS)
+release:
+	$(release-tag-guard)
+	IMAGE="$(RELEASE_IMAGE)" ./scripts/build-image.sh
+	docker push "$(RELEASE_IMAGE)"
+	edabuilder release "$(CATALOG)" --app "$(APP_DIR)" $(RELEASE_FLAGS)
 
 .PHONY: clean
 HELP_clean := Remove generated frontend, embedded frontend, and operator build output
