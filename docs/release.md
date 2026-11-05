@@ -14,11 +14,14 @@ Ref: [EDA docs: Build & publish](https://eda-docs.pages.dev/latest/development/a
 edabuilder, matching `builderVersion` in `PROJECT`:
 
 ```sh
-V=v26.4.2; A=linux-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+V=v26.8.2; A=linux-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 gh release download $V -R nokia-eda/edabuilder -p "edabuilder-$V-$A*"
 sha256sum -c edabuilder-$V-$A.sha256sum
 install -m 0755 edabuilder-$V-$A ~/.local/bin/edabuilder
 ```
+
+Older edabuilder versions record no `appImageDigest`, and EDA 26.8 refuses to install those
+catalog entries. Go 1.26.4 or newer is required; `go.work` pins it.
 
 EDK and frontend deps:
 
@@ -36,6 +39,15 @@ edabuilder login registry ghcr.io -u <gh-user> -p "$(gh auth token)"
 edabuilder login git https://github.com/eda-labs/catalog -u <gh-user> -p "$(gh auth token)"
 ```
 
+Releases are unsigned. EDA 26.8 rejects unsigned app images by default, so each cluster that
+installs the app has to allow them, once. This applies to everything the cluster installs from
+ghcr, not only Cable Map. The registry name can differ per cluster.
+
+```sh
+kubectl -n eda-system patch registries.appstore.eda.nokia.com eda-apps-registry \
+  --type merge -p '{"spec":{"skipSignatureVerification":true}}'
+```
+
 Access:
 
 - Write on both ghcr packages. They are not linked to the repo, so repo admin is not enough.
@@ -50,11 +62,34 @@ Access:
 2. Set the same new tag on both `image:` lines in `cable_map/manifest.yaml`. Commit.
 3. Run `make check`. It runs lint, frontend and Go tests, the contract-drift guard and a full
    build, checks that both tags match, then runs `edabuilder release --dry-run`. The dry run
-   stages the catalog commit and tag in a temp clone. It pushes nothing.
+   stages the catalog commit and tag in a temp clone. It pushes nothing. It also builds no app
+   image, so it does not exercise the digest.
 4. Run `make release`. It checks the tags, builds and pushes the operator image, then runs
-   `edabuilder release`. That pushes the app image, commits the manifest to the catalog, and
-   creates tag `apps/cable-map.eda.labs/<version>`. The EDA Store installs from that tag.
+   `edabuilder release`. That pushes the app image, commits the manifest and digest to the
+   catalog, and creates tag `apps/cable-map.eda.labs/<version>`. The EDA Store installs from
+   that tag.
 5. Push the bump commit to `main`.
+6. On a cluster that allows unsigned apps (see Setup), check that it accepts the release without
+   installing anything:
+
+   ```sh
+   kubectl apply -f - <<EOF
+   apiVersion: appstore.eda.nokia.com/v1
+   kind: AppInstaller
+   metadata:
+     name: dryrun-cable-map
+     namespace: eda-system
+   spec:
+     apps:
+       - appId: cable-map.eda.labs
+         catalog: eda-labs-catalog
+         version: {type: semver, value: <version>}
+     dryRun: true
+     operation: install
+   EOF
+   kubectl -n eda-system get appinstaller dryrun-cable-map -o jsonpath='{.status}'
+   kubectl -n eda-system delete appinstaller dryrun-cable-map
+   ```
 
 ## Knobs
 
@@ -73,5 +108,5 @@ Push the operator image first. The app image pulls it in as a `dependencies.cont
 make image IMAGE=ghcr.io/eda-labs/cable-map/operators/cable-map:<version>
 docker push ghcr.io/eda-labs/cable-map/operators/cable-map:<version>
 edabuilder build-push --app cable_map
-edabuilder publish https://github.com/eda-labs/catalog --app cable_map
+edabuilder publish app https://github.com/eda-labs/catalog --app cable_map
 ```
